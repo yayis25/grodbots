@@ -70,7 +70,7 @@ public class RobotApplet extends JApplet {
             }
             
             goalIcon = new ImageIcon(new URL(getDocumentBase(), "cake.png"));
-            robotIcon = new ImageIcon(new URL(getDocumentBase(), "robot.png"))
+            robotIcon = new ImageIcon(new URL(getDocumentBase(), "robot.png"));
             pfModel = new PlayfieldModel(map);
         } catch (MalformedURLException e) {
             e.printStackTrace();

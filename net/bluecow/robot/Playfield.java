@@ -90,6 +90,10 @@ public class Playfield extends JPanel {
                     g2.setColor(Color.white);
                     g2.drawString("BAD: "+squares[i][j].getType(), r.x, r.y+10);
                 }
+                
+                if (robot.getPosition().x == i && robot.getPosition().y == j) {
+                    robot.getIcon().paintIcon(this, g2, r.x+1, r.y+1);
+                }
             }
         }
     }

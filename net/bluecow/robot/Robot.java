@@ -21,6 +21,7 @@ public class Robot {
     public Robot(PlayfieldModel pfm, Point initialPosition, ImageIcon icon) {
         this.pfm = pfm;
         this.position = initialPosition;
+        this.icon = icon;
     }
     
     public void move() {
