@@ -16,6 +16,7 @@ public class Playfield extends JPanel {
     private PlayfieldModel pfm;
     private int squareWidth = 30;
     private ImageIcon goalIcon;
+    private Robot robot;
     
     /**
      * Creates a playfield of spaces (mainly for testing).
@@ -38,8 +39,9 @@ public class Playfield extends JPanel {
      * 
      * @param map The map.
      */
-    public Playfield(PlayfieldModel model) {
+    public Playfield(PlayfieldModel model, Robot robot) {
        this.pfm = model;
+       this.robot = robot;
     }
 
     public void paintComponent(Graphics g) {

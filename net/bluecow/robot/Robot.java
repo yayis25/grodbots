@@ -7,6 +7,8 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
+import javax.swing.ImageIcon;
+
 /**
  * The robot.
  */
@@ -14,8 +16,9 @@ public class Robot {
     
     private PlayfieldModel pfm;
     private Point position;
+    private ImageIcon icon;
     
-    public Robot(PlayfieldModel pfm, Point initialPosition) {
+    public Robot(PlayfieldModel pfm, Point initialPosition, ImageIcon icon) {
         this.pfm = pfm;
         this.position = initialPosition;
     }
@@ -55,5 +58,23 @@ public class Robot {
         while (it.hasNext()) {
             ((PropertyChangeListener) it.next()).propertyChange(e);
         }
+    }
+    
+    // ACCESSORS and MUTATORS
+    
+    public ImageIcon getIcon() {
+        return icon;
+    }
+
+    public void setIcon(ImageIcon icon) {
+        this.icon = icon;
+    }
+
+    public Point getPosition() {
+        return position;
+    }
+
+    public void setPosition(Point position) {
+        this.position = position;
     }
 }
