@@ -23,6 +23,7 @@ public class RobotApplet extends JApplet {
     private PlayfieldModel pfModel;
     private ImageIcon goalIcon;
     private Point initialPosition;
+    private ImageIcon robotIcon;
 
     public void init() {
         URL levelMapURL;
@@ -68,8 +69,8 @@ public class RobotApplet extends JApplet {
                 }
             }
             
-            goalIcon = new ImageIcon(new URL(getDocumentBase(), "cake.PNG"));
-            
+            goalIcon = new ImageIcon(new URL(getDocumentBase(), "cake.png"));
+            robotIcon = new ImageIcon(new URL(getDocumentBase(), "robot.png"))
             pfModel = new PlayfieldModel(map);
         } catch (MalformedURLException e) {
             e.printStackTrace();
@@ -82,8 +83,9 @@ public class RobotApplet extends JApplet {
                 if (pfModel == null) {
                     getContentPane().add(new JLabel("Oops, null map!"));
                 } else {
-                    playfield = new Playfield(pfModel);
-                    Robot robot = new Robot(pfModel, initialPosition);
+                    Robot robot = new Robot(pfModel, initialPosition, robotIcon);
+                    playfield = new Playfield(pfModel, robot);
+                    
                     //circuitEditor = new CircuitEditor(robot);
                     playfield.setGoalIcon(goalIcon);
                     getContentPane().add(playfield);
