@@ -20,7 +20,7 @@ public class RobotApplet extends JApplet {
     private Playfield playfield;
     
     private String levelName;
-    private Square[][] map;
+    private PlayfieldModel pfModel;
     private ImageIcon goalIcon;
     private Point initialPosition;
 
@@ -44,7 +44,7 @@ public class RobotApplet extends JApplet {
             int initialY = Integer.parseInt(in.readLine());
             initialPosition = new Point(initialX, initialY);
             
-            map = new Square[xSize][ySize];
+            Square[][] map = new Square[xSize][ySize];
             
             // read the level map (short lines are padded with spaces)
             String line;
@@ -69,6 +69,8 @@ public class RobotApplet extends JApplet {
             }
             
             goalIcon = new ImageIcon(new URL(getDocumentBase(), "cake.PNG"));
+            
+            pfModel = new PlayfieldModel(map);
         } catch (MalformedURLException e) {
             e.printStackTrace();
         } catch (IOException e) {
@@ -77,11 +79,11 @@ public class RobotApplet extends JApplet {
         
         SwingUtilities.invokeLater(new Runnable() {
             public void run() {
-                if (map == null) {
+                if (pfModel == null) {
                     getContentPane().add(new JLabel("Oops, null map!"));
                 } else {
-                    playfield = new Playfield(map);
-                    Robot robot = new Robot(playfield, initialPosition);
+                    playfield = new Playfield(pfModel);
+                    Robot robot = new Robot(pfModel, initialPosition);
                     //circuitEditor = new CircuitEditor(robot);
                     playfield.setGoalIcon(goalIcon);
                     getContentPane().add(playfield);

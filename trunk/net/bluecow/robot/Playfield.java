@@ -13,7 +13,7 @@ import javax.swing.JPanel;
  * Playfield
  */
 public class Playfield extends JPanel {
-    private Square[][] squares;
+    private PlayfieldModel pfm;
     private int squareWidth = 30;
     private ImageIcon goalIcon;
     
@@ -24,12 +24,13 @@ public class Playfield extends JPanel {
      * @param y Height (in squares)
      */
     public Playfield(int x, int y) {
-        squares = new Square[x][y];
+        Square[][] squares = new Square[x][y];
         for (int i = 0; i < x; i++) {
             for (int j = 0; j < y; j++) {
                 squares[i][j] = new Square(Square.EMPTY);
             }
         }
+        pfm = new PlayfieldModel(squares);
     }
     
     /**
@@ -37,12 +38,13 @@ public class Playfield extends JPanel {
      * 
      * @param map The map.
      */
-    public Playfield(Square[][] map) {
-       this.squares = map; 
+    public Playfield(PlayfieldModel model) {
+       this.pfm = model;
     }
 
     public void paintComponent(Graphics g) {
         Graphics2D g2 = (Graphics2D) g;
+        Square[][] squares = pfm.getMap();
         for (int i = 0; i < squares.length; i++) {
             for (int j = 0; j < squares[0].length; j++) {
                 Rectangle r = new Rectangle(i*squareWidth, j*squareWidth, squareWidth, squareWidth);
@@ -91,7 +93,8 @@ public class Playfield extends JPanel {
     }
     
     public Dimension getPreferredSize() {
-        return new Dimension(squares.length, squares[0].length);
+        return new Dimension(pfm.getWidth() * getSquareWidth(),
+                			 pfm.getHeight() * getSquareWidth());
     }
     
     // ACCESSORS AND MUTATORS
@@ -110,17 +113,5 @@ public class Playfield extends JPanel {
 
     public void setSquareWidth(int squareWidth) {
         this.squareWidth = squareWidth;
-    }
-
-    public Square getSquare(int x, int y) {
-        return squares[x][y];
-    }
-    
-    public int getFieldWidth() {
-        return squares.length;
-    }
-
-    public int getFieldHeight() {
-        return squares[0].length;
     }
 }

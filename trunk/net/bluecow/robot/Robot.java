@@ -12,17 +12,17 @@ import java.util.List;
  */
 public class Robot {
     
-    private Playfield pf;
+    private PlayfieldModel pfm;
     private Point position;
     
-    public Robot(Playfield pf, Point initialPosition) {
-        this.pf = pf;
+    public Robot(PlayfieldModel pfm, Point initialPosition) {
+        this.pfm = pfm;
         this.position = initialPosition;
     }
     
     public void move() {
         // XXX: this is hardwired for now
-        Square s = pf.getSquare(position.x, position.y); 
+        Square s = pfm.getSquare(position.x, position.y); 
         if (s.getType() == Square.RED) {
             moveDown();
         } else if (s.getType() == Square.GREEN) {
@@ -31,8 +31,8 @@ public class Robot {
     }
     
     private void moveRight() {
-        if (position.x < pf.getFieldWidth()
-                && pf.getSquare(position.x+1, position.y).isOccupiable()) {
+        if (position.x < pfm.getWidth()
+                && pfm.getSquare(position.x+1, position.y).isOccupiable()) {
                 Point oldPos = new Point(position);
                 position.x += 1;
                 fireMoveEvent(oldPos);
@@ -40,8 +40,8 @@ public class Robot {
     }
 
     public void moveDown() {
-        if (position.y < pf.getFieldHeight()
-                && pf.getSquare(position.x, position.y+1).isOccupiable()) {
+        if (position.y < pfm.getHeight()
+                && pfm.getSquare(position.x, position.y+1).isOccupiable()) {
                 Point oldPos = new Point(position);
                 position.y += 1;
                 fireMoveEvent(oldPos);
