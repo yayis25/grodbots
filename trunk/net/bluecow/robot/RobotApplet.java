@@ -1,6 +1,7 @@
 package net.bluecow.robot;
 
-import java.awt.Point;
+import java.awt.*;
+import java.awt.event.*;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -8,10 +9,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
 
-import javax.swing.ImageIcon;
-import javax.swing.JApplet;
-import javax.swing.JLabel;
-import javax.swing.SwingUtilities;
+import javax.swing.*;
 
 /**
  * RobotApplet Main Class
@@ -83,12 +81,25 @@ public class RobotApplet extends JApplet {
                 if (pfModel == null) {
                     getContentPane().add(new JLabel("Oops, null map!"));
                 } else {
-                    Robot robot = new Robot(pfModel, initialPosition, robotIcon);
+                    final Robot robot = new Robot(pfModel, initialPosition, robotIcon);
                     playfield = new Playfield(pfModel, robot);
                     
                     //circuitEditor = new CircuitEditor(robot);
                     playfield.setGoalIcon(goalIcon);
-                    getContentPane().add(playfield);
+                    getContentPane().add(playfield, BorderLayout.CENTER);
+
+		    JButton moveButton = new JButton("Move");
+		    moveButton.addActionListener(new ActionListener() {
+			    public void actionPerformed(ActionEvent e) {
+				robot.move();
+				getContentPane().repaint();
+			    }
+			});
+		    JPanel buttonPanel = new JPanel(new FlowLayout());
+		    buttonPanel.add(moveButton);
+		    getContentPane().add(buttonPanel, BorderLayout.SOUTH);
+
+		    getContentPane().repaint();
                 }
             }
         });

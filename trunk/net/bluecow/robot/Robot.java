@@ -31,9 +31,20 @@ public class Robot {
             moveDown();
         } else if (s.getType() == Square.GREEN) {
             moveRight();
+        } else if (s.getType() == Square.BLUE) {
+            moveUp();
         }
     }
     
+    private void moveLeft() {
+        if (position.x > 0
+                && pfm.getSquare(position.x-1, position.y).isOccupiable()) {
+                Point oldPos = new Point(position);
+                position.x -= 1;
+                fireMoveEvent(oldPos);
+            }
+    }
+
     private void moveRight() {
         if (position.x < pfm.getWidth()
                 && pfm.getSquare(position.x+1, position.y).isOccupiable()) {
@@ -48,6 +59,15 @@ public class Robot {
                 && pfm.getSquare(position.x, position.y+1).isOccupiable()) {
                 Point oldPos = new Point(position);
                 position.y += 1;
+                fireMoveEvent(oldPos);
+            }
+    }
+
+    public void moveUp() {
+        if (position.y > 0
+                && pfm.getSquare(position.x, position.y-1).isOccupiable()) {
+                Point oldPos = new Point(position);
+                position.y -= 1;
                 fireMoveEvent(oldPos);
             }
     }
