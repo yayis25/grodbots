@@ -75,7 +75,7 @@ public class RobotApplet extends JApplet {
         } catch (IOException e) {
             e.printStackTrace();
         }
-        
+
         SwingUtilities.invokeLater(new Runnable() {
             public void run() {
                 if (pfModel == null) {
@@ -84,7 +84,12 @@ public class RobotApplet extends JApplet {
                     final Robot robot = new Robot(pfModel, initialPosition, robotIcon);
                     playfield = new Playfield(pfModel, robot);
                     
-                    //circuitEditor = new CircuitEditor(robot);
+                    CircuitEditor ce = new CircuitEditor(robot.getOutputs(), robot.getInputs());
+		    JFrame cef = new JFrame("Curcuit Editor");
+		    cef.getContentPane().add(ce);
+		    cef.pack();
+		    cef.setVisible(true);
+
                     playfield.setGoalIcon(goalIcon);
                     getContentPane().add(playfield, BorderLayout.CENTER);
 
