@@ -1,7 +1,5 @@
 package net.bluecow.robot.gate;
 
-import java.util.Iterator;
-
 public class OrGate extends AbstractGate {
     
     public OrGate(int ninputs) {
