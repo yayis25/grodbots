@@ -9,6 +9,8 @@ public interface Gate {
      */
     public abstract boolean getOutputState();
 
+    public Gate.Input[] getInputs();
+    
     /**
      * The input interface represents an input to a gate.  A gate will
      * have 0 or more inputs.

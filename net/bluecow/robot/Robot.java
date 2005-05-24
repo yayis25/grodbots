@@ -129,6 +129,10 @@ public class Robot {
 
 	private List changeListeners = new ArrayList();
 
+	public Gate.Input[] getInputs() {
+		return new Gate.Input[0];
+	}
+	
 	public void addChangeListener(ChangeListener l) {
 	    changeListeners.add(l);
 	}
