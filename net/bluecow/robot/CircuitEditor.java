@@ -1,6 +1,8 @@
 package net.bluecow.robot;
 
 import java.awt.Color;
+import java.awt.Dimension;
+import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Point;
@@ -47,8 +49,13 @@ public class CircuitEditor extends JPanel {
 	 */
 	private Color hilightColor = Color.BLUE;
 	
+	/**
+	 * The font we use for labelling.
+	 */
+	private Font labelFont;
 	
 	public CircuitEditor(Gate[] outputs, Gate.Input[] inputs) {
+		setPreferredSize(new Dimension(400, 400));
 		this.outputs = outputs;
 		this.inputs = inputs;
 	}
@@ -57,10 +64,15 @@ public class CircuitEditor extends JPanel {
 		Point p = (Point) gatePositions.get(gate);
 		g2.drawOval(p.x-10,p.y-10,20,20);
 	}
-	private void paintOutput(Graphics2D g2, Point p) {
+	private void paintOutput(Graphics2D g2, Point p, String label) {
 		final int length = 15;
 		g2.drawLine(p.x, p.y, p.x + length, p.y);
-		g2.drawOval(p.x + length, p.y - 5, 10, 10);
+		g2.drawLine(p.x + length, p.y, p.x + (int) (length*0.75), p.y - (int) (length*0.25));
+		g2.drawLine(p.x + length, p.y, p.x + (int) (length*0.75), p.y + (int) (length*0.25));
+		if (label != null) {
+			g2.setFont(getLabelFont(g2));
+			g2.drawString(label, p.x, p.y + 15);
+		}
 	}
 
 	private void paintInput(Graphics2D g2, Point p) {
@@ -83,7 +95,8 @@ public class CircuitEditor extends JPanel {
 			}
 
 			paintOutput(g2, new Point(0, (int) ((0.5 + i)
-					* (double) getHeight() / (double) outputs.length)));
+					* (double) getHeight() / (double) outputs.length)),
+					outputs[i].getLabel());
 		}
 
 		// draw the inputs along the right edge
@@ -124,6 +137,13 @@ public class CircuitEditor extends JPanel {
 		return activeColor;
 	}
 	
+	private Font getLabelFont(Graphics2D g) {
+		if (labelFont == null) {
+			labelFont = new Font("System", Font.PLAIN, 9);
+		}
+		return labelFont;
+	}
+
 	private class MouseInput extends MouseInputAdapter {
 		public void mouseDragged(MouseEvent e) {
 			if (dragStartGate != null) {

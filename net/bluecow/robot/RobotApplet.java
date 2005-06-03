@@ -94,6 +94,7 @@ public class RobotApplet extends JApplet {
 					JFrame cef = new JFrame("Curcuit Editor");
 					cef.getContentPane().add(ce);
 					cef.pack();
+					cef.setLocation(getX()+getWidth(), getY());
 					cef.setVisible(true);
 
 					playfield.setGoalIcon(goalIcon);
@@ -110,7 +111,13 @@ public class RobotApplet extends JApplet {
 					buttonPanel.add(moveButton);
 					getContentPane().add(buttonPanel, BorderLayout.SOUTH);
 
-					getContentPane().repaint();
+					// XXX: shouldn't be necessary, but applet shows up blank otherwise
+					SwingUtilities.invokeLater(new Runnable() {
+						public void run() {
+							getContentPane().validate();
+							getContentPane().repaint();
+						}
+					});
 				}
 			}
 		});
