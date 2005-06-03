@@ -12,6 +12,11 @@ import java.util.Iterator;
 public abstract class AbstractGate implements Gate {
 
 	/**
+	 * The label text for this gate.
+	 */
+	private String label;
+	
+	/**
 	 * These are the inputs to this gate. Subclass constructors should
 	 * initialise this array to the correct length and types.
 	 */
@@ -30,6 +35,15 @@ public abstract class AbstractGate implements Gate {
 		}
 	};
 
+	/**
+	 * Creates a new gate with the given label.
+	 * 
+	 * @param label The label associated with this gate.
+	 */
+	protected AbstractGate(String label) {
+		this.label = label;
+	}
+	
 	/**
 	 * The Input class represents a single input to its enclosing gate instance.
 	 * A gate can have 0 or more of these in its inputs list.
@@ -117,5 +131,11 @@ public abstract class AbstractGate implements Gate {
 		while (it.hasNext()) {
 			((ChangeListener) it.next()).stateChanged(e);
 		}
+	}
+	
+	// -------------- ACCESSORS and MUTATORS ------------------
+	
+	public String getLabel() {
+		return label;
 	}
 }

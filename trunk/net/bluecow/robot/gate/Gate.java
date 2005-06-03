@@ -4,6 +4,13 @@ import javax.swing.event.*;
 
 public interface Gate {
 
+	/**
+	 * Gets the label text that is associated with this gate.
+	 * 
+	 * @return The text associated with this gate, or null if the gate has no label.
+	 */
+	public String getLabel();
+	
     /**
      * Returns the current output state of this gate.
      */
