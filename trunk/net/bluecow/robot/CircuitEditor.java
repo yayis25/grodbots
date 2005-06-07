@@ -7,19 +7,58 @@ import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Point;
 import java.awt.Rectangle;
+import java.awt.event.ActionEvent;
 import java.awt.event.MouseEvent;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
+import javax.swing.AbstractAction;
+import javax.swing.Action;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+import javax.swing.KeyStroke;
 import javax.swing.event.MouseInputAdapter;
 
 import net.bluecow.robot.gate.Gate;
+import net.bluecow.robot.gate.OrGate;
 import net.bluecow.robot.gate.Gate.Input;
 
 public class CircuitEditor extends JPanel {
 
+	/**
+	 * The AddGateAction adds a new instance of a gate to the enclosing circuit editor. 
+	 *
+	 * @author fuerth
+	 * @version $Id$
+	 */
+	public class AddGateAction extends AbstractAction implements Action {
+
+		/**
+		 * The type of gate that will be created when this action is invoked.
+		 */
+		private Class gateClass;
+		
+		public AddGateAction(Class gateClass) {
+			this.gateClass = gateClass;
+		}
+		
+		public void actionPerformed(ActionEvent e) {
+			try {
+				Gate newGate = (Gate) gateClass.newInstance();
+				Point p = new Point(10, 10);
+				addGate(newGate, p);
+				System.out.println("Added new "+newGate.getClass().getName()+" at "+p);
+			} catch (InstantiationException e1) {
+				e1.printStackTrace();
+				JOptionPane.showMessageDialog(CircuitEditor.this, "Couldn't create new Gate instance:\n"+e1.getMessage());
+			} catch (IllegalAccessException e1) {
+				e1.printStackTrace();
+				JOptionPane.showMessageDialog(CircuitEditor.this, "Couldn't access new Gate instance:\n"+e1.getMessage());
+			}
+		}
+
+	}
 	private Gate[] outputs;
 
 	private Gate.Input[] inputs;
@@ -53,16 +92,34 @@ public class CircuitEditor extends JPanel {
 	 * The font we use for labelling.
 	 */
 	private Font labelFont;
+
+	private static final int DEFAULT_GATE_WIDTH = 50;
+
+	private static final int DEFAULT_GATE_HEIGHT = 50;
 	
 	public CircuitEditor(Gate[] outputs, Gate.Input[] inputs) {
+		setupKeyActions();
 		setPreferredSize(new Dimension(400, 400));
 		this.outputs = outputs;
 		this.inputs = inputs;
 	}
 
-	private void paintGate(Graphics2D g2, Gate gate) {
-		Point p = (Point) gatePositions.get(gate);
-		g2.drawOval(p.x-10,p.y-10,20,20);
+	private void setupKeyActions() {
+		getInputMap().put(KeyStroke.getKeyStroke('A'), "addGate(AND)");
+		getInputMap().put(KeyStroke.getKeyStroke('O'), "addGate(OR)");
+		
+		//getActionMap().put("addGate(AND)", new AddGateAction(AndGate.class));
+		getActionMap().put("addGate(OR)", new AddGateAction(OrGate.class));
+	}
+	private void paintGate(Graphics2D g2, Gate gate, Rectangle r) {
+		g2.translate(r.x, r.y);
+		if (gate instanceof OrGate) {
+			g2.drawArc(0, 0, 20, r.height, 30, 30);
+		} else {
+			g2.drawOval(0, 0, r.width, r.height);
+			g2.drawString(gate.getClass().getName(), 5, r.height/2);
+		}
+		g2.translate(-r.x, -r.y);
 	}
 	private void paintOutput(Graphics2D g2, Point p, String label) {
 		final int length = 15;
@@ -110,6 +167,18 @@ public class CircuitEditor extends JPanel {
 			paintInput(g2, new Point(getWidth(), (int) ((0.5 + i)
 					* (double) getHeight() / (double) inputs.length)));
 		}
+		
+		// draw the individual gates
+		Iterator it = gatePositions.entrySet().iterator();
+		while (it.hasNext()) {
+			Map.Entry ent = (Map.Entry) it.next();
+			paintGate(g2, (Gate) ent.getKey(), (Rectangle) ent.getValue());
+		}
+	}
+	
+	public void addGate(Gate g, Point p) {
+		gatePositions.put(g, new Rectangle(p.x, p.y, DEFAULT_GATE_WIDTH, DEFAULT_GATE_HEIGHT));
+		repaint();
 	}
 
 	public Gate getGateAt(Point p) {
@@ -159,8 +228,8 @@ public class CircuitEditor extends JPanel {
 		}
 
 		public void mousePressed(MouseEvent e) {
-			// TODO Auto-generated method stub
-			super.mousePressed(e);
+			// TODO: pick up the gate under the cursor
+			JOptionPane.showMessageDialog(CircuitEditor.this, "Click not implemented yet.");
 		}
 
 		public void mouseReleased(MouseEvent e) {
