@@ -2,6 +2,18 @@ package net.bluecow.robot.gate;
 
 public class OrGate extends AbstractGate {
 	
+	/**
+	 * Creates a 2-input OR gate.
+	 */
+	public OrGate() {
+		this(2);
+	}
+	
+	/**
+	 * Creates a new OR gate with the specified number of inputs.
+	 * 
+	 * @param ninputs The number of inputs.
+	 */
 	public OrGate(int ninputs) {
 		super(null);
 		inputs = new DefaultInput[ninputs];
