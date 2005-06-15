@@ -69,14 +69,18 @@ public class CircuitEditor extends JPanel {
 	private Map gatePositions = new HashMap();
 	
 	/**
-	 * The gate that should be highlighted.  This is the gate that currently has keyboard and mouse focus.
+	 * The gate that should be highlighted.  This is the gate that currently 
+	 * has keyboard and mouse focus.
 	 */
 	private Gate hilightGate;
 
 	/**
-	 * The Gate where the current drag operation started.  This is set to null when there is not a drag operation in progress.
+	 * The Input that the sure wants to connect to an output.  This is set to 
+	 * null when there is not a connect operation in progress.
 	 */
-	private Gate dragStartGate;
+	private Gate.Input connectionStartInput;
+	
+	private Gate movingGate;
 	
 	/**
 	 * The colour to make a gate or connection which is active (in the TRUE/ON state). 
@@ -102,23 +106,32 @@ public class CircuitEditor extends JPanel {
 		setPreferredSize(new Dimension(400, 400));
 		this.outputs = outputs;
 		this.inputs = inputs;
+		MouseInput mouseListener = new MouseInput();
+		addMouseListener(mouseListener);
+		addMouseMotionListener(mouseListener);
 	}
 
 	private void setupKeyActions() {
-		getInputMap().put(KeyStroke.getKeyStroke('A'), "addGate(AND)");
-		getInputMap().put(KeyStroke.getKeyStroke('O'), "addGate(OR)");
+		getInputMap().put(KeyStroke.getKeyStroke('a'), "addGate(AND)");
+		getInputMap().put(KeyStroke.getKeyStroke('o'), "addGate(OR)");
 		
 		//getActionMap().put("addGate(AND)", new AddGateAction(AndGate.class));
 		getActionMap().put("addGate(OR)", new AddGateAction(OrGate.class));
 	}
 	private void paintGate(Graphics2D g2, Gate gate, Rectangle r) {
 		g2.translate(r.x, r.y);
+		if (gate == hilightGate) g2.setColor(hilightColor);
+
+		// for debugging the draw routine
+		g2.drawRect(0, 0, r.width, r.height);
+		
 		if (gate instanceof OrGate) {
 			g2.drawArc(0, 0, 20, r.height, 30, 30);
 		} else {
 			g2.drawOval(0, 0, r.width, r.height);
 			g2.drawString(gate.getClass().getName(), 5, r.height/2);
 		}
+		if (gate == hilightGate) g2.setColor(getForeground());
 		g2.translate(-r.x, -r.y);
 	}
 	private void paintOutput(Graphics2D g2, Point p, String label) {
@@ -139,6 +152,7 @@ public class CircuitEditor extends JPanel {
 	}
 
 	public void paintComponent(Graphics g) {
+	    // TODO: paint connections between gates
 		Graphics2D g2 = (Graphics2D) g;
 		g2.setColor(getBackground());
 		g2.fillRect(0, 0, getWidth(), getHeight());
@@ -212,42 +226,77 @@ public class CircuitEditor extends JPanel {
 		}
 		return labelFont;
 	}
-
+	
+	/**
+	 * @param gate The gate that should be highlighted and given input focus.
+	 */
+	private void setHilightGate(Gate gate) {
+	    if (gate != hilightGate) {
+	        System.out.println("Hilight gate changed from "+hilightGate+" to "+gate);
+	        hilightGate = gate;
+	        repaint();
+	    }
+	}
+	
 	private class MouseInput extends MouseInputAdapter {
+	    public static final int MODE_IDLE = 1;
+	    public static final int MODE_CONNECTING = 2;
+	    public static final int MODE_MOVING = 3;
+	    
+	    private int mode = MODE_IDLE;
+	    
 		public void mouseDragged(MouseEvent e) {
-			if (dragStartGate != null) {
-				repaint();
-			}
+		    if (mode == MODE_CONNECTING) {
+		        repaint();
+		    } else if (mode == MODE_MOVING) {
+		        Point p = e.getPoint();
+		        Rectangle r = (Rectangle) gatePositions.get(movingGate);
+		        r.x = p.x;
+		        r.y = p.y;
+		        repaint();
+		    }
 		}
 
 		public void mouseMoved(MouseEvent e) {
-			Gate gate = getGateAt(e.getPoint());
-			if (gate != null) {
-				hilightGate = gate;
-			}
+		    if (mode == MODE_IDLE) {
+		        setHilightGate(getGateAt(e.getPoint()));
+		    }
 		}
 
-		public void mousePressed(MouseEvent e) {
-			// TODO: pick up the gate under the cursor
-			JOptionPane.showMessageDialog(CircuitEditor.this, "Click not implemented yet.");
+        public void mousePressed(MouseEvent e) {
+            if (mode == MODE_IDLE) {
+                Point p = e.getPoint();
+                Gate g = getGateAt(e.getPoint());
+                if (g != null) {
+                    Gate.Input inp = getGateInput(g, p.x, p.y); 
+                    if (inp != null) {
+                        mode = MODE_CONNECTING;
+                        connectionStartInput = inp;
+                    } else {
+                        mode = MODE_MOVING;
+                        movingGate = g;
+                    }
+                }
+            }
 		}
 
-		public void mouseReleased(MouseEvent e) {
-			if (dragStartGate != null) {
-				Gate g = getGateAt(e.getPoint());
-				if (g != null) {
-					Rectangle gloc = (Rectangle) gatePositions.get(g);
-					Point p = e.getPoint();
-					Gate.Input inp = getGateInput(g, p.x - gloc.x, p.y - gloc.y);
-					connectGates(dragStartGate, inp);
-				}
-				dragStartGate = null;
-			}
-		}
+        public void mouseReleased(MouseEvent e) {
+            if (mode == MODE_CONNECTING) {
+                Gate g = getGateAt(e.getPoint());
+                if (g != null) {
+                    connectGates(g, connectionStartInput);
+                }
+                connectionStartInput = null;
+                mode = MODE_IDLE;
+            } else if (mode == MODE_MOVING) {
+                movingGate = null;
+                mode = MODE_IDLE;
+            }
+        }
 
 		/**
 		 * Returns the input of the gate which is at or near the given
-		 * point (relative to the top left corner of the gate).  Currently,
+		 * point (relative to the top left corner of the editor).  Currently,
 		 * inputs are equally spaced along the left-hand side of the gate's
 		 * bounding rectangle, so this is just a simple calculation.  It
 		 * may become more sophisticated as required.
@@ -261,8 +310,10 @@ public class CircuitEditor extends JPanel {
 			final int nt = 4; // the nearness threshold, in pixels
 			final int ni = g.getInputs().length;  // number of inputs on this gate
 			Rectangle bb = (Rectangle) gatePositions.get(g); // the bounding box for this gate
-			if (x > nt) return null;
-			else return g.getInputs()[y / ni];
+			x -= bb.x;
+			y -= bb.y;
+			if (x < 0 || x > nt) return null;
+			else return g.getInputs()[y / (bb.height / ni)];
 		}
 	}
 }
