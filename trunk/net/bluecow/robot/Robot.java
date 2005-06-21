@@ -27,7 +27,8 @@ public class Robot {
 	private RobotInput downInput = new RobotInput();
 	private RobotInput leftInput = new RobotInput();
 	private RobotInput rightInput = new RobotInput();
-	private RobotInput[] inputs = new RobotInput[] {upInput, downInput, leftInput, rightInput};
+    private RobotInputsGate robotInputsGate 
+    				= new RobotInputsGate(new RobotInput[] {upInput, downInput, leftInput, rightInput});
 	
 	// Outputs that report the robot's current state and surroundings
 	private RobotSensorOutput redSensorOutput = new RobotSensorOutput("Red");
@@ -112,7 +113,7 @@ public class Robot {
 	 * moves from a red square to a green square, the red output will
 	 * change to false and the green output will change to true.
 	 */
-	private class RobotSensorOutput implements Gate {
+	class RobotSensorOutput implements Gate {
 		private boolean state;
 		private List changeListeners = new ArrayList();
 		private String label;
@@ -163,25 +164,55 @@ public class Robot {
 	 * will cause it to perform some action.  For example, the upInput
 	 * and downInput instances cause the robot to move up or down.
 	 */
-	private class RobotInput implements Gate.Input {
-		private Gate inputGate;
+	private class RobotInput implements Gate.Input, ChangeListener {
+	    private Gate inputGate;
+	    private boolean myState;
 		
 		public void connect(Gate g) {
-			if (inputGate != null) {
-				inputGate.removeChangeListener(inputGateListener);
+		    boolean newState = myState;
+		    if (inputGate != null) {
+				inputGate.removeChangeListener(this);
 			}
-			g.addChangeListener(inputGateListener);
+			if (g != null) {
+			    g.addChangeListener(this);
+			    newState = g.getOutputState();
+			} else {
+			    newState = false;
+			}
 			inputGate = g;
-			inputGateListener.stateChanged(new ChangeEvent(inputGate));
+			if (newState != myState) {
+			    myState = newState;
+			    fireChangeEvent(new ChangeEvent(this));
+			}
 		}
 		
 		public boolean getState() {
-			if (inputGate == null) {
-				return false;
-			} else {
-				return inputGate.getOutputState();
-			}
+		    return myState;
 		}
+
+        public Gate getConnectedGate() {
+            return inputGate;
+        }
+        
+        /**
+         * Returns the robotInputsGate instance.
+         */
+        public Gate getGate() {
+            return robotInputsGate;
+        }
+
+        public void stateChanged(ChangeEvent e) {
+            Gate g = (Gate) e.getSource();
+            if (g.getOutputState() != myState) {
+                myState = g.getOutputState();
+                fireChangeEvent(new ChangeEvent(this));
+            }
+        }
+
+        private void fireChangeEvent(ChangeEvent event) {
+            // this is a lame implementation that always forwards the event to this one hardcoded listener
+            inputGateListener.stateChanged(event);
+        }
 	}
 	
 	/**
@@ -225,6 +256,54 @@ public class Robot {
 		}
 	}
 	
+	/**
+	 * The RobotInputsGate is basically a place to hold the collection
+	 * of this robot's inputs.  Its output state is meaningless.
+	 */
+	public class RobotInputsGate implements Gate {
+
+	    private RobotInput[] inputs;
+
+	    /**
+	     * Creates the instance of this robot's input gate.
+	     * 
+	     * @param inputs All the inputs that this robot has.
+	     */
+	    public RobotInputsGate(RobotInput[] inputs) {
+	        super();
+	        this.inputs = inputs;
+	    }
+	    
+	    public String getLabel() {
+	        return "Robot inputs";
+	    }
+
+	    /**
+	     * Always returns false.
+	     */
+	    public boolean getOutputState() {
+	        return false;
+	    }
+
+	    public Input[] getInputs() {
+	        return inputs;
+	    }
+
+	    /**
+	     * Does nothing because this gate's output state never changes.
+	     */
+	    public void addChangeListener(ChangeListener l) {
+	        // NOP
+	    }
+
+	    /**
+	     * Does nothing because this gate's doesn't support listeners.
+	     */
+	    public void removeChangeListener(ChangeListener l) {
+	        // NOP
+	    }
+	}
+
 	// ACCESSORS and MUTATORS
 	
 	public ImageIcon getIcon() {
@@ -244,10 +323,14 @@ public class Robot {
 	}
 	
 	public RobotInput[] getInputs() {
-		return inputs;
+	    return robotInputsGate.inputs;
 	}
 	
 	public RobotSensorOutput[] getOutputs() {
 		return outputs;
 	}
+
+    public Gate getInputsGate() {
+        return robotInputsGate;
+    }
 }

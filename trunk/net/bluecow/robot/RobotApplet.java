@@ -89,8 +89,7 @@ public class RobotApplet extends JApplet {
 							robotIcon);
 					playfield = new Playfield(pfModel, robot);
 
-					CircuitEditor ce = new CircuitEditor(robot.getOutputs(),
-							robot.getInputs());
+					CircuitEditor ce = new CircuitEditor(robot.getOutputs(), robot.getInputsGate());
 					JFrame cef = new JFrame("Curcuit Editor");
 					cef.getContentPane().add(ce);
 					cef.pack();
