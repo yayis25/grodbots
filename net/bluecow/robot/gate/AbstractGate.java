@@ -64,11 +64,13 @@ public abstract class AbstractGate implements Gate {
 		 *             if already connected.
 		 */
 		public void connect(Gate g) {
-
-			if (inputGate != null)
-				throw new IllegalStateException("Already connected!");
+			if (inputGate != null) {
+				throw new IllegalStateException("This input is already connected!");
+			}
 			inputGate = g;
-			inputGate.addChangeListener(inputChangeListener);
+			if (g != null) {
+			    inputGate.addChangeListener(inputChangeListener);
+			}
 		}
 
 		/**
@@ -82,6 +84,14 @@ public abstract class AbstractGate implements Gate {
 			} else {
 				return false;
 			}
+		}
+		
+		public Gate getConnectedGate() {
+		    return inputGate;
+		}
+		
+		public Gate getGate() {
+		    return AbstractGate.this;
 		}
 	}
 

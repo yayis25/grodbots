@@ -33,6 +33,18 @@ public interface Gate {
 	 * Returns the current state of this input.
 	 */
 	public boolean getState();
+	
+	/**
+	 * Returns the gate that this input is connected to.  The value is null
+	 * if this input is not connected.
+	 */
+	public Gate getConnectedGate();
+	
+	/**
+	 * Returns the gate that this is an input for.
+	 */
+	public Gate getGate();
+	
     }
 
     /**
