@@ -89,7 +89,7 @@ public class RobotApplet extends JApplet {
 							robotIcon);
 					playfield = new Playfield(pfModel, robot);
 
-					CircuitEditor ce = new CircuitEditor(robot.getOutputs(), robot.getInputsGate());
+					final CircuitEditor ce = new CircuitEditor(robot.getOutputs(), robot.getInputsGate());
 					JFrame cef = new JFrame("Curcuit Editor");
 					cef.getContentPane().add(ce);
 					cef.pack();
@@ -104,6 +104,7 @@ public class RobotApplet extends JApplet {
 						public void actionPerformed(ActionEvent e) {
 							robot.move();
 							getContentPane().repaint();
+							ce.repaint();  // XXX: editor should be able to do this automatically
 						}
 					});
 					JPanel buttonPanel = new JPanel(new FlowLayout());
