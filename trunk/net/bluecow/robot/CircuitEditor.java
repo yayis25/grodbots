@@ -128,7 +128,7 @@ public class CircuitEditor extends JPanel {
 	 */
 	private Font labelFont;
 
-	private static final int DEFAULT_GATE_WIDTH = 50;
+	private static final int DEFAULT_GATE_WIDTH = 75;
 
 	private static final int DEFAULT_GATE_HEIGHT = 50;
 	
@@ -161,7 +161,7 @@ public class CircuitEditor extends JPanel {
 		if (gate == hilightGate) g2.setColor(hilightColor);
 
 		// for debugging the draw routine
-		g2.drawRect(0, 0, r.width, r.height);
+		//g2.drawRect(0, 0, r.width, r.height);
 		
 		// draw the inputs along the left edge of this gate
 		Gate.Input[] inputs = gate.getInputs();
@@ -183,6 +183,16 @@ public class CircuitEditor extends JPanel {
 		// individual gate bodies (XXX: should probably farm this out to the gates themselves)
 		if (gate instanceof OrGate) {
 			g2.drawArc(0, 0, 20, r.height, 30, 30);
+		} else if (gate instanceof AndGate) {
+		    int backX = OUTPUT_STICK_LENGTH;
+		    int arcRadius = r.height/2;
+		    int straightLength = r.width - arcRadius - INPUT_STICK_LENGTH - OUTPUT_STICK_LENGTH;
+		    if (straightLength < 0) straightLength = 0;
+		    g2.drawLine(backX, 0, backX, r.height);
+		    g2.drawLine(backX, 0, backX+straightLength, 0);
+		    g2.drawLine(backX, r.height, backX+straightLength, r.height);
+		    g2.drawArc(backX + straightLength - arcRadius, 0, arcRadius*2, r.height, 270, 90);
+		    g2.drawArc(backX + straightLength - arcRadius, 0, arcRadius*2, r.height, 0, 90);
 		} else if (gate instanceof Robot.RobotSensorOutput) {
 		    // nothing to draw: this should be squished against the left side of the editor
 		} else {
