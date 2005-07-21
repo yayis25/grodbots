@@ -5,8 +5,6 @@
  */
 package net.bluecow.robot.gate;
 
-import net.bluecow.robot.gate.AbstractGate.DefaultInput;
-
 /**
  * The AndGate represents an AND gate with any number of inputs.
  *
