@@ -11,6 +11,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ComponentEvent;
 import java.awt.event.ComponentListener;
 import java.awt.event.MouseEvent;
+import java.awt.geom.QuadCurve2D;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -182,7 +183,18 @@ public class CircuitEditor extends JPanel {
 		
 		// individual gate bodies (XXX: should probably farm this out to the gates themselves)
 		if (gate instanceof OrGate) {
-			g2.drawArc(0, 0, 20, r.height, 30, 30);
+		    int backX = OUTPUT_STICK_LENGTH;
+		    double backDepth = r.height/6.0;
+		    
+		    // The back part
+		    g2.draw(new QuadCurve2D.Double(backX, 0, backX + backDepth, r.height/2, backX, r.height));
+		    
+		    // Top curve
+		    g2.draw(new QuadCurve2D.Double(backX, 0, backX + r.width/2, 0, r.width, r.height/2));
+		    
+		    // Bottom curve
+		    g2.draw(new QuadCurve2D.Double(backX, r.height, backX + r.width/2, r.height, r.width, r.height/2));
+
 		} else if (gate instanceof AndGate) {
 		    int backX = OUTPUT_STICK_LENGTH;
 		    int arcRadius = r.height/2;
@@ -220,6 +232,28 @@ public class CircuitEditor extends JPanel {
 		}
 	}
 
+	/**
+	 * A more reasonable interface to Graphics2D.drawArc().  The main differences are 
+	 * everything is a double, you specify the centre point instead of the top-left 
+	 * corner, and the angles are in radians.
+	 * 
+	 * @param g2 The graphics context that draws the arc.
+	 * @param centreX The centre point of the ellipse that would draw the arc (X coord).
+	 * @param centreY The centre point of the ellipse that would draw the arc (Y coord).
+	 * @param width The width of the arc's ellipse
+	 * @param height The height of the arc's ellipse
+	 * @param startRadians The starting angle in radians
+	 * @param arcRadians The number of radians to trace along the ellipse's circumference
+	 */
+	private void arc(Graphics2D g2, double centreX, double centreY, double width, double height, double startRadians, double arcRadians) {
+	    g2.drawArc((int) (centreX-width/2),
+	            (int) (centreY-height/2),
+	            (int) width,
+	            (int) height,
+	            (int) (startRadians/Math.PI*180.0),
+	            (int) (arcRadians/Math.PI*180.0));
+	}
+	
 	private void paintOutput(Graphics2D g2, Point p, String label) {
 	    int length = OUTPUT_STICK_LENGTH;
 	    g2.drawLine(p.x, p.y, p.x + length, p.y);
@@ -308,6 +342,7 @@ public class CircuitEditor extends JPanel {
 	    public static final int MODE_MOVING = 3;
 	    
 	    private int mode = MODE_IDLE;
+        private Point dragOffset;
 	    
 		public void mouseDragged(MouseEvent e) {
 		    if (mode == MODE_CONNECTING) {
@@ -315,8 +350,8 @@ public class CircuitEditor extends JPanel {
 		    } else if (mode == MODE_MOVING) {
 		        Point p = e.getPoint();
 		        Rectangle r = (Rectangle) gatePositions.get(movingGate);
-		        r.x = p.x;
-		        r.y = p.y;
+		        r.x = p.x - dragOffset.x;
+		        r.y = p.y - dragOffset.y;
 		        repaint();
 		    }
 		}
@@ -340,6 +375,8 @@ public class CircuitEditor extends JPanel {
                     } else {
                         mode = MODE_MOVING;
                         movingGate = g;
+                        Rectangle r = (Rectangle) gatePositions.get(g);
+                        dragOffset = new Point(p.x - r.x, p.y - r.y);
                     }
                 }
             }
@@ -352,6 +389,7 @@ public class CircuitEditor extends JPanel {
                     connectGates(g, connectionStartInput);
                 }
                 connectionStartInput = null;
+                dragOffset = null;
                 mode = MODE_IDLE;
             } else if (mode == MODE_MOVING) {
                 movingGate = null;
