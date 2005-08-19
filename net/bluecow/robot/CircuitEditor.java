@@ -25,6 +25,7 @@ import javax.swing.event.MouseInputAdapter;
 
 import net.bluecow.robot.gate.AndGate;
 import net.bluecow.robot.gate.Gate;
+import net.bluecow.robot.gate.NotGate;
 import net.bluecow.robot.gate.OrGate;
 import net.bluecow.robot.gate.Gate.Input;
 
@@ -129,7 +130,7 @@ public class CircuitEditor extends JPanel {
 	 */
 	private Font labelFont;
 
-	private static final int DEFAULT_GATE_WIDTH = 75;
+	private static final int DEFAULT_GATE_WIDTH = 85;
 
 	private static final int DEFAULT_GATE_HEIGHT = 50;
 	
@@ -152,9 +153,11 @@ public class CircuitEditor extends JPanel {
 	private void setupKeyActions() {
 		getInputMap().put(KeyStroke.getKeyStroke('a'), "addGate(AND)");
 		getInputMap().put(KeyStroke.getKeyStroke('o'), "addGate(OR)");
+		getInputMap().put(KeyStroke.getKeyStroke('n'), "addGate(NOT)");
 		
 		getActionMap().put("addGate(AND)", new AddGateAction(AndGate.class));
 		getActionMap().put("addGate(OR)", new AddGateAction(OrGate.class));
+		getActionMap().put("addGate(NOT)", new AddGateAction(NotGate.class));
 	}
 
 	private void paintGate(Graphics2D g2, Gate gate, Rectangle r) {
@@ -185,15 +188,16 @@ public class CircuitEditor extends JPanel {
 		if (gate instanceof OrGate) {
 		    int backX = OUTPUT_STICK_LENGTH;
 		    double backDepth = r.height/6.0;
+		    int pointyX = r.width-OUTPUT_STICK_LENGTH;
 		    
 		    // The back part
 		    g2.draw(new QuadCurve2D.Double(backX, 0, backX + backDepth, r.height/2, backX, r.height));
 		    
 		    // Top curve
-		    g2.draw(new QuadCurve2D.Double(backX, 0, backX + r.width/2, 0, r.width, r.height/2));
+		    g2.draw(new QuadCurve2D.Double(backX, 0, backX + pointyX/2, 0, pointyX, r.height/2));
 		    
 		    // Bottom curve
-		    g2.draw(new QuadCurve2D.Double(backX, r.height, backX + r.width/2, r.height, r.width, r.height/2));
+		    g2.draw(new QuadCurve2D.Double(backX, r.height, backX + pointyX/2, r.height, pointyX, r.height/2));
 
 		} else if (gate instanceof AndGate) {
 		    int backX = OUTPUT_STICK_LENGTH;
@@ -205,6 +209,13 @@ public class CircuitEditor extends JPanel {
 		    g2.drawLine(backX, r.height, backX+straightLength, r.height);
 		    g2.drawArc(backX + straightLength - arcRadius, 0, arcRadius*2, r.height, 270, 90);
 		    g2.drawArc(backX + straightLength - arcRadius, 0, arcRadius*2, r.height, 0, 90);
+		} else if (gate instanceof NotGate) {
+		    int backX = OUTPUT_STICK_LENGTH;
+		    int circleSize = 6;
+		    g2.drawLine(backX, 0, backX, r.height);
+		    g2.drawLine(backX, 0, r.width-OUTPUT_STICK_LENGTH-circleSize, r.height/2);
+		    g2.drawLine(backX, r.height, r.width-OUTPUT_STICK_LENGTH-circleSize, r.height/2);
+		    g2.drawOval(r.width-OUTPUT_STICK_LENGTH-circleSize, r.height/2 - circleSize/2, circleSize, circleSize);
 		} else if (gate instanceof Robot.RobotSensorOutput) {
 		    // nothing to draw: this should be squished against the left side of the editor
 		} else {
