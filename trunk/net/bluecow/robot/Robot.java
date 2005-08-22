@@ -1,15 +1,7 @@
 package net.bluecow.robot;
 
 import java.awt.Point;
-import java.beans.PropertyChangeEvent;
-import java.beans.PropertyChangeListener;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-
 import javax.swing.ImageIcon;
-import javax.swing.event.ChangeListener;
-import javax.swing.event.ChangeEvent;
 
 import net.bluecow.robot.gate.Gate;
 
@@ -43,6 +35,24 @@ public class Robot {
 	}
 	
 	public void move() {
+	    // Move as indicated
+	    if (upInput.getState() == true) {
+	        moveUp();
+	    }
+	    if (downInput.getState() == true) {
+	        moveDown();
+	    }
+	    if (leftInput.getState() == true) {
+	        moveLeft();
+	    }
+	    if (rightInput.getState() == true) {
+	        moveRight();
+	    }
+	    
+	    updateSensors();
+	}
+	
+	public void updateSensors() {
 		Square s = pfm.getSquare(position.x, position.y); 
 		redSensorOutput.setState(s.getType() == Square.RED);
 		greenSensorOutput.setState(s.getType() == Square.GREEN);
@@ -54,7 +64,6 @@ public class Robot {
 				&& pfm.getSquare(position.x-1, position.y).isOccupiable()) {
 			Point oldPos = new Point(position);
 			position.x -= 1;
-			fireMoveEvent(oldPos);
 		}
 	}
 	
@@ -63,7 +72,6 @@ public class Robot {
 				&& pfm.getSquare(position.x+1, position.y).isOccupiable()) {
 			Point oldPos = new Point(position);
 			position.x += 1;
-			fireMoveEvent(oldPos);
 		}
 	}
 	
@@ -72,7 +80,6 @@ public class Robot {
 				&& pfm.getSquare(position.x, position.y+1).isOccupiable()) {
 			Point oldPos = new Point(position);
 			position.y += 1;
-			fireMoveEvent(oldPos);
 		}
 	}
 	
@@ -81,31 +88,9 @@ public class Robot {
 				&& pfm.getSquare(position.x, position.y-1).isOccupiable()) {
 			Point oldPos = new Point(position);
 			position.y -= 1;
-			fireMoveEvent(oldPos);
 		}
 	}
-	
-	/**
-	 * The inputGateListener listens to the robot's various inputs,
-	 * and causes it to do things when they change state (such as move
-	 * around the maze).
-	 */
-	private ChangeListener inputGateListener = new ChangeListener() {
-		public void stateChanged(ChangeEvent e) {
-			Gate.Input i = (Gate.Input) e.getSource();
-			
-			if (i == upInput) {
-				moveUp();
-			} else if (i == downInput) {
-				moveDown();
-			} else if (i == leftInput) {
-				moveLeft();
-			} else if (i == rightInput) {
-				moveRight();
-			}
-		}
-	};
-	
+		
 	/**
 	 * The RobotSensorOutput class represents an environmental sensor
 	 * attached to the robot.  It can change state as the robot's
@@ -115,7 +100,6 @@ public class Robot {
 	 */
 	class RobotSensorOutput implements Gate {
 		private boolean state;
-		private List changeListeners = new ArrayList();
 		private String label;
 
 		public RobotSensorOutput(String label) {
@@ -130,7 +114,6 @@ public class Robot {
 		public void setState(boolean v) {
 			if (v != state) {
 				state = v;
-				fireChangeEvent();
 			}
 		}
 				
@@ -138,25 +121,14 @@ public class Robot {
 			return new Gate.Input[0];
 		}
 		
-		public void addChangeListener(ChangeListener l) {
-			changeListeners.add(l);
-		}
-		
-		public void removeChangeListener(ChangeListener l) {
-			changeListeners.remove(l);
-		}
-		
-		private void fireChangeEvent() {
-			ChangeEvent evt = new ChangeEvent(this);
-			Iterator it = changeListeners.iterator();
-			while (it.hasNext()) {
-				((ChangeListener) it.next()).stateChanged(evt);
-			}
-		}
-		
 		public String getLabel() {
 			return label;
 		}
+
+        public void evaluate() {
+            // doesn't do anything because this gate's state gets set elsewhere
+            // XXX: this could check which colour of square the robot is over, and update the state accordingly
+        }
 	}
 	
 	/**
@@ -164,30 +136,19 @@ public class Robot {
 	 * will cause it to perform some action.  For example, the upInput
 	 * and downInput instances cause the robot to move up or down.
 	 */
-	private class RobotInput implements Gate.Input, ChangeListener {
+	private class RobotInput implements Gate.Input {
 	    private Gate inputGate;
-	    private boolean myState;
 		
 		public void connect(Gate g) {
-		    boolean newState = myState;
-		    if (inputGate != null) {
-				inputGate.removeChangeListener(this);
-			}
-			if (g != null) {
-			    g.addChangeListener(this);
-			    newState = g.getOutputState();
-			} else {
-			    newState = false;
-			}
 			inputGate = g;
-			if (newState != myState) {
-			    myState = newState;
-			    fireChangeEvent(new ChangeEvent(this));
-			}
 		}
 		
 		public boolean getState() {
-		    return myState;
+		    if (inputGate != null) {
+		        return inputGate.getOutputState();
+		    } else {
+		        return false;
+		    }
 		}
 
         public Gate getConnectedGate() {
@@ -199,19 +160,6 @@ public class Robot {
          */
         public Gate getGate() {
             return robotInputsGate;
-        }
-
-        public void stateChanged(ChangeEvent e) {
-            Gate g = (Gate) e.getSource();
-            if (g.getOutputState() != myState) {
-                myState = g.getOutputState();
-                fireChangeEvent(new ChangeEvent(this));
-            }
-        }
-
-        private void fireChangeEvent(ChangeEvent event) {
-            // this is a lame implementation that always forwards the event to this one hardcoded listener
-            inputGateListener.stateChanged(event);
         }
 	}
 	
@@ -247,15 +195,6 @@ public class Robot {
 		return rightInput;
 	}
 	
-	protected List propertyChangeListeners = new ArrayList();
-	protected void fireMoveEvent(Point oldPos) {
-		PropertyChangeEvent e = new PropertyChangeEvent(this, "position", oldPos, position);
-		Iterator it = propertyChangeListeners.iterator();
-		while (it.hasNext()) {
-			((PropertyChangeListener) it.next()).propertyChange(e);
-		}
-	}
-	
 	/**
 	 * The RobotInputsGate is basically a place to hold the collection
 	 * of this robot's inputs.  Its output state is meaningless.
@@ -289,19 +228,9 @@ public class Robot {
 	        return inputs;
 	    }
 
-	    /**
-	     * Does nothing because this gate's output state never changes.
-	     */
-	    public void addChangeListener(ChangeListener l) {
-	        // NOP
-	    }
-
-	    /**
-	     * Does nothing because this gate's doesn't support listeners.
-	     */
-	    public void removeChangeListener(ChangeListener l) {
-	        // NOP
-	    }
+        public void evaluate() {
+            // this gate always outputs false
+        }
 	}
 
 	// ACCESSORS and MUTATORS

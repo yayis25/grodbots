@@ -12,15 +12,16 @@ package net.bluecow.robot.gate;
  * @version $Id$
  */
 public class AndGate extends AbstractGate {
-	/**
-	 * Creates a 2-input OR gate.
+
+    /**
+	 * Creates a 2-input AND gate.
 	 */
 	public AndGate() {
 		this(2);
 	}
 	
 	/**
-	 * Creates a new OR gate with the specified number of inputs.
+	 * Creates a new AND gate with the specified number of inputs.
 	 * 
 	 * @param ninputs The number of inputs.
 	 */
@@ -32,12 +33,12 @@ public class AndGate extends AbstractGate {
 		}
 	}
 	
-	public boolean getOutputState() {
+	public void evaluate() {
 		boolean state = true;
 		Gate.Input[] inputs = getInputs();
 		for (int i = 0; i < inputs.length; i++) {
 			state &= inputs[i].getState();
 		}
-		return state;
+		outputState = state;
 	}
 }

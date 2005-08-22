@@ -61,9 +61,6 @@ public class CircuitEditor extends JPanel {
 
     /**
 	 * The AddGateAction adds a new instance of a gate to the enclosing circuit editor. 
-	 *
-	 * @author fuerth
-	 * @version $Id$
 	 */
 	public class AddGateAction extends AbstractAction implements Action {
 
@@ -144,7 +141,6 @@ public class CircuitEditor extends JPanel {
 		setPreferredSize(new Dimension(400, 400));
 		this.outputs = outputs;
 		this.inputsGate = inputs;
-		//gatePositions.put(inputsGate, new Rectangle(getWidth() - INPUT_STICK_LENGTH, 0, INPUT_STICK_LENGTH, getHeight()));
 		MouseInput mouseListener = new MouseInput();
 		addMouseListener(mouseListener);
 		addMouseMotionListener(mouseListener);
@@ -241,28 +237,6 @@ public class CircuitEditor extends JPanel {
 		        }
 		    }
 		}
-	}
-
-	/**
-	 * A more reasonable interface to Graphics2D.drawArc().  The main differences are 
-	 * everything is a double, you specify the centre point instead of the top-left 
-	 * corner, and the angles are in radians.
-	 * 
-	 * @param g2 The graphics context that draws the arc.
-	 * @param centreX The centre point of the ellipse that would draw the arc (X coord).
-	 * @param centreY The centre point of the ellipse that would draw the arc (Y coord).
-	 * @param width The width of the arc's ellipse
-	 * @param height The height of the arc's ellipse
-	 * @param startRadians The starting angle in radians
-	 * @param arcRadians The number of radians to trace along the ellipse's circumference
-	 */
-	private void arc(Graphics2D g2, double centreX, double centreY, double width, double height, double startRadians, double arcRadians) {
-	    g2.drawArc((int) (centreX-width/2),
-	            (int) (centreY-height/2),
-	            (int) width,
-	            (int) height,
-	            (int) (startRadians/Math.PI*180.0),
-	            (int) (arcRadians/Math.PI*180.0));
 	}
 	
 	private void paintOutput(Graphics2D g2, Point p, String label) {
@@ -448,4 +422,17 @@ public class CircuitEditor extends JPanel {
 	        return new Point(r.x, r.y + (int) ( ((double) inputNum) * spacing + (spacing / 2.0)));
 	    }
 	}
+
+    /**
+     * Evaluates each gate in the circuit one time, then schedules a repaint.
+     */
+    public void evaluateOnce() {
+		Iterator it = gatePositions.entrySet().iterator();
+		while (it.hasNext()) {
+			Map.Entry ent = (Map.Entry) it.next();
+			Gate gate = (Gate) ent.getKey();
+			gate.evaluate();
+		}
+		repaint();
+    }
 }
