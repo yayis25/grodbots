@@ -99,16 +99,16 @@ public class RobotApplet extends JApplet {
 					playfield.setGoalIcon(goalIcon);
 					getContentPane().add(playfield, BorderLayout.CENTER);
 
-					JButton moveButton = new JButton("Move");
-					moveButton.addActionListener(new ActionListener() {
+					final GameLoop gameLoop = new GameLoop(robot, playfield, ce);
+					
+					JButton startButton = new JButton("Start Game");
+					startButton.addActionListener(new ActionListener() {
 						public void actionPerformed(ActionEvent e) {
-							robot.move();
-							getContentPane().repaint();
-							ce.repaint();  // XXX: editor should be able to do this automatically
+						    new Thread(gameLoop).start();
 						}
 					});
 					JPanel buttonPanel = new JPanel(new FlowLayout());
-					buttonPanel.add(moveButton);
+					buttonPanel.add(startButton);
 					getContentPane().add(buttonPanel, BorderLayout.SOUTH);
 
 					// XXX: shouldn't be necessary, but applet shows up blank otherwise

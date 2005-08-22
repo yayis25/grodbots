@@ -1,10 +1,5 @@
 package net.bluecow.robot.gate;
 
-import javax.swing.event.*;
-import java.util.List;
-import java.util.ArrayList;
-import java.util.Iterator;
-
 /**
  * A generic gate implementation that can do everything except evaluate its
  * output state (because it's not declared to be AND, OR, NOT, XOR, NAND, etc).
@@ -17,23 +12,15 @@ public abstract class AbstractGate implements Gate {
 	private String label;
 	
 	/**
+	 * The most-recently calculated output state of this gate.
+	 */
+	protected boolean outputState;
+	
+	/**
 	 * These are the inputs to this gate. Subclass constructors should
 	 * initialise this array to the correct length and types.
 	 */
 	protected Gate.Input inputs[];
-
-	/**
-	 * This is the listener that receives the change events from all the inputs.
-	 */
-	private ChangeListener inputChangeListener = new ChangeListener() {
-		public void stateChanged(ChangeEvent e) {
-			// FIXME: This will cause a big event storm. We
-			// probably need to remember what the previous output
-			// state was and only fire a change if the output
-			// truly changed.
-			fireChangeEvent();
-		}
-	};
 
 	/**
 	 * Creates a new gate with the given label.
@@ -68,9 +55,6 @@ public abstract class AbstractGate implements Gate {
 				throw new IllegalStateException("This input is already connected!");
 			}
 			inputGate = g;
-			if (g != null) {
-			    inputGate.addChangeListener(inputChangeListener);
-			}
 		}
 
 		/**
@@ -96,56 +80,19 @@ public abstract class AbstractGate implements Gate {
 	}
 
 	/**
-	 * This is the method that subclasses will implement to evaluate their
-	 * inputs.
-	 */
-	public abstract boolean getOutputState();
-
-	/**
 	 * Returns the list of inputs.
 	 */
 	public Gate.Input[] getInputs() {
 		return inputs;
 	}
 
-	// ------------- Change Event Support ----------------
-
-	/**
-	 * The list of change listeners who want to know when this gate's inputs
-	 * have changed.
-	 */
-	private List changeListeners = new ArrayList();
-
-	/**
-	 * Adds a listener who will be notified with a change event every time an
-	 * input changes state.
-	 */
-	public void addChangeListener(ChangeListener l) {
-		changeListeners.add(l);
-	}
-
-	/**
-	 * Removes change listener from the list. If the given change listener
-	 * wasn't on the list in the first place, this method does nothing.
-	 */
-	public void removeChangeListener(ChangeListener l) {
-		changeListeners.remove(l);
-	}
-
-	/**
-	 * Notifies all change listeners.
-	 */
-	public void fireChangeEvent() {
-		ChangeEvent e = new ChangeEvent(this);
-		Iterator it = changeListeners.iterator();
-		while (it.hasNext()) {
-			((ChangeListener) it.next()).stateChanged(e);
-		}
-	}
-	
 	// -------------- ACCESSORS and MUTATORS ------------------
 	
 	public String getLabel() {
 		return label;
+	}
+	
+	public boolean getOutputState() {
+	    return outputState;
 	}
 }
