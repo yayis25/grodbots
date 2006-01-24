@@ -37,6 +37,8 @@ public abstract class AbstractGate implements Gate {
 	 */
 	public class DefaultInput implements Gate.Input {
 
+	    private String label;
+	    
 		/**
 		 * This is the gate we monitor for changes, and whose output state we
 		 * report as our input state.
@@ -45,15 +47,9 @@ public abstract class AbstractGate implements Gate {
 
 		/**
 		 * Connects this input to the output of the given gate. If this input
-		 * was already connected, throws an exception.
-		 * 
-		 * @throws IllegalStateException
-		 *             if already connected.
+		 * was already connected, the existing connection is broken.
 		 */
 		public void connect(Gate g) {
-			if (inputGate != null) {
-				throw new IllegalStateException("This input is already connected!");
-			}
 			inputGate = g;
 		}
 
@@ -77,6 +73,17 @@ public abstract class AbstractGate implements Gate {
 		public Gate getGate() {
 		    return AbstractGate.this;
 		}
+
+		public String getLabel() {
+		    return label;
+		}
+		
+	    /**
+         * See {@link #label}.
+         */
+        public void setLabel(String label) {
+            this.label = label;
+        }
 	}
 
 	/**

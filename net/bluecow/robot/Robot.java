@@ -15,10 +15,10 @@ public class Robot {
 	private ImageIcon icon;
 	
 	// Inputs that make the robot do stuff
-	private RobotInput upInput = new RobotInput();
-	private RobotInput downInput = new RobotInput();
-	private RobotInput leftInput = new RobotInput();
-	private RobotInput rightInput = new RobotInput();
+	private RobotInput upInput = new RobotInput("Up");
+	private RobotInput downInput = new RobotInput("Down");
+	private RobotInput leftInput = new RobotInput("Left");
+	private RobotInput rightInput = new RobotInput("Right");
     private RobotInputsGate robotInputsGate 
     				= new RobotInputsGate(new RobotInput[] {upInput, downInput, leftInput, rightInput});
 	
@@ -30,7 +30,7 @@ public class Robot {
 	
 	public Robot(PlayfieldModel pfm, Point initialPosition, ImageIcon icon) {
 		this.pfm = pfm;
-		this.position = initialPosition;
+		this.position = new Point(initialPosition);
 		this.icon = icon;
 	}
 	
@@ -62,7 +62,6 @@ public class Robot {
 	private void moveLeft() {
 		if (position.x > 0
 				&& pfm.getSquare(position.x-1, position.y).isOccupiable()) {
-			Point oldPos = new Point(position);
 			position.x -= 1;
 		}
 	}
@@ -70,7 +69,6 @@ public class Robot {
 	private void moveRight() {
 		if (position.x < pfm.getWidth()
 				&& pfm.getSquare(position.x+1, position.y).isOccupiable()) {
-			Point oldPos = new Point(position);
 			position.x += 1;
 		}
 	}
@@ -78,7 +76,6 @@ public class Robot {
 	public void moveDown() {
 		if (position.y < pfm.getHeight()
 				&& pfm.getSquare(position.x, position.y+1).isOccupiable()) {
-			Point oldPos = new Point(position);
 			position.y += 1;
 		}
 	}
@@ -86,7 +83,6 @@ public class Robot {
 	public void moveUp() {
 		if (position.y > 0
 				&& pfm.getSquare(position.x, position.y-1).isOccupiable()) {
-			Point oldPos = new Point(position);
 			position.y -= 1;
 		}
 	}
@@ -138,7 +134,12 @@ public class Robot {
 	 */
 	private class RobotInput implements Gate.Input {
 	    private Gate inputGate;
+	    private String label;
 		
+	    public RobotInput(String label) {
+	        this.label = label;
+	    }
+	    
 		public void connect(Gate g) {
 			inputGate = g;
 		}
@@ -160,6 +161,10 @@ public class Robot {
          */
         public Gate getGate() {
             return robotInputsGate;
+        }
+        
+        public String getLabel() {
+            return label;
         }
 	}
 	
@@ -244,11 +249,11 @@ public class Robot {
 	}
 	
 	public Point getPosition() {
-		return position;
+		return new Point(position);
 	}
 	
 	public void setPosition(Point position) {
-		this.position = position;
+		this.position = new Point(position);
 	}
 	
 	public RobotInput[] getInputs() {

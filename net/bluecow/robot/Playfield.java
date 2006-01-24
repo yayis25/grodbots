@@ -4,6 +4,7 @@ import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.Point;
 import java.awt.Rectangle;
 
 import javax.swing.ImageIcon;
@@ -91,7 +92,8 @@ public class Playfield extends JPanel {
                     g2.drawString("BAD: "+squares[i][j].getType(), r.x, r.y+10);
                 }
                 
-                if (robot.getPosition().x == i && robot.getPosition().y == j) {
+                Point roboPos = robot.getPosition();
+                if (roboPos.x == i && roboPos.y == j) {
                     robot.getIcon().paintIcon(this, g2, r.x+1, r.y+1);
                 }
             }
@@ -119,5 +121,9 @@ public class Playfield extends JPanel {
 
     public void setSquareWidth(int squareWidth) {
         this.squareWidth = squareWidth;
+    }
+    
+    public Square getSquareAt(Point p) {
+        return pfm.getSquare(p.x, p.y);
     }
 }
