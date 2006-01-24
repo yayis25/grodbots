@@ -17,8 +17,6 @@ import javax.swing.*;
 public class RobotApplet extends JApplet {
 	private Playfield playfield;
 
-	private String levelName;
-
 	private PlayfieldModel pfModel;
 
 	private ImageIcon goalIcon;
@@ -39,7 +37,8 @@ public class RobotApplet extends JApplet {
 			if (!"ROCKY".equals(in.readLine())) {
 				throw new IOException("Bad magic!");
 			}
-			levelName = in.readLine();
+			String levelName = in.readLine();
+			System.out.println("Reading level \""+levelName+"\"");
 			int xSize = Integer.parseInt(in.readLine());
 			int ySize = Integer.parseInt(in.readLine());
 
@@ -101,14 +100,28 @@ public class RobotApplet extends JApplet {
 
 					final GameLoop gameLoop = new GameLoop(robot, playfield, ce);
 					
-					JButton startButton = new JButton("Start Game");
+					final JButton startButton = new JButton("Start Game");
 					startButton.addActionListener(new ActionListener() {
 						public void actionPerformed(ActionEvent e) {
-						    new Thread(gameLoop).start();
+                            if (gameLoop.isRunning()) {
+                                gameLoop.requestStop();
+                                startButton.setText("Start Game");
+                            } else {
+                                new Thread(gameLoop).start();
+                                startButton.setText("Stop Game");
+                            }
 						}
+					});
+					final JButton resetButton = new JButton("Reset");
+					resetButton.addActionListener(new ActionListener() {
+					    public void actionPerformed(ActionEvent e) {
+                            robot.setPosition(initialPosition);
+                            playfield.repaint();
+					    }
 					});
 					JPanel buttonPanel = new JPanel(new FlowLayout());
 					buttonPanel.add(startButton);
+					buttonPanel.add(resetButton);
 					getContentPane().add(buttonPanel, BorderLayout.SOUTH);
 
 					// XXX: shouldn't be necessary, but applet shows up blank otherwise

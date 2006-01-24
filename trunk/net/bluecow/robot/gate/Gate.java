@@ -48,5 +48,11 @@ public interface Gate {
          */
         public Gate getGate();
         
+        /**
+         * Returns the label to be painted near this input.
+         * 
+         * @return The label, or null for no label.
+         */
+        public String getLabel();
     }
 }

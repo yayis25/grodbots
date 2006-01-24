@@ -1,15 +1,17 @@
 package net.bluecow.robot;
 
+import java.awt.BasicStroke;
 import java.awt.Color;
+import java.awt.Component;
+import java.awt.Container;
 import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.LayoutManager;
 import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.event.ActionEvent;
-import java.awt.event.ComponentEvent;
-import java.awt.event.ComponentListener;
 import java.awt.event.MouseEvent;
 import java.awt.geom.QuadCurve2D;
 import java.util.HashMap;
@@ -20,6 +22,7 @@ import javax.swing.AbstractAction;
 import javax.swing.Action;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+import javax.swing.JPopupMenu;
 import javax.swing.KeyStroke;
 import javax.swing.event.MouseInputAdapter;
 
@@ -31,63 +34,108 @@ import net.bluecow.robot.gate.Gate.Input;
 
 public class CircuitEditor extends JPanel {
 
+    private static final class ConnectionLine {
+        private Point fixedEnd;
+        private Point cursorEnd;
+        private boolean couldConnect;
+        
+        /**
+         * Creates a new ConnectionLine with the given fixed end and cursor end.
+         * 
+         * @param fixedEnd the end of the cursor that stays in the same place throughout
+         * the connection operation.
+         * @param cursorEnd the end of the line that moves around according to the
+         * user's whim.
+         * @param couldConnect true iff the line currently represents a valid connection
+         * in the circuit editor.
+         */
+        public ConnectionLine(Point fixedEnd, Point cursorEnd, boolean couldConnect) {
+            this.fixedEnd = fixedEnd;
+            this.cursorEnd = cursorEnd;
+            this.couldConnect = couldConnect;
+        }
+        
+        public ConnectionLine moveCursor(Point newCursorEnd, boolean couldConnect) {
+            return new ConnectionLine(fixedEnd, newCursorEnd, couldConnect);
+        }
+
+        public Point getCursorEnd() {
+            return new Point(cursorEnd);
+        }
+
+        public Point getFixedEnd() {
+            return new Point(fixedEnd);
+        }
+        
+        public boolean isConnectionPossible() {
+            return couldConnect;
+        }
+    }
+
     /**
-     * The CircuitEditorComponentListener shifts the inputs and outputs along the edge as necessary.
+     * The CircuitEditorLayout shifts the inputs and outputs
+     * along the edge as necessary.
      */
-    public class CircuitEditorComponentListener implements ComponentListener {
+    public static class CircuitEditorLayout implements LayoutManager {
 
-        public void componentResized(ComponentEvent e) {
-            double height = getHeight();
-            double n = outputs.length;
-            for (int i = 0; i < outputs.length; i++) {
+        public void addLayoutComponent(String name, Component comp) {
+            // NOP
+        }
+
+        public void removeLayoutComponent(Component comp) {
+            // NOP
+        }
+
+        public Dimension preferredLayoutSize(Container parent) {
+            return parent.getPreferredSize();
+        }
+
+        public Dimension minimumLayoutSize(Container parent) {
+            return parent.getPreferredSize();
+        }
+
+        public void layoutContainer(Container parent) {
+            CircuitEditor ce = (CircuitEditor) parent;
+            double height = ce.getHeight();
+            double n = ce.outputs.length;
+            for (int i = 0; i < ce.outputs.length; i++) {
                 int y = (int) ( ((double) i) * (height / n) + (height / n / 2.0) - DEFAULT_GATE_HEIGHT/2.0 );
-                gatePositions.put(outputs[i], new Rectangle(0, y, OUTPUT_STICK_LENGTH, DEFAULT_GATE_HEIGHT));
+                ce.gatePositions.put(ce.outputs[i], new Rectangle(0, y, OUTPUT_STICK_LENGTH, DEFAULT_GATE_HEIGHT));
             }
-            gatePositions.put(inputsGate, new Rectangle(getWidth() - INPUT_STICK_LENGTH, 0, INPUT_STICK_LENGTH, getHeight()));
-        }
-
-        public void componentMoved(ComponentEvent e) {
-            // NOP
-        }
-
-        public void componentShown(ComponentEvent e) {
-            // NOP
-        }
-
-        public void componentHidden(ComponentEvent e) {
-            // NOP
+            ce.gatePositions.put(ce.inputsGate, new Rectangle(ce.getWidth() - INPUT_STICK_LENGTH, 0, INPUT_STICK_LENGTH + OUTPUT_STICK_LENGTH, ce.getHeight()));
         }
     }
 
     /**
 	 * The AddGateAction adds a new instance of a gate to the enclosing circuit editor. 
 	 */
-	public class AddGateAction extends AbstractAction implements Action {
-
-		/**
-		 * The type of gate that will be created when this action is invoked.
-		 */
-		private Class gateClass;
-		
-		public AddGateAction(Class gateClass) {
-			this.gateClass = gateClass;
-		}
-		
-		public void actionPerformed(ActionEvent e) {
-			try {
-				Gate newGate = (Gate) gateClass.newInstance();
-				Point p = new Point(10, 10);
-				addGate(newGate, p);
-				System.out.println("Added new "+newGate.getClass().getName()+" at "+p);
-			} catch (InstantiationException e1) {
-				e1.printStackTrace();
-				JOptionPane.showMessageDialog(CircuitEditor.this, "Couldn't create new Gate instance:\n"+e1.getMessage());
-			} catch (IllegalAccessException e1) {
-				e1.printStackTrace();
-				JOptionPane.showMessageDialog(CircuitEditor.this, "Couldn't access new Gate instance:\n"+e1.getMessage());
-			}
-		}
-
+    public class AddGateAction extends AbstractAction implements Action {
+        
+        /**
+         * The type of gate that will be created when this action is invoked.
+         */
+        private Class gateClass;
+        
+        public AddGateAction(Class gateClass, String name) {
+            super(name);
+            this.gateClass = gateClass;
+        }
+        
+        public void actionPerformed(ActionEvent e) {
+            try {
+                Gate newGate = (Gate) gateClass.newInstance();
+                Point p = new Point(10, 10);
+                addGate(newGate, p);
+                System.out.println("Added new "+newGate.getClass().getName()+" at "+p);
+            } catch (InstantiationException e1) {
+                e1.printStackTrace();
+                JOptionPane.showMessageDialog(CircuitEditor.this, "Couldn't create new Gate instance:\n"+e1.getMessage());
+            } catch (IllegalAccessException e1) {
+                e1.printStackTrace();
+                JOptionPane.showMessageDialog(CircuitEditor.this, "Couldn't access new Gate instance:\n"+e1.getMessage());
+            }
+        }
+        
 	}
 	private Gate[] outputs;
 
@@ -105,11 +153,23 @@ public class CircuitEditor extends JPanel {
 	private Gate hilightGate;
 
 	/**
-	 * The Input that the sure wants to connect to an output.  This is set to 
-	 * null when there is not a connect operation in progress.
+	 * The Input that the user wants to connect to an output.  This is set to 
+	 * null when there is not a connect-from-input operation in progress.
 	 */
 	private Gate.Input connectionStartInput;
 	
+    /**
+     * The Gate that the user wants to connect to an input.  This is set to 
+     * null when there is not a connect-from-output operation in progress.
+     */
+    private Gate connectionStartOutput;
+
+    /**
+     * The line segment that the user sees while trying to connect a pair of gates together.
+     * This is set to null when there is not a connection operation in progress.
+     */
+    private ConnectionLine pendingConnectionLine;
+    
 	private Gate movingGate;
 	
 	/**
@@ -127,6 +187,12 @@ public class CircuitEditor extends JPanel {
 	 */
 	private Font labelFont;
 
+    private AddGateAction addAndGateAction;
+
+    private AddGateAction addOrGateAction;
+
+    private AddGateAction addNotGateAction;
+
 	private static final int DEFAULT_GATE_WIDTH = 85;
 
 	private static final int DEFAULT_GATE_HEIGHT = 50;
@@ -137,13 +203,13 @@ public class CircuitEditor extends JPanel {
 	
 	public CircuitEditor(Gate[] outputs, Gate inputs) {
 		setupKeyActions();
-		addComponentListener(new CircuitEditorComponentListener());
 		setPreferredSize(new Dimension(400, 400));
 		this.outputs = outputs;
 		this.inputsGate = inputs;
 		MouseInput mouseListener = new MouseInput();
 		addMouseListener(mouseListener);
 		addMouseMotionListener(mouseListener);
+        setLayout(new CircuitEditorLayout());
 	}
 
 	private void setupKeyActions() {
@@ -151,9 +217,13 @@ public class CircuitEditor extends JPanel {
 		getInputMap().put(KeyStroke.getKeyStroke('o'), "addGate(OR)");
 		getInputMap().put(KeyStroke.getKeyStroke('n'), "addGate(NOT)");
 		
-		getActionMap().put("addGate(AND)", new AddGateAction(AndGate.class));
-		getActionMap().put("addGate(OR)", new AddGateAction(OrGate.class));
-		getActionMap().put("addGate(NOT)", new AddGateAction(NotGate.class));
+        addAndGateAction = new AddGateAction(AndGate.class, "New AND Gate");
+        addOrGateAction = new AddGateAction(OrGate.class, "New OR Gate");
+        addNotGateAction = new AddGateAction(NotGate.class, "New NOT Gate");
+        
+		getActionMap().put("addGate(AND)", addAndGateAction);
+		getActionMap().put("addGate(OR)", addOrGateAction);
+		getActionMap().put("addGate(NOT)", addNotGateAction);
 	}
 
 	private void paintGate(Graphics2D g2, Gate gate, Rectangle r) {
@@ -214,6 +284,8 @@ public class CircuitEditor extends JPanel {
 		    g2.drawOval(r.width-OUTPUT_STICK_LENGTH-circleSize, r.height/2 - circleSize/2, circleSize, circleSize);
 		} else if (gate instanceof Robot.RobotSensorOutput) {
 		    // nothing to draw: this should be squished against the left side of the editor
+		} else if (gate instanceof Robot.RobotInputsGate) {
+		    // Again, there's no visible gate body here
 		} else {
 			g2.drawOval(0, 0, r.width, r.height);
 			g2.drawString(gate.getClass().getName(), 5, r.height/2);
@@ -251,8 +323,15 @@ public class CircuitEditor extends JPanel {
 	}
 
 	private void paintInput(Graphics2D g2, Point p, Gate.Input input) {
-		g2.drawOval(p.x - INPUT_STICK_LENGTH, p.y - 5, 10, 10);
-		g2.drawLine(p.x, p.y, p.x - INPUT_STICK_LENGTH + 10, p.y);
+	    int bubbleDiameter = 10;
+		g2.drawOval(p.x - INPUT_STICK_LENGTH, p.y - (bubbleDiameter / 2), bubbleDiameter, bubbleDiameter);
+		g2.drawLine(p.x, p.y, p.x - INPUT_STICK_LENGTH + bubbleDiameter, p.y);
+		if (input.getLabel() != null) {
+		    g2.setFont(getLabelFont(g2));
+		    int labelLength = g2.getFontMetrics().stringWidth(input.getLabel());
+		    int ascent = g2.getFontMetrics().getAscent();
+		    g2.drawString(input.getLabel(), p.x - labelLength, p.y + ascent + bubbleDiameter);
+		}
 	}
 
 	public void paintComponent(Graphics g) {
@@ -268,6 +347,19 @@ public class CircuitEditor extends JPanel {
 			Rectangle gr = (Rectangle) ent.getValue();
 			paintGate(g2, gate, gr);
 		}
+        
+        if (pendingConnectionLine != null) {
+            if (pendingConnectionLine.isConnectionPossible()) {
+                g2.setColor(Color.RED);
+            } else {
+                g2.setStroke(new BasicStroke(1.0f, BasicStroke.CAP_SQUARE,
+                                             BasicStroke.JOIN_MITER, 1.0f,
+                                             new float[] {5.0f, 5.0f}, 0f));
+            }
+            Point p1 = pendingConnectionLine.getCursorEnd();
+            Point p2 = pendingConnectionLine.getFixedEnd();
+            g2.drawLine(p1.x, p1.y, p2.x, p2.y);
+        }
 	}
 	
 	public void addGate(Gate g, Point p) {
@@ -323,17 +415,24 @@ public class CircuitEditor extends JPanel {
 	
 	private class MouseInput extends MouseInputAdapter {
 	    public static final int MODE_IDLE = 1;
-	    public static final int MODE_CONNECTING = 2;
+	    public static final int MODE_CONNECTING_FROM_INPUT = 2;
 	    public static final int MODE_MOVING = 3;
+	    public static final int MODE_CONNECTING_FROM_OUTPUT = 4;
 	    
 	    private int mode = MODE_IDLE;
         private Point dragOffset;
 	    
 		public void mouseDragged(MouseEvent e) {
-		    if (mode == MODE_CONNECTING) {
+		    Point p = e.getPoint();
+		    if (mode == MODE_CONNECTING_FROM_INPUT) {
+		        pendingConnectionLine = pendingConnectionLine.moveCursor(p, getGateAt(p) != null);
+		        repaint();
+		    } else if (mode == MODE_CONNECTING_FROM_OUTPUT) {
+                Gate g = getGateAt(p);
+		        pendingConnectionLine = pendingConnectionLine.moveCursor(p,
+                        (g == null ? false : getGateInput(g, p.x, p.y) != null));
 		        repaint();
 		    } else if (mode == MODE_MOVING) {
-		        Point p = e.getPoint();
 		        Rectangle r = (Rectangle) gatePositions.get(movingGate);
 		        r.x = p.x - dragOffset.x;
 		        r.y = p.y - dragOffset.y;
@@ -348,36 +447,61 @@ public class CircuitEditor extends JPanel {
 		}
 
         public void mousePressed(MouseEvent e) {
-            // TODO: pop up a contextual menu for adding gates
             if (mode == MODE_IDLE) {
                 Point p = e.getPoint();
                 Gate g = getGateAt(e.getPoint());
-                if (g != null) {
-                    Gate.Input inp = getGateInput(g, p.x, p.y); 
-                    if (inp != null) {
-                        mode = MODE_CONNECTING;
-                        connectionStartInput = inp;
-                    } else {
-                        mode = MODE_MOVING;
-                        movingGate = g;
-                        Rectangle r = (Rectangle) gatePositions.get(g);
-                        dragOffset = new Point(p.x - r.x, p.y - r.y);
+                if (e.isPopupTrigger()) {
+                    JPopupMenu menu = new JPopupMenu();
+                    menu.add(addAndGateAction);
+                    menu.add(addOrGateAction);
+                    menu.add(addNotGateAction);
+                    menu.show(CircuitEditor.this, e.getX(), e.getY());
+                } else {
+                    if (g != null) {
+                        Gate.Input inp = getGateInput(g, p.x, p.y); 
+                        if (inp != null) {
+                            mode = MODE_CONNECTING_FROM_INPUT;
+                            pendingConnectionLine = new ConnectionLine(getInputLocation(inp), p, false);
+                            connectionStartInput = inp;
+                        } else if (isGateOutput(g, p.x, p.y)) {
+                            mode = MODE_CONNECTING_FROM_OUTPUT;
+                            pendingConnectionLine = new ConnectionLine(getOutputLocation(g), p, false);
+                            connectionStartOutput = g;
+                        } else {
+                            mode = MODE_MOVING;
+                            movingGate = g;
+                            Rectangle r = (Rectangle) gatePositions.get(g);
+                            dragOffset = new Point(p.x - r.x, p.y - r.y);
+                        }
                     }
                 }
             }
 		}
 
         public void mouseReleased(MouseEvent e) {
-            if (mode == MODE_CONNECTING) {
+            if (mode == MODE_CONNECTING_FROM_INPUT) {
                 Gate g = getGateAt(e.getPoint());
                 if (g != null) {
                     connectGates(g, connectionStartInput);
                 }
                 connectionStartInput = null;
-                dragOffset = null;
+                pendingConnectionLine = null;
+                mode = MODE_IDLE;
+            } else if (mode == MODE_CONNECTING_FROM_OUTPUT) {
+                Point p = e.getPoint();
+                Gate g = getGateAt(p);
+                if (g != null) {
+                    Gate.Input input = getGateInput(g, p.x, p.y);
+                    if (input != null) {
+                        connectGates(connectionStartOutput, input);
+                    }
+                }
+                connectionStartOutput = null;
+                pendingConnectionLine = null;
                 mode = MODE_IDLE;
             } else if (mode == MODE_MOVING) {
                 movingGate = null;
+                dragOffset = null;
                 mode = MODE_IDLE;
             }
         }
@@ -397,6 +521,7 @@ public class CircuitEditor extends JPanel {
 	 */
 	private Input getGateInput(Gate g, int x, int y) {
 	    final int ni = g.getInputs().length;  // number of inputs on this gate
+        if (ni == 0) return null;
 	    Rectangle bb = (Rectangle) gatePositions.get(g); // the bounding box for this gate
 	    x -= bb.x;
 	    y -= bb.y;
@@ -423,6 +548,19 @@ public class CircuitEditor extends JPanel {
 	    }
 	}
 
+    private boolean isGateOutput(Gate g, int x, int y) {
+        Rectangle bb = (Rectangle) gatePositions.get(g); // the bounding box for this gate
+        x -= bb.x;
+        y -= bb.y;
+        if (x > bb.width || x < bb.width - OUTPUT_STICK_LENGTH) return false;
+        else return true;
+    }
+
+    private Point getOutputLocation(Gate g) {
+        Rectangle bb = (Rectangle) gatePositions.get(g); // the bounding box for this gate
+        return new Point(bb.x + bb.width, bb.y + (bb.height / 2));
+    }
+    
     /**
      * Evaluates each gate in the circuit one time, then schedules a repaint.
      */

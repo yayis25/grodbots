@@ -17,19 +17,24 @@ public class Square {
         this.type = type;
     }
 
-    
     /**
-     * Get the Square Type
+     * Returns the Square Type.
      */
     public char getType() {
         return type;
     }
 
-
     /**
-     * @return
+     * @return true iff this square can be occupied by the robot.
      */
     public boolean isOccupiable() {
         return getType() != WALL;
+    }
+
+    /**
+     * Returns true iff this square is the goal.
+     */
+    public boolean isGoal() {
+        return getType() == GOAL;
     }
 }
