@@ -12,10 +12,11 @@ import java.awt.LayoutManager;
 import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.event.ActionEvent;
+import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 import java.awt.geom.QuadCurve2D;
+import java.util.Collections;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
 
 import javax.swing.AbstractAction;
@@ -33,6 +34,36 @@ import net.bluecow.robot.gate.OrGate;
 import net.bluecow.robot.gate.Gate.Input;
 
 public class CircuitEditor extends JPanel {
+
+    private class RemoveGateAction extends AbstractAction {
+
+        public RemoveGateAction(String name) {
+            super(name);
+        }
+
+        public void actionPerformed(ActionEvent e) {
+            if (hilightGate != null) {
+                
+                // disconnect all the inputs the hilight gate outputs to
+                for (Gate g : gatePositions.keySet()) {
+                    for (int i = 0; i < g.getInputs().length; i++) {
+                        if (g.getInputs()[i].getConnectedGate() == hilightGate) {
+                            g.getInputs()[i].connect(null);
+                        }
+                    }
+                }
+                
+                // disconnect the outputs from the hilighted gate's inputs
+                for (int i = 0; i < hilightGate.getInputs().length; i++) {
+                    hilightGate.getInputs()[i].connect(null);
+                }
+                
+                gatePositions.remove(hilightGate);
+                repaint();
+            }
+        }
+
+    }
 
     private static final class ConnectionLine {
         private Point fixedEnd;
@@ -124,7 +155,7 @@ public class CircuitEditor extends JPanel {
         public void actionPerformed(ActionEvent e) {
             try {
                 Gate newGate = (Gate) gateClass.newInstance();
-                Point p = new Point(10, 10);
+                Point p = new Point(newGatePosition);
                 addGate(newGate, p);
                 System.out.println("Added new "+newGate.getClass().getName()+" at "+p);
             } catch (InstantiationException e1) {
@@ -144,7 +175,7 @@ public class CircuitEditor extends JPanel {
 	/**
 	 * Maps Gate instances to Rectangles that say where and how big to paint them.
 	 */
-	private Map gatePositions = new HashMap();
+	private Map<Gate,Rectangle> gatePositions = new HashMap<Gate,Rectangle>();
 	
 	/**
 	 * The gate that should be highlighted.  This is the gate that currently 
@@ -169,7 +200,26 @@ public class CircuitEditor extends JPanel {
      * This is set to null when there is not a connection operation in progress.
      */
     private ConnectionLine pendingConnectionLine;
+
+    /**
+     * The position where AddGateAction should add a gate.  Gets updated by
+     * the mouse listener.
+     */
+    private Point newGatePosition = new Point(10, 10);
+
+    /**
+     * The gate input that should be highlighted (because the cursor is over it).
+     */
+    private Gate.Input hilightInput;
     
+    /**
+     * The gate whose output should be highlighted (because the cursor is over it).
+     */
+    private Gate hilightOutput;
+
+    /**
+     * The gate that's currently being dragged around.
+     */
 	private Gate movingGate;
 	
 	/**
@@ -178,7 +228,7 @@ public class CircuitEditor extends JPanel {
 	private Color activeColor = Color.orange;
 	
 	/**
-	 * The colour to make the highlight gate.
+	 * The colour to make the highlighted gates or inputs.
 	 */
 	private Color hilightColor = Color.BLUE;
 	
@@ -192,6 +242,8 @@ public class CircuitEditor extends JPanel {
     private AddGateAction addOrGateAction;
 
     private AddGateAction addNotGateAction;
+
+    private RemoveGateAction removeGateAction;
 
 	private static final int DEFAULT_GATE_WIDTH = 85;
 
@@ -213,22 +265,24 @@ public class CircuitEditor extends JPanel {
 	}
 
 	private void setupKeyActions() {
-		getInputMap().put(KeyStroke.getKeyStroke('a'), "addGate(AND)");
-		getInputMap().put(KeyStroke.getKeyStroke('o'), "addGate(OR)");
-		getInputMap().put(KeyStroke.getKeyStroke('n'), "addGate(NOT)");
-		
-        addAndGateAction = new AddGateAction(AndGate.class, "New AND Gate");
-        addOrGateAction = new AddGateAction(OrGate.class, "New OR Gate");
-        addNotGateAction = new AddGateAction(NotGate.class, "New NOT Gate");
-        
-		getActionMap().put("addGate(AND)", addAndGateAction);
-		getActionMap().put("addGate(OR)", addOrGateAction);
-		getActionMap().put("addGate(NOT)", addNotGateAction);
+	    getInputMap().put(KeyStroke.getKeyStroke('a'), "addGate(AND)");
+	    getInputMap().put(KeyStroke.getKeyStroke('o'), "addGate(OR)");
+	    getInputMap().put(KeyStroke.getKeyStroke('n'), "addGate(NOT)");
+	    getInputMap().put(KeyStroke.getKeyStroke(KeyEvent.VK_DELETE, 0), "removeGate");
+	    
+	    addAndGateAction = new AddGateAction(AndGate.class, "New AND Gate");
+	    addOrGateAction = new AddGateAction(OrGate.class, "New OR Gate");
+	    addNotGateAction = new AddGateAction(NotGate.class, "New NOT Gate");
+	    removeGateAction = new RemoveGateAction("Remove Current Gate");
+	    
+	    getActionMap().put("addGate(AND)", addAndGateAction);
+	    getActionMap().put("addGate(OR)", addOrGateAction);
+	    getActionMap().put("addGate(NOT)", addNotGateAction);
+	    getActionMap().put("removeGate", removeGateAction);
 	}
 
 	private void paintGate(Graphics2D g2, Gate gate, Rectangle r) {
 		g2.translate(r.x, r.y);
-		if (gate == hilightGate) g2.setColor(hilightColor);
 
 		// for debugging the draw routine
 		//g2.drawRect(0, 0, r.width, r.height);
@@ -237,19 +291,29 @@ public class CircuitEditor extends JPanel {
 		Gate.Input[] inputs = gate.getInputs();
 		Point inputLoc = new Point(INPUT_STICK_LENGTH, 0);
 		for (int i = 0; inputs != null && i < inputs.length; i++) {
-			if (inputs[i].getState() == true) {
-				g2.setColor(getActiveColor());
-			} else {
-				g2.setColor(getForeground());
-			}
-
-			inputLoc.y = (int) ((0.5 + i) * (double) r.height / (double) inputs.length);
-			paintInput(g2, inputLoc, inputs[i]);
+            if (inputs[i] == hilightInput) {
+                g2.setColor(getHilightColor());
+            } else if (inputs[i].getState() == true) {
+                g2.setColor(getActiveColor());
+            } else {
+                g2.setColor(getForeground());
+            }
+            
+            inputLoc.y = (int) ((0.5 + i) * (double) r.height / (double) inputs.length);
+            paintInput(g2, inputLoc, inputs[i]);
 		}
 
 		// and the output
-		paintOutput(g2, new Point(r.width - OUTPUT_STICK_LENGTH, r.height/2), gate.getLabel());
+		paintOutput(g2, new Point(r.width - OUTPUT_STICK_LENGTH, r.height/2), gate.getLabel(),
+                gate == hilightOutput, gate.getOutputState());
 		
+        if (gate == hilightGate) {
+            g2.setColor(getHilightColor());
+        } else if (gate.getOutputState() == true) {
+            g2.setColor(activeColor);
+        } else {
+            g2.setColor(getForeground());
+        }
 		// individual gate bodies (XXX: should probably farm this out to the gates themselves)
 		if (gate instanceof OrGate) {
 		    int backX = OUTPUT_STICK_LENGTH;
@@ -290,7 +354,6 @@ public class CircuitEditor extends JPanel {
 			g2.drawOval(0, 0, r.width, r.height);
 			g2.drawString(gate.getClass().getName(), 5, r.height/2);
 		}
-		if (gate == hilightGate) g2.setColor(getForeground());
 		g2.translate(-r.x, -r.y);
 		
 		// paint the connecting lines
@@ -302,7 +365,7 @@ public class CircuitEditor extends JPanel {
 			}
 
 		    if (inputs[i].getConnectedGate() != null) {
-		        Rectangle ir = (Rectangle) gatePositions.get(inputs[i].getConnectedGate());
+		        Rectangle ir = gatePositions.get(inputs[i].getConnectedGate());
 		        if (ir != null) {
 		            inputLoc = getInputLocation(inputs[i]);
 		            g2.drawLine(inputLoc.x, inputLoc.y, ir.x + ir.width, ir.y + (ir.height / 2));
@@ -311,15 +374,23 @@ public class CircuitEditor extends JPanel {
 		}
 	}
 	
-	private void paintOutput(Graphics2D g2, Point p, String label) {
+	private void paintOutput(Graphics2D g2, Point p, String label,
+            boolean highlight, boolean active) {
 	    int length = OUTPUT_STICK_LENGTH;
+        if (highlight) {
+            g2.setColor(getHilightColor());
+        } else if (active) {
+	        g2.setColor(getActiveColor());
+	    } else {
+	        g2.setColor(getForeground());
+	    }
 	    g2.drawLine(p.x, p.y, p.x + length, p.y);
-		g2.drawLine(p.x + length, p.y, p.x + (int) (length*0.75), p.y - (int) (length*0.25));
-		g2.drawLine(p.x + length, p.y, p.x + (int) (length*0.75), p.y + (int) (length*0.25));
-		if (label != null) {
-			g2.setFont(getLabelFont(g2));
-			g2.drawString(label, p.x, p.y + 15);
-		}
+	    g2.drawLine(p.x + length, p.y, p.x + (int) (length*0.75), p.y - (int) (length*0.25));
+	    g2.drawLine(p.x + length, p.y, p.x + (int) (length*0.75), p.y + (int) (length*0.25));
+	    if (label != null) {
+	        g2.setFont(getLabelFont(g2));
+	        g2.drawString(label, p.x, p.y + 15);
+	    }
 	}
 
 	private void paintInput(Graphics2D g2, Point p, Gate.Input input) {
@@ -340,11 +411,9 @@ public class CircuitEditor extends JPanel {
 		g2.fillRect(0, 0, getWidth(), getHeight());
 		g2.setColor(getForeground());
 		
-		Iterator it = gatePositions.entrySet().iterator();
-		while (it.hasNext()) {
-			Map.Entry ent = (Map.Entry) it.next();
-			Gate gate = (Gate) ent.getKey();
-			Rectangle gr = (Rectangle) ent.getValue();
+		for (Map.Entry<Gate,Rectangle> ent : gatePositions.entrySet()) {
+			Gate gate = ent.getKey();
+			Rectangle gr = ent.getValue();
 			paintGate(g2, gate, gr);
 		}
         
@@ -368,10 +437,8 @@ public class CircuitEditor extends JPanel {
 	}
 
 	public Gate getGateAt(Point p) {
-		Iterator it = gatePositions.entrySet().iterator();
-		while (it.hasNext()) {
-			Map.Entry ent = (Map.Entry) it.next();
-			Rectangle r = (Rectangle) ent.getValue();
+        for (Map.Entry<Gate,Rectangle> ent : gatePositions.entrySet()) {
+			Rectangle r = ent.getValue();
 			if (r.contains(p)) return (Gate) ent.getKey();
 		}
 		return null;
@@ -413,6 +480,8 @@ public class CircuitEditor extends JPanel {
 	    }
 	}
 	
+    
+    
 	private class MouseInput extends MouseInputAdapter {
 	    public static final int MODE_IDLE = 1;
 	    public static final int MODE_CONNECTING_FROM_INPUT = 2;
@@ -433,7 +502,7 @@ public class CircuitEditor extends JPanel {
                         (g == null ? false : getGateInput(g, p.x, p.y) != null));
 		        repaint();
 		    } else if (mode == MODE_MOVING) {
-		        Rectangle r = (Rectangle) gatePositions.get(movingGate);
+		        Rectangle r = gatePositions.get(movingGate);
 		        r.x = p.x - dragOffset.x;
 		        r.y = p.y - dragOffset.y;
 		        repaint();
@@ -441,20 +510,39 @@ public class CircuitEditor extends JPanel {
 		}
 
 		public void mouseMoved(MouseEvent e) {
+		    Point p = e.getPoint();
 		    if (mode == MODE_IDLE) {
-		        setHilightGate(getGateAt(e.getPoint()));
+		        Gate g = getGateAt(p);
+		        setHilightGate(g);
+		        Gate.Input newHilightInput = null;
+		        Gate newHilightOutput = null;
+		        if (g != null) {
+		            Gate.Input inp = getGateInput(g, p.x, p.y); 
+		            if (inp != null) {
+		                newHilightInput = inp;
+		            } else if (isGateOutput(g, p.x, p.y)) {
+		                newHilightOutput = g;
+		            }
+		        }
+                
+                // only call these once now that we know the ones we want
+                // (avoids extra repaints)
+                setHilightInput(newHilightInput);
+                setHilightOutput(newHilightOutput);
 		    }
+		    newGatePosition = p;
 		}
 
         public void mousePressed(MouseEvent e) {
             if (mode == MODE_IDLE) {
                 Point p = e.getPoint();
-                Gate g = getGateAt(e.getPoint());
+                Gate g = getGateAt(p);
                 if (e.isPopupTrigger()) {
                     JPopupMenu menu = new JPopupMenu();
                     menu.add(addAndGateAction);
                     menu.add(addOrGateAction);
                     menu.add(addNotGateAction);
+                    menu.add(removeGateAction);
                     menu.show(CircuitEditor.this, e.getX(), e.getY());
                 } else {
                     if (g != null) {
@@ -470,7 +558,7 @@ public class CircuitEditor extends JPanel {
                         } else {
                             mode = MODE_MOVING;
                             movingGate = g;
-                            Rectangle r = (Rectangle) gatePositions.get(g);
+                            Rectangle r = gatePositions.get(g);
                             dragOffset = new Point(p.x - r.x, p.y - r.y);
                         }
                     }
@@ -504,6 +592,7 @@ public class CircuitEditor extends JPanel {
                 dragOffset = null;
                 mode = MODE_IDLE;
             }
+            repaint();
         }
 	}
 	
@@ -522,7 +611,7 @@ public class CircuitEditor extends JPanel {
 	private Input getGateInput(Gate g, int x, int y) {
 	    final int ni = g.getInputs().length;  // number of inputs on this gate
         if (ni == 0) return null;
-	    Rectangle bb = (Rectangle) gatePositions.get(g); // the bounding box for this gate
+	    Rectangle bb = gatePositions.get(g); // the bounding box for this gate
 	    x -= bb.x;
 	    y -= bb.y;
 	    if (x < 0 || x > INPUT_STICK_LENGTH) return null;
@@ -535,7 +624,7 @@ public class CircuitEditor extends JPanel {
 	        // this doesn't happen under normal circumstances
 	        return new Point(getWidth(), getHeight());
 	    }
-	    Rectangle r = (Rectangle) gatePositions.get(enclosingGate);
+	    Rectangle r = gatePositions.get(enclosingGate);
 	    if (r == null) {
 	        throw new IllegalStateException("Can't determine location of gate input "+inp
 	                +" because its gate isn't in the gatePositions map.");
@@ -549,7 +638,7 @@ public class CircuitEditor extends JPanel {
 	}
 
     private boolean isGateOutput(Gate g, int x, int y) {
-        Rectangle bb = (Rectangle) gatePositions.get(g); // the bounding box for this gate
+        Rectangle bb = gatePositions.get(g); // the bounding box for this gate
         x -= bb.x;
         y -= bb.y;
         if (x > bb.width || x < bb.width - OUTPUT_STICK_LENGTH) return false;
@@ -557,7 +646,7 @@ public class CircuitEditor extends JPanel {
     }
 
     private Point getOutputLocation(Gate g) {
-        Rectangle bb = (Rectangle) gatePositions.get(g); // the bounding box for this gate
+        Rectangle bb = gatePositions.get(g); // the bounding box for this gate
         return new Point(bb.x + bb.width, bb.y + (bb.height / 2));
     }
     
@@ -565,12 +654,58 @@ public class CircuitEditor extends JPanel {
      * Evaluates each gate in the circuit one time, then schedules a repaint.
      */
     public void evaluateOnce() {
-		Iterator it = gatePositions.entrySet().iterator();
-		while (it.hasNext()) {
-			Map.Entry ent = (Map.Entry) it.next();
-			Gate gate = (Gate) ent.getKey();
-			gate.evaluate();
+        for (Map.Entry<Gate,Rectangle> ent : gatePositions.entrySet()) {
+			Gate gate = ent.getKey();
+			gate.evaluateInput();
 		}
+        for (Map.Entry<Gate,Rectangle> ent : gatePositions.entrySet()) {
+            Gate gate = ent.getKey();
+            gate.latchOutput();
+        }
 		repaint();
+    }
+
+    public void resetState() {
+        for (Map.Entry<Gate,Rectangle> ent : gatePositions.entrySet()) {
+            Gate gate = ent.getKey();
+            gate.reset();
+        }
+    }
+
+    public Color getHilightColor() {
+        return hilightColor;
+    }
+
+    public void setHilightColor(Color hilightColor) {
+        this.hilightColor = hilightColor;
+    }
+
+    /**
+     * Updates the currently-highlighted input, and issues a repaint request
+     * if the given input differs from the current one.
+     */
+    public void setHilightInput(Gate.Input hilightInput) {
+        if (this.hilightInput != hilightInput) {
+            this.hilightInput = hilightInput;
+            repaint();
+        }
+    }
+
+    /**
+     * Updates the currently-highlighted output, and issues a repaint request
+     * if the given output differs from the current one.
+     */
+    public void setHilightOutput(Gate hilightOutput) {
+        if (this.hilightOutput != hilightOutput) {
+            this.hilightOutput = hilightOutput;
+            repaint();
+        }
+    }
+
+    /**
+     * Returns an unmodifiable view of the gate position map.
+     */
+    public Map<Gate, Rectangle> getGatePositions() {
+        return Collections.unmodifiableMap(gatePositions);
     }
 }

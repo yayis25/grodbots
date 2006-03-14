@@ -1,13 +1,163 @@
-ROCKY
-Default Map
+ROCKY 2.0
+Easy Map
 15
-10
-2
-2
+8
+2.5
+2.5
+0.1
+XXXXXXXXXXXXXXX
+X R  X @      X
+X R  X B      X
+X R    B      X
+X GGGGGB      X
+X             X
+XXXXXXXXXXXXXXX
+*
+Slightly Harder Map
+15
+8
+2.5
+2.5
+0.1
 XXXXXXXXXXXXXXX
 X R  X        X
 X R  X B      X
 X R    B      X
-X GGGGGB    @ X
+X GGGGGB@     X
 X             X
 XXXXXXXXXXXXXXX
+*
+Slightly Harder Map
+15
+8
+2.5
+2.5
+0.1
+XXXXXXXXXXXXXXX
+X R  X @      X
+X R  X        X
+X R           X
+X GGGGGB      X
+X             X
+XXXXXXXXXXXXXXX
+*
+Mildly Tricky Map
+15
+8
+2.5
+2.5
+0.1
+XXXXXXXXXXXXXXX
+X R  X  @     X
+X R  X        X
+X R           X
+X GGG         X
+X             X
+XXXXXXXXXXXXXXX
+*
+Semi Tricky Map
+15
+8
+2.5
+2.5
+0.1
+XXXXXXXXXXXXXXX
+X R  X R@     X
+X R  XRRR     X
+X R  RRR      X
+X GGGRR       X
+X             X
+XXXXXXXXXXXXXXX
+*
+Windy Map (not as in gusty)
+15
+8
+1.5
+1.5
+0.1
+XXXXXXXXXXXXXXX
+X            BX
+XXXXXXXXXXXX  X
+X  R          X
+X XXXXXXXXXXXXX
+XB           @X
+XXXXXXXXXXXXXXX
+*
+Less Cheating Windy Map (not as in gusty)
+15
+8
+1.5
+1.5
+0.1
+XXXXXXXXXXXXXXX
+X            BX
+XXXXXXXXXXXX  X
+X  R          X
+X XXXXXXXXXXXXX
+XB           @X
+XXXXXXXXXXX   X
+          XXXXX
+*
+Flip and/or Flop
+7
+11
+1.5
+1.5
+0.1
+XXXXXXX
+X     X
+X     X
+X     X
+X     X
+XXX  GX
+X     X
+X     X
+X     X
+X@    X
+XXXXXXX
+*
+Gordo's Flippin'-Floppin' Level
+22
+9
+1.5
+1.5
+0.1
+XXXXXXXXXXXXXXXXXXXXXX
+XR X R X R X R X R   X
+X                    X
+X  B X B X B X B X   X
+XXXXXXXXXXXXXXXXXX  GX
+X  R X R X R X R X   X
+X                    X
+X@ X B X B X B X B   X
+XXXXXXXXXXXXXXXXXXXXXX
+*
+You Can Count On It!
+20
+6
+1.5
+4.5
+0.1
+XXXXXXXXXXXXXXXXXXXX
+X                  X
+X               @  X
+X                  X
+X B B B B B B B B BX
+XXXXXXXXXXXXXXXXXXXX
+*
+Dallas's Map
+13
+10
+10.5
+6.5
+0.1
+XXXXXXXXXXXXX
+X           X
+X G       B X
+X   X @ X   X
+X     G     X
+X       X   X
+X           X
+X     R     X
+X           X
+XXXXXXXXXXXXX

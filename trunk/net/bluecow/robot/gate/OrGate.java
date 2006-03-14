@@ -22,12 +22,12 @@ public class OrGate extends AbstractGate {
 		}
 	}
 	
-	public void evaluate() {
+	public void evaluateInput() {
 		boolean state = false;
 		Gate.Input[] inputs = getInputs();
 		for (int i = 0; i < inputs.length; i++) {
 			state |= inputs[i].getState();
 		}
-		outputState = state;
+		nextOutputState = state;
 	}
 }

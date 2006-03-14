@@ -10,12 +10,19 @@ public abstract class AbstractGate implements Gate {
 	 * The label text for this gate.
 	 */
 	private String label;
-	
+
+    /**
+     * The current output state that this gate reports.
+     */
+	private boolean outputState;
+    
 	/**
-	 * The most-recently calculated output state of this gate.
+	 * The most-recently calculated output state of this gate.  It will normally
+     * be delayed by one evaluate() cycle before it's reported as the
+     * current outputState.
 	 */
-	protected boolean outputState;
-	
+    protected boolean nextOutputState;
+    
 	/**
 	 * These are the inputs to this gate. Subclass constructors should
 	 * initialise this array to the correct length and types.
@@ -93,6 +100,19 @@ public abstract class AbstractGate implements Gate {
 		return inputs;
 	}
 
+    /**
+     * Implements gate delay by copying the nextOutputState to
+     * the current outputState variable.
+     */
+    public final void latchOutput() {
+        outputState = nextOutputState;
+    }
+    
+    public final void reset() {
+        outputState = false;
+        nextOutputState = false;
+    }
+    
 	// -------------- ACCESSORS and MUTATORS ------------------
 	
 	public String getLabel() {

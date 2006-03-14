@@ -25,7 +25,7 @@ public class NotGate extends AbstractGate {
     /**
      * Calculates the logical complement of the current input state.
      */
-    public void evaluate() {
-        outputState = ! inputs[0].getState();
+    public void evaluateInput() {
+        nextOutputState = ! inputs[0].getState();
     }   
 }
