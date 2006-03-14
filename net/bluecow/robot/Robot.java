@@ -1,6 +1,8 @@
 package net.bluecow.robot;
 
 import java.awt.Point;
+import java.awt.geom.Point2D;
+
 import javax.swing.ImageIcon;
 
 import net.bluecow.robot.gate.Gate;
@@ -11,7 +13,7 @@ import net.bluecow.robot.gate.Gate;
 public class Robot {
 	
 	private PlayfieldModel pfm;
-	private Point position;
+	private Point2D.Float position;
 	private ImageIcon icon;
 	
 	// Inputs that make the robot do stuff
@@ -28,14 +30,14 @@ public class Robot {
 	private RobotSensorOutput blueSensorOutput = new RobotSensorOutput("Blue");
 	private RobotSensorOutput[] outputs = new RobotSensorOutput[] {redSensorOutput, greenSensorOutput, blueSensorOutput};
 	
-	public Robot(PlayfieldModel pfm, Point initialPosition, ImageIcon icon) {
-		this.pfm = pfm;
-		this.position = new Point(initialPosition);
-		this.icon = icon;
+	public Robot(PlayfieldModel pfm, ImageIcon icon) {
+        this.pfm = pfm;
+        this.position = pfm.getStartPosition();
+        this.icon = icon;
 	}
 	
 	public void move() {
-	    // Move as indicated
+        
 	    if (upInput.getState() == true) {
 	        moveUp();
 	    }
@@ -48,7 +50,7 @@ public class Robot {
 	    if (rightInput.getState() == true) {
 	        moveRight();
 	    }
-	    
+
 	    updateSensors();
 	}
 	
@@ -61,29 +63,30 @@ public class Robot {
 	
 	private void moveLeft() {
 		if (position.x > 0
-				&& pfm.getSquare(position.x-1, position.y).isOccupiable()) {
-			position.x -= 1;
+				&& pfm.getSquare(position.x-pfm.getStepSize(), position.y).isOccupiable()) {
+			position.x -= pfm.getStepSize();
 		}
 	}
 	
 	private void moveRight() {
 		if (position.x < pfm.getWidth()
-				&& pfm.getSquare(position.x+1, position.y).isOccupiable()) {
-			position.x += 1;
+				&& pfm.getSquare(position.x+pfm.getStepSize(), position.y).isOccupiable()) {
+			position.x += pfm.getStepSize();
 		}
 	}
 	
-	public void moveDown() {
-		if (position.y < pfm.getHeight()
-				&& pfm.getSquare(position.x, position.y+1).isOccupiable()) {
-			position.y += 1;
+	private void moveDown() {
+        boolean atBottom = position.y >= pfm.getHeight();
+        boolean obstacleInTheWay = !pfm.getSquare(position.x, position.y+pfm.getStepSize()).isOccupiable();
+        if ( (!atBottom)	&& (!obstacleInTheWay)) {
+			position.y += pfm.getStepSize();
 		}
 	}
 	
-	public void moveUp() {
+	private void moveUp() {
 		if (position.y > 0
-				&& pfm.getSquare(position.x, position.y-1).isOccupiable()) {
-			position.y -= 1;
+				&& pfm.getSquare(position.x, position.y-pfm.getStepSize()).isOccupiable()) {
+			position.y -= pfm.getStepSize();
 		}
 	}
 		
@@ -121,9 +124,16 @@ public class Robot {
 			return label;
 		}
 
-        public void evaluate() {
+        public void evaluateInput() {
             // doesn't do anything because this gate's state gets set elsewhere
             // XXX: this could check which colour of square the robot is over, and update the state accordingly
+        }
+        public void latchOutput() {
+            // nothing to do
+        }
+        
+        public void reset() {
+            setState(false);
         }
 	}
 	
@@ -233,8 +243,16 @@ public class Robot {
 	        return inputs;
 	    }
 
-        public void evaluate() {
+        public void evaluateInput() {
             // this gate always outputs false
+        }
+        
+        public void latchOutput() {
+            // no op
+        }
+        
+        public void reset() {
+            // no op
         }
 	}
 
@@ -248,12 +266,12 @@ public class Robot {
 		this.icon = icon;
 	}
 	
-	public Point getPosition() {
-		return new Point(position);
+	public Point2D.Float getPosition() {
+		return new Point2D.Float(position.x, position.y);
 	}
 	
-	public void setPosition(Point position) {
-		this.position = new Point(position);
+	public void setPosition(Point2D.Float position) {
+		this.position = new Point2D.Float(position.x, position.y);
 	}
 	
 	public RobotInput[] getInputs() {

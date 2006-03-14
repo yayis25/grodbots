@@ -5,6 +5,9 @@
  */
 package net.bluecow.robot;
 
+import java.beans.PropertyChangeListener;
+import java.beans.PropertyChangeSupport;
+
 /**
  * The GameLoop represents the main loop of the game while it is in operation.
  *
@@ -38,6 +41,7 @@ public class GameLoop implements Runnable {
      * Gets set to true if and when the robot reaches the goal.
      */
     private boolean goalReached;
+    private int frameDelay;
     
     /**
      * @param robot
@@ -59,54 +63,123 @@ public class GameLoop implements Runnable {
             }
         }
         
-        robot.updateSensors();
+        pcs.firePropertyChange("running", false, true);
         
-        loopCount = 0;
-        
-        for (;;) {
-            synchronized (this) {
-                if (stopRequested || goalReached) break;
-                loopCount++;
-            }
+        try {
             
-            System.out.println("Starting loop "+loopCount);
-
-            circuitEditor.evaluateOnce();
-            robot.move();
-            playfield.repaint();
+            robot.updateSensors();
             
-            if (playfield.getSquareAt(robot.getPosition()).isGoal()) {
+            loopCount = 0;
+            
+            for (;;) {
                 synchronized (this) {
-                    goalReached = true;
+                    if (stopRequested || goalReached) break;
+                    loopCount++;
+                }
+                
+                System.out.println("Starting loop "+loopCount);
+                
+                circuitEditor.evaluateOnce();
+                robot.move();
+                playfield.repaint();
+                
+                if (playfield.getSquareAt(robot.getPosition()).isGoal()) {
+                    synchronized (this) {
+                        goalReached = true;
+                    }
+                }
+                
+                try {
+                    Thread.sleep(frameDelay);
+                } catch (InterruptedException ex) {
+                    System.out.println("GameLoop was Interrupted while sleeping.");
                 }
             }
-            
-            try {
-                Thread.sleep(100);
-            } catch (InterruptedException ex) {
-                System.out.println("GameLoop was Interrupted while sleeping.");
+        } finally {
+            synchronized (this) {
+                running = false;
+                stopRequested = false;
             }
+            pcs.firePropertyChange("running", true, false);
         }
-        
-        synchronized (this) {
-            running = false;
-            stopRequested = false;
-        }
+
     }
 
+    /**
+     * Tells whether or not the game loop is currently running.  This is a bound
+     * property; to recieve change notifications, register a property change listener
+     * for the "running" property.
+     */
     public synchronized boolean isRunning() {
         return running;
     }
     
+    /**
+     * Calling this method will cause the game loop to halt during the next loop
+     * iteration.  If you need to be notified when the loop has halted, you can
+     * sign up for the "running" property change event.
+     */
     public synchronized void requestStop() {
         stopRequested = true;
     }
-    
+
+    /**
+     * Returns the number of loops this game loop has executed so far.
+     */
     public synchronized int getLoopCount() {
         return loopCount;
     }
     
+    /**
+     * This becomes true when the robot has reached its goal. When the goal has
+     * been reached, the game loop stops itself. This flag can be reset by
+     * calling resetState(), which you will have to do before the game loop can
+     * be restarted.
+     */
     public synchronized boolean isGoalReached() {
         return goalReached;
+    }
+
+    /**
+     * Sets the amount of time that the loop will sleep between frames.
+     *
+     * @param delayInMS The amount of time to sleep, in milliseconds.
+     */
+    public void setFrameDelay(int delayInMS) {
+        frameDelay = delayInMS;
+    }
+    
+    /**
+     * Resets this game loop to its initial state.
+     * 
+     * @throws IllegalStateException if you call this method when the game loop
+     * is running
+     */
+    public void resetState() {
+        if (isRunning()) {
+            throw new IllegalStateException("You can't reset the loop when it's running.");
+        }
+        goalReached = false;
+        loopCount = 0;
+    }
+
+    
+    // PROPERTY CHANGE STUFF (for notifying of game wins)
+    private PropertyChangeSupport pcs = new PropertyChangeSupport(this);
+
+    public void addPropertyChangeListener(PropertyChangeListener listener) {
+        pcs.addPropertyChangeListener(listener);
+    }
+
+    public void addPropertyChangeListener(String propertyName, PropertyChangeListener listener) {
+        pcs.addPropertyChangeListener(propertyName, listener);
+    }
+
+    public void removePropertyChangeListener(PropertyChangeListener listener) {
+        pcs.removePropertyChangeListener(listener);
+    }
+
+    public void removePropertyChangeListener(String propertyName, PropertyChangeListener listener) {
+        pcs.removePropertyChangeListener(propertyName, listener);
     }
 }

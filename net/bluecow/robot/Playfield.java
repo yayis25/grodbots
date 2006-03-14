@@ -6,6 +6,7 @@ import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Point;
 import java.awt.Rectangle;
+import java.awt.geom.Point2D;
 
 import javax.swing.ImageIcon;
 import javax.swing.JPanel;
@@ -32,7 +33,7 @@ public class Playfield extends JPanel {
                 squares[i][j] = new Square(Square.EMPTY);
             }
         }
-        pfm = new PlayfieldModel(squares);
+        pfm = new PlayfieldModel(squares, "Test Playfield", new Point2D.Float(0.5f, 0.5f), 0.1f);
     }
     
     /**
@@ -92,12 +93,12 @@ public class Playfield extends JPanel {
                     g2.drawString("BAD: "+squares[i][j].getType(), r.x, r.y+10);
                 }
                 
-                Point roboPos = robot.getPosition();
-                if (roboPos.x == i && roboPos.y == j) {
-                    robot.getIcon().paintIcon(this, g2, r.x+1, r.y+1);
-                }
             }
         }
+        Point2D.Float roboPos = robot.getPosition();
+        robot.getIcon().paintIcon(this, g2,
+                (int) (squareWidth * roboPos.x) - robot.getIcon().getIconWidth() / 2,
+                (int) (squareWidth * roboPos.y) - robot.getIcon().getIconHeight() / 2);
     }
     
     public Dimension getPreferredSize() {
@@ -124,6 +125,10 @@ public class Playfield extends JPanel {
     }
     
     public Square getSquareAt(Point p) {
+        return pfm.getSquare(p.x, p.y);
+    }
+
+    public Square getSquareAt(Point2D.Float p) {
         return pfm.getSquare(p.x, p.y);
     }
 }

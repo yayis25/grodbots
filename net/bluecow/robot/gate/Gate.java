@@ -15,12 +15,23 @@ public interface Gate {
     public boolean getOutputState();
     
     /**
-     * Re-evaluates this gate's output state based on its current input states.
+     * Re-evaluates this gate's future state based on its current input states.
      */
-    public void evaluate();
+    public void evaluateInput();
+    
+    /**
+     * Latches output state to whatever was previously determined by evaluateInput().
+     */
+    public void latchOutput();
     
     public Gate.Input[] getInputs();
-    
+
+    /**
+     * Resets this gate to its default output state, regardless of the
+     * current input values.
+     */
+    public void reset();
+
     /**
      * The input interface represents an input to a gate.  A gate will
      * have 0 or more inputs.
