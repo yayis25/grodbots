@@ -38,6 +38,16 @@ public class RobotApplet extends JApplet {
 
     private ImageIcon robotIcon;
     
+    private ImageIcon blackIcon;
+    
+    private ImageIcon whiteIcon;
+
+    private ImageIcon redIcon;
+
+    private ImageIcon greenIcon;
+    
+    private ImageIcon blueIcon;
+
     public void init() {
         URL levelMapURL;
         
@@ -109,8 +119,15 @@ public class RobotApplet extends JApplet {
                 levels.add(pf);
             }
             
-            goalIcon = new ImageIcon(new URL(getDocumentBase(), "cake.png"));
-            robotIcon = new ImageIcon(new URL(getDocumentBase(), "robot.png"));
+            goalIcon = new ImageIcon(new URL(getDocumentBase(), "images/cake.png"));
+            robotIcon = new ImageIcon(new URL(getDocumentBase(), "images/robot.png"));
+            
+            blackIcon = new ImageIcon(new URL(getDocumentBase(), "images/blacktile.png"));
+            whiteIcon = new ImageIcon(new URL(getDocumentBase(), "images/whitetile.png"));
+            redIcon = new ImageIcon(new URL(getDocumentBase(), "images/redtile.png"));
+            greenIcon = new ImageIcon(new URL(getDocumentBase(), "images/yellowtile.png"));
+            blueIcon = new ImageIcon(new URL(getDocumentBase(), "images/bluetile.png"));
+            
         } catch (Exception e) {
             e.printStackTrace();
             JOptionPane.showMessageDialog(
@@ -139,6 +156,12 @@ public class RobotApplet extends JApplet {
                     cef.setVisible(true);
                     
                     playfield.setGoalIcon(goalIcon);
+                    playfield.setBlackIcon(blackIcon);
+                    playfield.setWhiteIcon(whiteIcon);
+                    playfield.setRedIcon(redIcon);
+                    playfield.setGreenIcon(greenIcon);
+                    playfield.setBlueIcon(blueIcon);
+                    
                     getContentPane().setLayout(new BorderLayout());
                     System.out.println("Starting level "+pfModel.getName());
                     getContentPane().add(
