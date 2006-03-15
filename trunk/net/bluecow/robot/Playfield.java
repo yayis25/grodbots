@@ -16,10 +16,19 @@ import javax.swing.JPanel;
  */
 public class Playfield extends JPanel {
     private PlayfieldModel pfm;
-    private int squareWidth = 30;
+    private int squareWidth = 25;
     private ImageIcon goalIcon;
     private Robot robot;
+    private ImageIcon blackIcon;
     
+    private ImageIcon whiteIcon;
+
+    private ImageIcon redIcon;
+
+    private ImageIcon greenIcon;
+    
+    private ImageIcon blueIcon;
+
     /**
      * Creates a playfield of spaces (mainly for testing).
      * 
@@ -53,39 +62,18 @@ public class Playfield extends JPanel {
             for (int j = 0; j < squares[0].length; j++) {
                 Rectangle r = new Rectangle(i*squareWidth, j*squareWidth, squareWidth, squareWidth);
                 if (squares[i][j].getType() == Square.EMPTY) {
-                    Color c = Color.white;
-                    g2.setColor(c);
-                    g2.fillRect(r.x, r.y, r.width, r.height);
-                    g2.setColor(c.darker());
-                    g2.draw(r);
+                    whiteIcon.paintIcon(this, g2, r.x, r.y);
                 } else if (squares[i][j].getType() == Square.WALL) {
-                    Color c = Color.darkGray;
-                    g2.setColor(c);
-                    g2.fillRect(r.x, r.y, r.width, r.height);
-                    g2.setColor(Color.lightGray);
-                    g2.draw(r);
+                    blackIcon.paintIcon(this, g2, r.x, r.y);
                 } else if (squares[i][j].getType() == Square.RED) {
-                    Color c = new Color(255, 160, 160);
-                    g2.setColor(c);
-                    g2.fillRect(r.x, r.y, r.width, r.height);
-                    g2.setColor(c.darker());
-                    g2.draw(r);
+                    redIcon.paintIcon(this, g2, r.x, r.y);
                 } else if (squares[i][j].getType() == Square.GREEN) {
-                    Color c = new Color(160, 255, 160);
-                    g2.setColor(c);
-                    g2.fillRect(r.x, r.y, r.width, r.height);
-                    g2.setColor(c.darker());
-                    g2.draw(r);
+                    greenIcon.paintIcon(this, g2, r.x, r.y);
                 } else if (squares[i][j].getType() == Square.BLUE) {
-                    Color c = new Color(160, 160, 255);
-                    g2.setColor(c);
-                    g2.fillRect(r.x, r.y, r.width, r.height);
-                    g2.setColor(c.darker());
-                    g2.draw(r);
+                    blueIcon.paintIcon(this, g2, r.x, r.y);
                 } else if (squares[i][j].getType() == Square.GOAL) {
+                    whiteIcon.paintIcon(this, g2, r.x, r.y);
                     goalIcon.paintIcon(this, g2, r.x+1, r.y+1);
-                    g2.setColor(Color.darkGray);
-                    g2.draw(r);
                 } else {
                     g2.setColor(Color.red);
                     g2.fillRect(r.x, r.y, r.width, r.height);
@@ -114,6 +102,46 @@ public class Playfield extends JPanel {
 
     public void setGoalIcon(ImageIcon goalIcon) {
         this.goalIcon = goalIcon;
+    }
+
+    public ImageIcon getBlackIcon() {
+        return blackIcon;
+    }
+
+    public void setBlackIcon(ImageIcon blackIcon) {
+        this.blackIcon = blackIcon;
+    }
+
+    public ImageIcon getBlueIcon() {
+        return blueIcon;
+    }
+
+    public void setBlueIcon(ImageIcon blueIcon) {
+        this.blueIcon = blueIcon;
+    }
+
+    public ImageIcon getGreenIcon() {
+        return greenIcon;
+    }
+
+    public void setGreenIcon(ImageIcon greenIcon) {
+        this.greenIcon = greenIcon;
+    }
+
+    public ImageIcon getRedIcon() {
+        return redIcon;
+    }
+
+    public void setRedIcon(ImageIcon redIcon) {
+        this.redIcon = redIcon;
+    }
+
+    public ImageIcon getWhiteIcon() {
+        return whiteIcon;
+    }
+
+    public void setWhiteIcon(ImageIcon whiteIcon) {
+        this.whiteIcon = whiteIcon;
     }
 
     public int getSquareWidth() {
