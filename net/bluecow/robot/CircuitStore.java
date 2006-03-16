@@ -117,9 +117,9 @@ public class CircuitStore {
                     g = robot.getInputsGate();
                 } else {
                     g = (Gate) Class.forName(gateClassName).newInstance();
+                    ce.addGate(g, p);
                 }
                 idmap.put(id, g);
-                ce.addGate(g, p);
             }
             
             // read gate connections

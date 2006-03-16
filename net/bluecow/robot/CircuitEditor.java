@@ -1,5 +1,6 @@
 package net.bluecow.robot;
 
+import java.applet.AudioClip;
 import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Component;
@@ -15,9 +16,6 @@ import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 import java.awt.geom.QuadCurve2D;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -27,8 +25,6 @@ import javax.swing.Action;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
-import javax.swing.JScrollPane;
-import javax.swing.JTextArea;
 import javax.swing.KeyStroke;
 import javax.swing.event.MouseInputAdapter;
 
@@ -63,8 +59,16 @@ public class CircuitEditor extends JPanel {
                     hilightGate.getInputs()[i].connect(null);
                 }
                 
+                if (hilightGate instanceof Robot.RobotInputsGate ||
+                        hilightGate instanceof Robot.RobotSensorOutput) {
+                    // TODO: play a "you suck" type sound
+                    return;
+                }
+                
                 gatePositions.remove(hilightGate);
                 repaint();
+                
+                playSound("delete_gate");
             }
         }
 
@@ -152,9 +156,12 @@ public class CircuitEditor extends JPanel {
          */
         private Class gateClass;
         
-        public AddGateAction(Class gateClass, String name) {
+        private String audioClipName;
+        
+        public AddGateAction(Class gateClass, String name, String audioClipName) {
             super(name);
             this.gateClass = gateClass;
+            this.audioClipName = audioClipName;
         }
         
         public void actionPerformed(ActionEvent e) {
@@ -162,6 +169,7 @@ public class CircuitEditor extends JPanel {
                 Gate newGate = (Gate) gateClass.newInstance();
                 Point p = new Point(newGatePosition);
                 addGate(newGate, p);
+                playSound(audioClipName);
                 System.out.println("Added new "+newGate.getClass().getName()+" at "+p);
             } catch (InstantiationException e1) {
                 e1.printStackTrace();
@@ -250,6 +258,8 @@ public class CircuitEditor extends JPanel {
 
     private RemoveGateAction removeGateAction;
     
+    private Map<String,AudioClip> audioClips;
+    
 	private static final int DEFAULT_GATE_WIDTH = 85;
 
 	private static final int DEFAULT_GATE_HEIGHT = 50;
@@ -258,15 +268,16 @@ public class CircuitEditor extends JPanel {
 	
 	private static final int OUTPUT_STICK_LENGTH = 20;
 	
-	public CircuitEditor(Gate[] outputs, Gate inputs) {
-		setupKeyActions();
-		setPreferredSize(new Dimension(400, 400));
-		this.outputs = outputs;
-		this.inputsGate = inputs;
-		MouseInput mouseListener = new MouseInput();
-		addMouseListener(mouseListener);
-		addMouseMotionListener(mouseListener);
-        setLayout(new CircuitEditorLayout());
+	public CircuitEditor(Gate[] outputs, Gate inputs, Map<String,AudioClip> audioClips) {
+	    setupKeyActions();
+	    setPreferredSize(new Dimension(400, 400));
+	    this.outputs = outputs;
+	    this.inputsGate = inputs;
+	    this.audioClips = audioClips;
+	    MouseInput mouseListener = new MouseInput();
+	    addMouseListener(mouseListener);
+	    addMouseMotionListener(mouseListener);
+	    setLayout(new CircuitEditorLayout());
 	}
 
 	private void setupKeyActions() {
@@ -276,9 +287,9 @@ public class CircuitEditor extends JPanel {
         getInputMap().put(KeyStroke.getKeyStroke(KeyEvent.VK_DELETE, 0), "removeGate");
         getInputMap().put(KeyStroke.getKeyStroke(KeyEvent.VK_BACK_SPACE, 0), "removeGate");
         
-	    addAndGateAction = new AddGateAction(AndGate.class, "New AND Gate");
-	    addOrGateAction = new AddGateAction(OrGate.class, "New OR Gate");
-	    addNotGateAction = new AddGateAction(NotGate.class, "New NOT Gate");
+	    addAndGateAction = new AddGateAction(AndGate.class, "New AND Gate", "create-AND");
+	    addOrGateAction = new AddGateAction(OrGate.class, "New OR Gate", "create-OR");
+	    addNotGateAction = new AddGateAction(NotGate.class, "New NOT Gate", "create-NOT");
         removeGateAction = new RemoveGateAction("Remove Current Gate");
 	    
 	    getActionMap().put("addGate(AND)", addAndGateAction);
@@ -485,7 +496,6 @@ public class CircuitEditor extends JPanel {
 	        repaint();
 	    }
 	}
-	
     
     
 	private class MouseInput extends MouseInputAdapter {
@@ -519,6 +529,13 @@ public class CircuitEditor extends JPanel {
 		    Point p = e.getPoint();
 		    if (mode == MODE_IDLE) {
 		        Gate g = getGateAt(p);
+		        
+		        if (hilightGate != null && g == null) {
+		            playSound("leave_gate");
+		        } else if (hilightGate == null && g != null) {
+		            playSound("enter_gate");
+		        }
+		        
 		        setHilightGate(g);
 		        Gate.Input newHilightInput = null;
 		        Gate newHilightOutput = null;
@@ -530,11 +547,11 @@ public class CircuitEditor extends JPanel {
 		                newHilightOutput = g;
 		            }
 		        }
-                
-                // only call these once now that we know the ones we want
-                // (avoids extra repaints)
-                setHilightInput(newHilightInput);
-                setHilightOutput(newHilightOutput);
+		        
+		        // only call these once now that we know the ones we want
+		        // (avoids extra repaints)
+		        setHilightInput(newHilightInput);
+		        setHilightOutput(newHilightOutput);
 		    }
 		    newGatePosition = p;
 		}
@@ -557,15 +574,20 @@ public class CircuitEditor extends JPanel {
                             mode = MODE_CONNECTING_FROM_INPUT;
                             pendingConnectionLine = new ConnectionLine(getInputLocation(inp), p, false);
                             connectionStartInput = inp;
+                            playSound("start_drawing_wire");
+                            loopSound("pull_wire");
                         } else if (isGateOutput(g, p.x, p.y)) {
                             mode = MODE_CONNECTING_FROM_OUTPUT;
                             pendingConnectionLine = new ConnectionLine(getOutputLocation(g), p, false);
                             connectionStartOutput = g;
+                            playSound("start_drawing_wire");
+                            loopSound("pull_wire");
                         } else {
                             mode = MODE_MOVING;
                             movingGate = g;
                             Rectangle r = gatePositions.get(g);
                             dragOffset = new Point(p.x - r.x, p.y - r.y);
+                            loopSound("drag-AND");
                         }
                     }
                 }
@@ -577,10 +599,14 @@ public class CircuitEditor extends JPanel {
                 Gate g = getGateAt(e.getPoint());
                 if (g != null) {
                     connectGates(g, connectionStartInput);
+                    playSound("terminated_wire");
+                } else {
+                    playSound("unterminated_wire");
                 }
                 connectionStartInput = null;
                 pendingConnectionLine = null;
                 mode = MODE_IDLE;
+                stopSound("pull_wire");
             } else if (mode == MODE_CONNECTING_FROM_OUTPUT) {
                 Point p = e.getPoint();
                 Gate g = getGateAt(p);
@@ -589,14 +615,19 @@ public class CircuitEditor extends JPanel {
                     if (input != null) {
                         connectGates(connectionStartOutput, input);
                     }
+                    playSound("terminated_wire");
+                } else {
+                    playSound("unterminated_wire");
                 }
                 connectionStartOutput = null;
                 pendingConnectionLine = null;
                 mode = MODE_IDLE;
+                stopSound("pull_wire");
             } else if (mode == MODE_MOVING) {
                 movingGate = null;
                 dragOffset = null;
                 mode = MODE_IDLE;
+                stopSound("drag-AND");
             }
             repaint();
         }
@@ -714,4 +745,26 @@ public class CircuitEditor extends JPanel {
     public Map<Gate, Rectangle> getGatePositions() {
         return Collections.unmodifiableMap(gatePositions);
     }
+    
+    private void playSound(String name) {
+        AudioClip clip = audioClips.get(name);
+        if (clip != null) {
+            clip.play();
+        }
+    }
+    
+    private void loopSound(String name) {
+        AudioClip clip = audioClips.get(name);
+        if (clip != null) {
+            clip.loop();
+        }
+    }
+
+    private void stopSound(String name) {
+        AudioClip clip = audioClips.get(name);
+        if (clip != null) {
+            clip.stop();
+        }
+    }
+
 }
