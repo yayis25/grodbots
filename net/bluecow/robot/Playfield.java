@@ -56,6 +56,7 @@ public class Playfield extends JPanel {
     }
 
     public void paintComponent(Graphics g) {
+        super.paintComponent(g);
         Graphics2D g2 = (Graphics2D) g;
         Square[][] squares = pfm.getMap();
         for (int i = 0; i < squares.length; i++) {

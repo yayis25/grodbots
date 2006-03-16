@@ -15,6 +15,9 @@ import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 import java.awt.geom.QuadCurve2D;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -24,6 +27,8 @@ import javax.swing.Action;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
+import javax.swing.JScrollPane;
+import javax.swing.JTextArea;
 import javax.swing.KeyStroke;
 import javax.swing.event.MouseInputAdapter;
 
@@ -244,7 +249,7 @@ public class CircuitEditor extends JPanel {
     private AddGateAction addNotGateAction;
 
     private RemoveGateAction removeGateAction;
-
+    
 	private static final int DEFAULT_GATE_WIDTH = 85;
 
 	private static final int DEFAULT_GATE_HEIGHT = 50;
@@ -267,18 +272,19 @@ public class CircuitEditor extends JPanel {
 	private void setupKeyActions() {
 	    getInputMap().put(KeyStroke.getKeyStroke('a'), "addGate(AND)");
 	    getInputMap().put(KeyStroke.getKeyStroke('o'), "addGate(OR)");
-	    getInputMap().put(KeyStroke.getKeyStroke('n'), "addGate(NOT)");
-	    getInputMap().put(KeyStroke.getKeyStroke(KeyEvent.VK_DELETE, 0), "removeGate");
-	    
+        getInputMap().put(KeyStroke.getKeyStroke('n'), "addGate(NOT)");
+        getInputMap().put(KeyStroke.getKeyStroke(KeyEvent.VK_DELETE, 0), "removeGate");
+        getInputMap().put(KeyStroke.getKeyStroke(KeyEvent.VK_BACK_SPACE, 0), "removeGate");
+        
 	    addAndGateAction = new AddGateAction(AndGate.class, "New AND Gate");
 	    addOrGateAction = new AddGateAction(OrGate.class, "New OR Gate");
 	    addNotGateAction = new AddGateAction(NotGate.class, "New NOT Gate");
-	    removeGateAction = new RemoveGateAction("Remove Current Gate");
+        removeGateAction = new RemoveGateAction("Remove Current Gate");
 	    
 	    getActionMap().put("addGate(AND)", addAndGateAction);
 	    getActionMap().put("addGate(OR)", addOrGateAction);
 	    getActionMap().put("addGate(NOT)", addNotGateAction);
-	    getActionMap().put("removeGate", removeGateAction);
+        getActionMap().put("removeGate", removeGateAction);
 	}
 
 	private void paintGate(Graphics2D g2, Gate gate, Rectangle r) {
