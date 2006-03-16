@@ -7,6 +7,8 @@ import java.awt.event.ActionListener;
 import java.awt.geom.Point2D;
 import java.beans.PropertyChangeListener;
 import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.URL;
@@ -16,6 +18,7 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import javax.swing.AbstractAction;
 import javax.swing.ImageIcon;
 import javax.swing.JApplet;
 import javax.swing.JButton;
@@ -23,13 +26,63 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+import javax.swing.JScrollPane;
 import javax.swing.JSpinner;
+import javax.swing.JTextArea;
 import javax.swing.SwingUtilities;
 
 /**
  * RobotApplet Main Class
  */
 public class RobotApplet extends JApplet {
+    
+    private class SaveCircuitAction extends AbstractAction {
+        
+        private CircuitEditor ce;
+        
+        public SaveCircuitAction(CircuitEditor ce) {
+            super("Save Circuit");
+            this.ce = ce;
+        }
+        
+        public void actionPerformed(ActionEvent e) {
+            try {
+                ByteArrayOutputStream buf = new ByteArrayOutputStream();
+                CircuitStore.save(buf, ce);
+                buf.close();
+                JTextArea ta = new JTextArea(buf.toString(), 24, 80);
+                JOptionPane.showMessageDialog(ce, new JScrollPane(ta));
+            } catch (IOException ex) {
+                JOptionPane.showMessageDialog(ce, "Save Failed: "+ex.getMessage());
+            }
+        }
+    }
+
+    private class LoadCircuitAction extends AbstractAction {
+        
+        private CircuitEditor ce;
+        private Robot robot;
+        
+        public LoadCircuitAction(CircuitEditor ce, Robot robot) {
+            super("Load Circuit");
+            this.ce = ce;
+            this.robot = robot;
+        }
+        
+        public void actionPerformed(ActionEvent e) {
+            try {
+                JTextArea ta = new JTextArea("Paste Circuit Here", 24, 80);
+                JOptionPane.showMessageDialog(ce, new JScrollPane(ta));
+                ByteArrayInputStream buf = new ByteArrayInputStream(ta.getText().getBytes());
+                CircuitStore.load(buf, ce, robot);
+                buf.close();
+            } catch (IOException ex) {
+                JOptionPane.showMessageDialog(ce, "Load Failed: "+ex.getMessage());
+            }
+        }
+    }
+
+    
     private Playfield playfield;
     
     private List<PlayfieldModel> levels;
@@ -47,6 +100,10 @@ public class RobotApplet extends JApplet {
     private ImageIcon greenIcon;
     
     private ImageIcon blueIcon;
+
+    private SaveCircuitAction saveCircuitAction;
+    
+    private LoadCircuitAction loadCircuitAction;
 
     public void init() {
         URL levelMapURL;
@@ -147,8 +204,11 @@ public class RobotApplet extends JApplet {
                     final PlayfieldModel pfModel = levels.get(10);
                     final Robot robot = new Robot(pfModel, robotIcon);
                     playfield = new Playfield(pfModel, robot);
-                    
                     final CircuitEditor ce = new CircuitEditor(robot.getOutputs(), robot.getInputsGate());
+                    
+                    saveCircuitAction = new SaveCircuitAction(ce);
+                    loadCircuitAction = new LoadCircuitAction(ce, robot);
+
                     JFrame cef = new JFrame("Curcuit Editor");
                     cef.getContentPane().add(ce);
                     cef.pack();
@@ -196,7 +256,12 @@ public class RobotApplet extends JApplet {
                             ce.repaint();
                         }
                     });
-                    
+                    final JButton saveButton = new JButton();
+                    saveButton.setAction(saveCircuitAction);
+
+                    final JButton loadButton = new JButton();
+                    loadButton.setAction(loadCircuitAction);
+
                     gameLoop.addPropertyChangeListener("running", new PropertyChangeListener() {
                         public void propertyChange(java.beans.PropertyChangeEvent evt) {
                             SwingUtilities.invokeLater(new Runnable() {
@@ -214,6 +279,8 @@ public class RobotApplet extends JApplet {
                     JPanel buttonPanel = new JPanel(new FlowLayout());
                     buttonPanel.add(startButton);
                     buttonPanel.add(resetButton);
+                    buttonPanel.add(loadButton);
+                    buttonPanel.add(saveButton);
                     buttonPanel.add(new JLabel("Delay between frames (ms):"));
                     buttonPanel.add(frameDelaySpinner);
                     
