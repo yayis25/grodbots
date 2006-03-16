@@ -1,7 +1,10 @@
 package net.bluecow.robot;
 
+import java.applet.AudioClip;
 import java.awt.BorderLayout;
+import java.awt.Color;
 import java.awt.FlowLayout;
+import java.awt.Graphics;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.geom.Point2D;
@@ -14,7 +17,9 @@ import java.io.InputStreamReader;
 import java.net.URL;
 import java.net.URLConnection;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -88,21 +93,16 @@ public class RobotApplet extends JApplet {
     private List<PlayfieldModel> levels;
     
     private ImageIcon goalIcon;
-
     private ImageIcon robotIcon;
-    
     private ImageIcon blackIcon;
-    
     private ImageIcon whiteIcon;
-
     private ImageIcon redIcon;
-
     private ImageIcon greenIcon;
-    
     private ImageIcon blueIcon;
 
-    private SaveCircuitAction saveCircuitAction;
+    private Map<String,AudioClip> soundClips = new HashMap<String,AudioClip>();
     
+    private SaveCircuitAction saveCircuitAction;
     private LoadCircuitAction loadCircuitAction;
 
     public void init() {
@@ -182,8 +182,23 @@ public class RobotApplet extends JApplet {
             blackIcon = new ImageIcon(new URL(getDocumentBase(), "images/blacktile.png"));
             whiteIcon = new ImageIcon(new URL(getDocumentBase(), "images/whitetile.png"));
             redIcon = new ImageIcon(new URL(getDocumentBase(), "images/redtile.png"));
-            greenIcon = new ImageIcon(new URL(getDocumentBase(), "images/yellowtile.png"));
+            greenIcon = new ImageIcon(new URL(getDocumentBase(), "images/greentile.png"));
             blueIcon = new ImageIcon(new URL(getDocumentBase(), "images/bluetile.png"));
+            
+            soundClips.put("create-AND", getAudioClip(new URL(getDocumentBase(), "sounds/create-AND.wav")));
+            soundClips.put("create-OR",  getAudioClip(new URL(getDocumentBase(), "sounds/create-OR.wav")));
+            soundClips.put("create-NOT", getAudioClip(new URL(getDocumentBase(), "sounds/create-NOT.wav")));
+            soundClips.put("delete_gate", getAudioClip(new URL(getDocumentBase(), "sounds/delete_gate.wav")));
+            soundClips.put("drag-AND", getAudioClip(new URL(getDocumentBase(), "sounds/drag-AND.wav")));
+            soundClips.put("drag-OR",  getAudioClip(new URL(getDocumentBase(), "sounds/drag-OR.wav")));
+            soundClips.put("drag-NOT", getAudioClip(new URL(getDocumentBase(), "sounds/drag-NOT.wav")));
+            soundClips.put("enter_gate", getAudioClip(new URL(getDocumentBase(), "sounds/enter_gate.wav")));
+            soundClips.put("leave_gate", getAudioClip(new URL(getDocumentBase(), "sounds/leave_gate.wav")));
+            soundClips.put("pull_wire", getAudioClip(new URL(getDocumentBase(), "sounds/pull_wire.wav")));
+            soundClips.put("start_drawing_wire", getAudioClip(new URL(getDocumentBase(), "sounds/start_drawing_wire.wav")));
+            soundClips.put("unterminated_wire", getAudioClip(new URL(getDocumentBase(), "sounds/unterminated_wire.wav")));
+            soundClips.put("terminated_wire", getAudioClip(new URL(getDocumentBase(), "sounds/terminated_wire.wav")));
+            soundClips.put("win", getAudioClip(new URL(getDocumentBase(), "sounds/win.wav")));
             
         } catch (Exception e) {
             e.printStackTrace();
@@ -201,10 +216,10 @@ public class RobotApplet extends JApplet {
                 if (levels.isEmpty()) {
                     getContentPane().add(new JLabel("Oops, can't find any levels!"));
                 } else {
-                    final PlayfieldModel pfModel = levels.get(8);
+                    final PlayfieldModel pfModel = levels.get(11);
                     final Robot robot = new Robot(pfModel, robotIcon);
                     playfield = new Playfield(pfModel, robot);
-                    final CircuitEditor ce = new CircuitEditor(robot.getOutputs(), robot.getInputsGate());
+                    final CircuitEditor ce = new CircuitEditor(robot.getOutputs(), robot.getInputsGate(), soundClips);
                     
                     saveCircuitAction = new SaveCircuitAction(ce);
                     loadCircuitAction = new LoadCircuitAction(ce, robot);
@@ -269,6 +284,15 @@ public class RobotApplet extends JApplet {
                                     if (gameLoop.isRunning()) {
                                         startButton.setText("Stop Game");
                                     } else {
+                                        if (gameLoop.isGoalReached()) {
+                                            Graphics g = playfield.getGraphics();
+                                            g.setFont(g.getFont().deriveFont(60f));
+                                            g.setColor(Color.BLACK);
+                                            g.drawString("CAKE! You Win?", 20, playfield.getHeight()/2);
+                                            g.setColor(Color.RED);
+                                            g.drawString("CAKE! You Win!", 15, playfield.getHeight()/2-5);
+                                            soundClips.get("win").play();
+                                        }
                                         startButton.setText("Start Game");
                                     }
                                 }
