@@ -201,7 +201,7 @@ public class RobotApplet extends JApplet {
                 if (levels.isEmpty()) {
                     getContentPane().add(new JLabel("Oops, can't find any levels!"));
                 } else {
-                    final PlayfieldModel pfModel = levels.get(10);
+                    final PlayfieldModel pfModel = levels.get(8);
                     final Robot robot = new Robot(pfModel, robotIcon);
                     playfield = new Playfield(pfModel, robot);
                     final CircuitEditor ce = new CircuitEditor(robot.getOutputs(), robot.getInputsGate());
