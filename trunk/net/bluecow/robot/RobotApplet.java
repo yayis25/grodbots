@@ -224,7 +224,7 @@ public class RobotApplet extends JApplet {
                     saveCircuitAction = new SaveCircuitAction(ce);
                     loadCircuitAction = new LoadCircuitAction(ce, robot);
 
-                    JFrame cef = new JFrame("Curcuit Editor");
+                    JFrame cef = new JFrame("Circuit Editor");
                     cef.getContentPane().add(ce);
                     cef.pack();
                     cef.setLocation(getX()+getWidth(), getY());
