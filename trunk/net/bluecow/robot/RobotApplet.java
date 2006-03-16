@@ -5,10 +5,14 @@ import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.FlowLayout;
 import java.awt.Graphics;
+import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.geom.Point2D;
+import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
+import java.beans.PropertyVetoException;
+import java.beans.VetoableChangeListener;
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -27,6 +31,7 @@ import javax.swing.AbstractAction;
 import javax.swing.ImageIcon;
 import javax.swing.JApplet;
 import javax.swing.JButton;
+import javax.swing.JComponent;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
@@ -35,6 +40,8 @@ import javax.swing.JScrollPane;
 import javax.swing.JSpinner;
 import javax.swing.JTextArea;
 import javax.swing.SwingUtilities;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
 
 /**
  * RobotApplet Main Class
@@ -104,6 +111,12 @@ public class RobotApplet extends JApplet {
     
     private SaveCircuitAction saveCircuitAction;
     private LoadCircuitAction loadCircuitAction;
+
+    private JFrame editorFrame;
+
+    private JFrame playfieldFrame;
+
+    private int level;
 
     public void init() {
         URL levelMapURL;
@@ -213,112 +226,150 @@ public class RobotApplet extends JApplet {
         
         SwingUtilities.invokeLater(new Runnable() {
             public void run() {
+                JComponent cp = (JComponent) getContentPane();
+                cp.setLayout(new FlowLayout(FlowLayout.CENTER));
                 if (levels.isEmpty()) {
-                    getContentPane().add(new JLabel("Oops, can't find any levels!"));
+                    cp.add(new JLabel("Oops, can't find any levels!"));
                 } else {
-                    final PlayfieldModel pfModel = levels.get(11);
-                    final Robot robot = new Robot(pfModel, robotIcon);
-                    playfield = new Playfield(pfModel, robot);
-                    final CircuitEditor ce = new CircuitEditor(robot.getOutputs(), robot.getInputsGate(), soundClips);
-                    
-                    saveCircuitAction = new SaveCircuitAction(ce);
-                    loadCircuitAction = new LoadCircuitAction(ce, robot);
-
-                    JFrame cef = new JFrame("Circuit Editor");
-                    cef.getContentPane().add(ce);
-                    cef.pack();
-                    cef.setLocation(getX()+getWidth(), getY());
-                    cef.setVisible(true);
-                    
-                    playfield.setGoalIcon(goalIcon);
-                    playfield.setBlackIcon(blackIcon);
-                    playfield.setWhiteIcon(whiteIcon);
-                    playfield.setRedIcon(redIcon);
-                    playfield.setGreenIcon(greenIcon);
-                    playfield.setBlueIcon(blueIcon);
-                    
-                    getContentPane().setLayout(new BorderLayout());
-                    System.out.println("Starting level "+pfModel.getName());
-                    getContentPane().add(
-                            new JLabel(pfModel.getName(), JLabel.CENTER),
-                            BorderLayout.NORTH);
-                    getContentPane().add(playfield, BorderLayout.CENTER);
-                    
-                    final GameLoop gameLoop = new GameLoop(robot, playfield, ce);
-
-                    final JSpinner frameDelaySpinner = new JSpinner();
-                    frameDelaySpinner.setValue(new Integer(50));
-
-                    final JButton startButton = new JButton("Start Game");
+                    JButton startButton = new JButton("Start Game");
                     startButton.addActionListener(new ActionListener() {
                         public void actionPerformed(ActionEvent e) {
-                            if (gameLoop.isRunning()) {
-                                gameLoop.requestStop();
-                            } else {
-                                gameLoop.setFrameDelay(((Integer) frameDelaySpinner.getValue()).intValue());
-                                gameLoop.resetState();
-                                new Thread(gameLoop).start();
-                            }
+                            editorFrame = new JFrame("Circuit Editor");
+                            playfieldFrame = new JFrame("CakeBots!");
+                            setLevel(0);
                         }
                     });
-                    final JButton resetButton = new JButton("Reset");
-                    resetButton.addActionListener(new ActionListener() {
-                        public void actionPerformed(ActionEvent e) {
-                            robot.setPosition(pfModel.getStartPosition());
-                            gameLoop.resetState();
-                            ce.resetState();
-                            playfield.repaint();
-                            ce.repaint();
-                        }
-                    });
-                    final JButton saveButton = new JButton();
-                    saveButton.setAction(saveCircuitAction);
-
-                    final JButton loadButton = new JButton();
-                    loadButton.setAction(loadCircuitAction);
-
-                    gameLoop.addPropertyChangeListener("running", new PropertyChangeListener() {
-                        public void propertyChange(java.beans.PropertyChangeEvent evt) {
-                            SwingUtilities.invokeLater(new Runnable() {
-                                public void run() {
-                                    if (gameLoop.isRunning()) {
-                                        startButton.setText("Stop Game");
-                                    } else {
-                                        if (gameLoop.isGoalReached()) {
-                                            Graphics g = playfield.getGraphics();
-                                            g.setFont(g.getFont().deriveFont(60f));
-                                            g.setColor(Color.BLACK);
-                                            g.drawString("CAKE! You Win?", 20, playfield.getHeight()/2);
-                                            g.setColor(Color.RED);
-                                            g.drawString("CAKE! You Win!", 15, playfield.getHeight()/2-5);
-                                            soundClips.get("win").play();
-                                        }
-                                        startButton.setText("Start Game");
-                                    }
-                                }
-                            });
-                        }
-                    });
-                    
-                    JPanel buttonPanel = new JPanel(new FlowLayout());
-                    buttonPanel.add(startButton);
-                    buttonPanel.add(resetButton);
-                    buttonPanel.add(loadButton);
-                    buttonPanel.add(saveButton);
-                    buttonPanel.add(new JLabel("Delay between frames (ms):"));
-                    buttonPanel.add(frameDelaySpinner);
-                    
-                    getContentPane().add(buttonPanel, BorderLayout.SOUTH);
-                    
-                    // XXX: shouldn't be necessary, but applet shows up blank otherwise
-                    SwingUtilities.invokeLater(new Runnable() {
-                        public void run() {
-                            getContentPane().validate();
-                            getContentPane().repaint();
-                        }
-                    });
+                    cp.add(startButton);
                 }
             }
         });
+    }
+    
+    private void setLevel(int levelNum) {
+        level = levelNum;
+        final PlayfieldModel pfModel = levels.get(levelNum);
+        final Robot robot = new Robot(pfModel, robotIcon);
+        playfield = new Playfield(pfModel, robot);
+        final CircuitEditor ce = new CircuitEditor(robot.getOutputs(), robot.getInputsGate(), soundClips);
+        
+        saveCircuitAction = new SaveCircuitAction(ce);
+        loadCircuitAction = new LoadCircuitAction(ce, robot);
+        
+        playfield.setGoalIcon(goalIcon);
+        playfield.setBlackIcon(blackIcon);
+        playfield.setWhiteIcon(whiteIcon);
+        playfield.setRedIcon(redIcon);
+        playfield.setGreenIcon(greenIcon);
+        playfield.setBlueIcon(blueIcon);
+
+        System.out.println("Starting level "+pfModel.getName());
+        
+        final GameLoop gameLoop = new GameLoop(robot, playfield, ce);
+
+        final JSpinner frameDelaySpinner = new JSpinner();
+        frameDelaySpinner.setValue(new Integer(50));
+
+        final JButton startButton = new JButton("Start Game");
+        startButton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                if (gameLoop.isRunning()) {
+                    gameLoop.requestStop();
+                } else {
+                    gameLoop.setFrameDelay(((Integer) frameDelaySpinner.getValue()).intValue());
+                    gameLoop.resetState();
+                    new Thread(gameLoop).start();
+                }
+            }
+        });
+        final JButton resetButton = new JButton("Reset");
+        resetButton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                robot.setPosition(pfModel.getStartPosition());
+                gameLoop.resetState();
+                ce.resetState();
+                playfield.repaint();
+                ce.repaint();
+            }
+        });
+        final JButton saveButton = new JButton();
+        saveButton.setAction(saveCircuitAction);
+
+        final JButton loadButton = new JButton();
+        loadButton.setAction(loadCircuitAction);
+
+        gameLoop.addPropertyChangeListener("running", new PropertyChangeListener() {
+            public void propertyChange(java.beans.PropertyChangeEvent evt) {
+                SwingUtilities.invokeLater(new Runnable() {
+                    public void run() {
+                        if (gameLoop.isRunning()) {
+                            startButton.setText("Stop Game");
+                        } else {
+                            if (gameLoop.isGoalReached()) {
+                                Graphics g = playfield.getGraphics();
+                                g.setFont(g.getFont().deriveFont(60f));
+                                g.setColor(Color.BLACK);
+                                g.drawString("CAKE! You Win?", 20, playfield.getHeight()/2);
+                                g.setColor(Color.RED);
+                                g.drawString("CAKE! You Win!", 15, playfield.getHeight()/2-5);
+                                soundClips.get("win").play();
+                            }
+                            startButton.setText("Start Game");
+                        }
+                    }
+                });
+            }
+        });
+        
+        final JSpinner levelSpinner = new JSpinner();
+        levelSpinner.setValue(new Integer(level));
+        levelSpinner.addChangeListener(new ChangeListener() {
+           public void stateChanged(ChangeEvent evt) {
+               int newLevel = (Integer) levelSpinner.getValue();
+               if (newLevel < 0) {
+                   Toolkit.getDefaultToolkit().beep();
+                   System.out.println("Silly person tried to go to level "+newLevel);
+               } else if (newLevel < levels.size()) {
+                   setLevel(newLevel);
+               } else {
+                   Toolkit.getDefaultToolkit().beep();
+                   System.out.println("Silly person tried to go to level "+newLevel);
+               }
+           }
+        });
+        
+        JPanel topButtonPanel = new JPanel(new FlowLayout());
+        topButtonPanel.add(startButton);
+        topButtonPanel.add(resetButton);
+        topButtonPanel.add(loadButton);
+        topButtonPanel.add(saveButton);
+        
+        JPanel bottomButtonPanel = new JPanel(new FlowLayout());
+        bottomButtonPanel.add(new JLabel("Delay between frames (ms):"));
+        bottomButtonPanel.add(frameDelaySpinner);
+        bottomButtonPanel.add(new JLabel("Level: "));
+        bottomButtonPanel.add(levelSpinner);
+        
+        JPanel buttonPanel = new JPanel(new BorderLayout());
+        buttonPanel.add(topButtonPanel, BorderLayout.NORTH);
+        buttonPanel.add(bottomButtonPanel, BorderLayout.SOUTH);
+        
+        JComponent pffcp = new JPanel(new BorderLayout());
+        pffcp.add(new JLabel(pfModel.getName(), JLabel.CENTER), BorderLayout.NORTH);
+        pffcp.add(playfield, BorderLayout.CENTER);
+        pffcp.add(buttonPanel, BorderLayout.SOUTH);
+        
+        playfieldFrame.setTitle("CakeBots: Level "+levelNum);
+        playfieldFrame.setContentPane(pffcp);
+        playfieldFrame.pack();
+        playfieldFrame.setVisible(true);
+
+        JPanel efcp = new JPanel(new BorderLayout());
+        efcp.add(ce, BorderLayout.CENTER);
+        editorFrame.setContentPane(efcp);
+        editorFrame.pack();
+        editorFrame.setLocation(
+                playfieldFrame.getX() + playfieldFrame.getWidth() + 5,
+                playfieldFrame.getY());
+        editorFrame.setVisible(true);
     }
 }
