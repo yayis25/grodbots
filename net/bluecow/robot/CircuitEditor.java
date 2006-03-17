@@ -1,6 +1,5 @@
 package net.bluecow.robot;
 
-import java.applet.AudioClip;
 import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Component;
@@ -259,7 +258,7 @@ public class CircuitEditor extends JPanel {
 
     private RemoveGateAction removeGateAction;
     
-    private Map<String,AudioClip> audioClips;
+    private SoundManager sm;
     
 	private static final int DEFAULT_GATE_WIDTH = 85;
 
@@ -269,12 +268,12 @@ public class CircuitEditor extends JPanel {
 	
 	private static final int OUTPUT_STICK_LENGTH = 20;
 	
-	public CircuitEditor(Gate[] outputs, Gate inputs, Map<String,AudioClip> audioClips) {
+	public CircuitEditor(Gate[] outputs, Gate inputs, SoundManager sm) {
 	    setupKeyActions();
 	    setPreferredSize(new Dimension(400, 400));
 	    this.outputs = outputs;
 	    this.inputsGate = inputs;
-	    this.audioClips = audioClips;
+	    this.sm = sm;
 	    MouseInput mouseListener = new MouseInput();
 	    addMouseListener(mouseListener);
 	    addMouseMotionListener(mouseListener);
@@ -749,24 +748,15 @@ public class CircuitEditor extends JPanel {
     }
     
     private void playSound(String name) {
-        AudioClip clip = audioClips.get(name);
-        if (clip != null) {
-            clip.play();
-        }
+        sm.play(name);
     }
     
     private void loopSound(String name) {
-        AudioClip clip = audioClips.get(name);
-        if (clip != null) {
-            clip.loop();
-        }
+        sm.loop(name);
     }
 
     private void stopSound(String name) {
-        AudioClip clip = audioClips.get(name);
-        if (clip != null) {
-            clip.stop();
-        }
+        sm.stop(name);
     }
 
 }
