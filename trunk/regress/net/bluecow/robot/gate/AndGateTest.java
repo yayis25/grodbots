@@ -1,11 +1,10 @@
 /*
  * Created on Feb 14, 2006
  *
- * This code belongs to SQL Power Group Inc.
+ * This code belongs to Jonathan Fuerth.
  */
 package net.bluecow.robot.gate;
 
-import net.bluecow.robot.gate.Gate.Input;
 import junit.framework.TestCase;
 
 public class AndGateTest extends TestCase {
