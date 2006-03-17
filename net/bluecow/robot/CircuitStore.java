@@ -1,7 +1,7 @@
 /*
  * Created on Mar 13, 2006
  *
- * This code belongs to SQL Power Group Inc.
+ * This code belongs to Jonathan Fuerth.
  */
 package net.bluecow.robot;
 
