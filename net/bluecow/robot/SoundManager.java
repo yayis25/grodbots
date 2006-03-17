@@ -75,6 +75,7 @@ public class SoundManager {
         if (c == null) {
             System.out.println("Can't loop clip '"+name+"' because it doesn't exist");
         }
+        c.setFramePosition(0);
         c.loop(Clip.LOOP_CONTINUOUSLY);
     }
 
