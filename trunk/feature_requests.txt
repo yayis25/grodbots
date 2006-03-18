@@ -1,0 +1,21 @@
+Game Features:
+-Single-step button for debugging (and redo interface with Start/Pause/Single Step/Reset)
+-Lock circuit editor when game is running (unlock after reset)
+-Multi-frame robot sprite
+-Score keeping (based on squares worth certain point values)
+-Goodies to pick up along the way
+-Batteries
+-Be able to specify how many circuit evaluations per step in a level
+-Different floor textures that the robot can detect (metal, carpet, dirt, tile, ...)
+
+Images:
+-Start/Pause/Single Step/Reset buttons
+-Images for different floor textures
+
+Sounds:
+-When game is running
+-Circuit Editor
+ -"you suck" sound (for trying to delete undeletable stuff)
+ -entering a connectable region while dragging a wire
+ -exiting a connectable region while dragging a wire
+ 
