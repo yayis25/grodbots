@@ -37,14 +37,24 @@ import net.bluecow.robot.gate.Gate.Input;
 
 public class CircuitEditor extends JPanel {
 
-    private class RemoveGateAction extends AbstractAction {
+    /**
+     * Removes the highlighted wire or gate.  If both a gate and a wire are
+     * highlighted, removes only the wire.
+     */
+    private class RemoveAction extends AbstractAction {
 
-        public RemoveGateAction(String name) {
+        public RemoveAction(String name) {
             super(name);
         }
 
         public void actionPerformed(ActionEvent e) {
-            if (hilightGate != null) {
+            if (hilightWireInput != null) {
+                hilightWireInput.connect(null);
+                hilightWireInput = null;
+                repaint();
+                playSound("delete_gate");  // XXX: should have a new sound!
+
+            } else if (hilightGate != null) {
                 
                 // disconnect all the inputs the hilight gate outputs to
                 for (Gate g : gatePositions.keySet()) {
@@ -68,7 +78,6 @@ public class CircuitEditor extends JPanel {
                 
                 gatePositions.remove(hilightGate);
                 repaint();
-                
                 playSound("delete_gate");
             }
         }
@@ -262,7 +271,7 @@ public class CircuitEditor extends JPanel {
 
     private AddGateAction addNotGateAction;
 
-    private RemoveGateAction removeGateAction;
+    private RemoveAction removeAction;
     
     private SoundManager sm;
     
@@ -290,18 +299,18 @@ public class CircuitEditor extends JPanel {
 	    getInputMap().put(KeyStroke.getKeyStroke('a'), "addGate(AND)");
 	    getInputMap().put(KeyStroke.getKeyStroke('o'), "addGate(OR)");
         getInputMap().put(KeyStroke.getKeyStroke('n'), "addGate(NOT)");
-        getInputMap().put(KeyStroke.getKeyStroke(KeyEvent.VK_DELETE, 0), "removeGate");
-        getInputMap().put(KeyStroke.getKeyStroke(KeyEvent.VK_BACK_SPACE, 0), "removeGate");
+        getInputMap().put(KeyStroke.getKeyStroke(KeyEvent.VK_DELETE, 0), "remove");
+        getInputMap().put(KeyStroke.getKeyStroke(KeyEvent.VK_BACK_SPACE, 0), "remove");
         
 	    addAndGateAction = new AddGateAction(AndGate.class, "New AND Gate", "create-AND");
 	    addOrGateAction = new AddGateAction(OrGate.class, "New OR Gate", "create-OR");
 	    addNotGateAction = new AddGateAction(NotGate.class, "New NOT Gate", "create-NOT");
-        removeGateAction = new RemoveGateAction("Remove Current Gate");
+        removeAction = new RemoveAction("Remove");
 	    
 	    getActionMap().put("addGate(AND)", addAndGateAction);
 	    getActionMap().put("addGate(OR)", addOrGateAction);
 	    getActionMap().put("addGate(NOT)", addNotGateAction);
-        getActionMap().put("removeGate", removeGateAction);
+        getActionMap().put("remove", removeAction);
 	}
 
 	private void paintGate(Graphics2D g2, Gate gate, Rectangle r) {
@@ -606,7 +615,7 @@ public class CircuitEditor extends JPanel {
                     menu.add(addAndGateAction);
                     menu.add(addOrGateAction);
                     menu.add(addNotGateAction);
-                    menu.add(removeGateAction);
+                    menu.add(removeAction);
                     menu.show(CircuitEditor.this, e.getX(), e.getY());
                 } else {
                     if (g != null) {
