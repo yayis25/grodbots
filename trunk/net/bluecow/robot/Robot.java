@@ -36,7 +36,6 @@ public class Robot {
 	}
 	
 	public void move() {
-        
 	    if (upInput.getState() == true) {
 	        moveUp();
 	    }
@@ -49,8 +48,6 @@ public class Robot {
 	    if (rightInput.getState() == true) {
 	        moveRight();
 	    }
-
-	    updateSensors();
 	}
 	
 	public void updateSensors() {
