@@ -67,27 +67,10 @@ public class GameLoop implements Runnable {
         
         try {
             
-            robot.updateSensors();
-            
-            loopCount = 0;
-            
-            for (;;) {
-                synchronized (this) {
-                    if (stopRequested || goalReached) break;
-                    loopCount++;
-                }
+                        
+            while (running) {
                 
-                System.out.println("Starting loop "+loopCount);
-                
-                circuitEditor.evaluateOnce();
-                robot.move();
-                playfield.repaint();
-                
-                if (playfield.getSquareAt(robot.getPosition()).isGoal()) {
-                    synchronized (this) {
-                        goalReached = true;
-                    }
-                }
+                singleStep();
                 
                 try {
                     Thread.sleep(frameDelay);
@@ -96,15 +79,39 @@ public class GameLoop implements Runnable {
                 }
             }
         } finally {
-            synchronized (this) {
-                running = false;
-                stopRequested = false;
-            }
-            pcs.firePropertyChange("running", true, false);
+            halt();
         }
 
     }
 
+    public void singleStep() {
+        synchronized (this) {
+            if (stopRequested || goalReached) halt();
+            loopCount++;
+        }
+
+        System.out.println("Starting loop "+loopCount);
+        
+        robot.updateSensors();
+        circuitEditor.evaluateOnce();
+        robot.move();
+        playfield.repaint();
+        
+        if (playfield.getSquareAt(robot.getPosition()).isGoal()) {
+            synchronized (this) {
+                goalReached = true;
+            }
+        }
+    }
+
+    private void halt() {
+        synchronized (this) {
+            running = false;
+            stopRequested = false;
+        }
+        pcs.firePropertyChange("running", true, false);
+    }
+    
     /**
      * Tells whether or not the game loop is currently running.  This is a bound
      * property; to recieve change notifications, register a property change listener
@@ -150,7 +157,7 @@ public class GameLoop implements Runnable {
     }
     
     /**
-     * Resets this game loop to its initial state.
+     * Resets this game loop, its robot, and the circuit editor to their initial states.
      * 
      * @throws IllegalStateException if you call this method when the game loop
      * is running
@@ -161,6 +168,8 @@ public class GameLoop implements Runnable {
         }
         goalReached = false;
         loopCount = 0;
+        robot.setPosition(playfield.getModel().getStartPosition());
+        circuitEditor.resetState();
     }
 
     

@@ -263,26 +263,50 @@ public class Main {
         final JSpinner frameDelaySpinner = new JSpinner();
         frameDelaySpinner.setValue(new Integer(50));
 
-        final JButton startButton = new JButton("Start Game");
+        final JButton startButton = new JButton("Start");
+        final JButton pauseButton = new JButton("Pause");
+        final JButton resetButton = new JButton("Reset");
+        final JButton stepButton = new JButton("Step");
+        startButton.setEnabled(true);
+        pauseButton.setEnabled(false);
+        stepButton.setEnabled(false);
+        resetButton.setEnabled(false);
+
         startButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                if (gameLoop.isRunning()) {
-                    gameLoop.requestStop();
-                } else {
+                if (!gameLoop.isRunning()) {
                     gameLoop.setFrameDelay(((Integer) frameDelaySpinner.getValue()).intValue());
-                    gameLoop.resetState();
                     new Thread(gameLoop).start();
+                    pauseButton.setEnabled(true);
+                    startButton.setEnabled(false);
+                    stepButton.setEnabled(false);
+                    resetButton.setEnabled(false);
                 }
             }
         });
-        final JButton resetButton = new JButton("Reset");
+        pauseButton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                gameLoop.requestStop();
+                startButton.setEnabled(true);
+                pauseButton.setEnabled(false);
+                stepButton.setEnabled(true);
+                resetButton.setEnabled(true);
+            }
+        });
+        stepButton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                gameLoop.singleStep();
+            }
+        });
         resetButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                robot.setPosition(pfModel.getStartPosition());
                 gameLoop.resetState();
-                ce.resetState();
                 playfield.repaint();
                 ce.repaint();
+                startButton.setEnabled(true);
+                pauseButton.setEnabled(false);
+                stepButton.setEnabled(false);
+                resetButton.setEnabled(false);
             }
         });
         final JButton saveButton = new JButton();
@@ -295,19 +319,20 @@ public class Main {
             public void propertyChange(java.beans.PropertyChangeEvent evt) {
                 SwingUtilities.invokeLater(new Runnable() {
                     public void run() {
-                        if (gameLoop.isRunning()) {
-                            startButton.setText("Stop Game");
-                        } else {
+                        if (!gameLoop.isRunning()) {
                             if (gameLoop.isGoalReached()) {
                                 Graphics g = playfield.getGraphics();
-                                g.setFont(g.getFont().deriveFont(60f));
+                                g.setFont(g.getFont().deriveFont(50f));
                                 g.setColor(Color.BLACK);
                                 g.drawString("CAKE! You Win?", 20, playfield.getHeight()/2);
                                 g.setColor(Color.RED);
                                 g.drawString("CAKE! You Win!", 15, playfield.getHeight()/2-5);
                                 sm.play("win");
+                                startButton.setEnabled(false);
+                                pauseButton.setEnabled(false);
+                                stepButton.setEnabled(false);
+                                resetButton.setEnabled(true);
                             }
-                            startButton.setText("Start Game");
                         }
                     }
                 });
@@ -333,6 +358,8 @@ public class Main {
         
         JPanel topButtonPanel = new JPanel(new FlowLayout());
         topButtonPanel.add(startButton);
+        topButtonPanel.add(pauseButton);
+        topButtonPanel.add(stepButton);
         topButtonPanel.add(resetButton);
         topButtonPanel.add(loadButton);
         topButtonPanel.add(saveButton);

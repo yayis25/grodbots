@@ -160,4 +160,8 @@ public class Playfield extends JPanel {
     public Square getSquareAt(Point2D.Float p) {
         return pfm.getSquare(p.x, p.y);
     }
+    
+    public PlayfieldModel getModel() {
+        return pfm;
+    }
 }
