@@ -15,6 +15,7 @@ import java.awt.RenderingHints;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
+import java.awt.geom.Line2D;
 import java.awt.geom.QuadCurve2D;
 import java.util.Collections;
 import java.util.HashMap;
@@ -224,7 +225,12 @@ public class CircuitEditor extends JPanel {
      * The gate input that should be highlighted (because the cursor is over it).
      */
     private Gate.Input hilightInput;
-    
+
+    /**
+     * The wire connected to this input should be highlighted (because the cursor is over it).
+     */
+    private Gate.Input hilightWireInput;
+
     /**
      * The gate whose output should be highlighted (because the cursor is over it).
      */
@@ -384,8 +390,13 @@ public class CircuitEditor extends JPanel {
 		    if (inputs[i].getConnectedGate() != null) {
 		        Rectangle ir = gatePositions.get(inputs[i].getConnectedGate());
 		        if (ir != null) {
-		            inputLoc = getInputLocation(inputs[i]);
-		            g2.drawLine(inputLoc.x, inputLoc.y, ir.x + ir.width, ir.y + (ir.height / 2));
+                    if (inputs[i] == hilightWireInput) {
+                        g2.setColor(getHilightColor());
+                    } else {
+                        g2.setColor(getForeground());
+                    }
+                    inputLoc = getInputLocation(inputs[i]);
+                    g2.drawLine(inputLoc.x, inputLoc.y, ir.x + ir.width, ir.y + (ir.height / 2));
 		        }
 		    }
 		}
@@ -462,6 +473,33 @@ public class CircuitEditor extends JPanel {
 		return null;
 	}
 	
+    /**
+     * Searches for a connecting wire that nearly intersects the given point.
+     * The current match radius is 4 pixels.
+     * 
+     * @return The input that the intersecting wire is connected to, or null
+     * if no connecting wire comes near p.
+     */
+    public Gate.Input getWireAt(Point p) {
+        final int r = 4;  // the radius of matching
+        for (Gate g : gatePositions.keySet()) {
+            Gate.Input[] inputs = g.getInputs();
+            for (int i = 0; i < inputs.length; i++) {
+                Gate.Input inp = inputs[i];
+                if (inp.getConnectedGate() != null) {
+                    Point start = getInputLocation(inputs[i]);
+                    Point end = getOutputLocation(inp.getConnectedGate());
+                    Line2D wire = new Line2D.Float(start.x, start.y, end.x, end.y);
+                    if (wire.intersects(p.x-r, p.y-r, r*2, r*2)) {
+                        //((Graphics2D) getGraphics()).draw(wire);
+                        return inp;
+                    }
+                }
+            }
+        }
+        return null;
+    }
+    
 	public void connectGates(Gate source, Gate.Input target) {
 	    try {
 	        target.connect(source);
@@ -553,6 +591,8 @@ public class CircuitEditor extends JPanel {
 		        // (avoids extra repaints)
 		        setHilightInput(newHilightInput);
 		        setHilightOutput(newHilightOutput);
+                
+                setHilightWireInput(getWireAt(p));
 		    }
 		    newGatePosition = p;
 		}
@@ -588,7 +628,7 @@ public class CircuitEditor extends JPanel {
                             movingGate = g;
                             Rectangle r = gatePositions.get(g);
                             dragOffset = new Point(p.x - r.x, p.y - r.y);
-                            loopSound("drag-AND");
+                            loopSound("drag-"+getSoundName(movingGate));
                         }
                     }
                 }
@@ -625,10 +665,10 @@ public class CircuitEditor extends JPanel {
                 mode = MODE_IDLE;
                 stopSound("pull_wire");
             } else if (mode == MODE_MOVING) {
+                stopSound("drag-"+getSoundName(movingGate));
                 movingGate = null;
                 dragOffset = null;
                 mode = MODE_IDLE;
-                stopSound("drag-AND");
             }
             repaint();
         }
@@ -730,6 +770,17 @@ public class CircuitEditor extends JPanel {
     }
 
     /**
+     * Updates the currently-highlighted wire, and issues a repaint request
+     * if the given wire differs from the current one.
+     */
+    public void setHilightWireInput(Gate.Input hilightWireInput) {
+        if (this.hilightWireInput != hilightWireInput) {
+            this.hilightWireInput = hilightWireInput;
+            repaint();
+        }
+    }
+
+    /**
      * Updates the currently-highlighted output, and issues a repaint request
      * if the given output differs from the current one.
      */
@@ -745,6 +796,21 @@ public class CircuitEditor extends JPanel {
      */
     public Map<Gate, Rectangle> getGatePositions() {
         return Collections.unmodifiableMap(gatePositions);
+    }
+    
+    /**
+     * Returns the sound manager name for the given gate.  For example,
+     * if it's an AND gate, return value is "AND"; for an OR gate, the
+     * return value is "OR".
+     * 
+     * @return the sound name for the given gate.  Returns "MISC" for unknown
+     * gates.
+     */
+    private String getSoundName(Gate g) {
+        if (g instanceof AndGate) return "AND";
+        else if (g instanceof OrGate) return "OR";
+        else if (g instanceof NotGate) return "NOT";
+        else return "MISC";
     }
     
     private void playSound(String name) {
