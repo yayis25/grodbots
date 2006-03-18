@@ -77,6 +77,7 @@ public class SoundManager {
         Clip c = clips.get(name);
         if (c == null) {
             System.out.println("Can't play clip '"+name+"' because it doesn't exist");
+            return;
         }
         c.setFramePosition(0);
         c.start();
@@ -89,6 +90,7 @@ public class SoundManager {
         Clip c = clips.get(name);
         if (c == null) {
             System.out.println("Can't stop clip '"+name+"' because it doesn't exist");
+            return;
         }
         c.stop();
     }
@@ -101,6 +103,7 @@ public class SoundManager {
         Clip c = clips.get(name);
         if (c == null) {
             System.out.println("Can't loop clip '"+name+"' because it doesn't exist");
+            return;
         }
         c.setFramePosition(0);
         c.loop(Clip.LOOP_CONTINUOUSLY);
