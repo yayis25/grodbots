@@ -43,6 +43,8 @@ import javax.swing.event.ChangeListener;
 
 public class Main {
     
+    private static final String DEFAULT_MAP_RESOURCE_PATH = "ROBO-INF/default.map";
+
     private class SaveCircuitAction extends AbstractAction {
         
         private CircuitEditor ce;
@@ -127,7 +129,12 @@ public class Main {
         playfieldFrame = new JFrame("CakeBots!");
 
         try {
-            URL levelMapURL = ClassLoader.getSystemResource("ROBO-INF/default.map");
+            URL levelMapURL = ClassLoader.getSystemResource(DEFAULT_MAP_RESOURCE_PATH);
+            if (levelMapURL == null) {
+                throw new RuntimeException(
+                        "Could not find default map at resource path " +
+                        DEFAULT_MAP_RESOURCE_PATH);
+            }
             URLConnection levelMapURLConnection = levelMapURL.openConnection();
             BufferedReader in = new BufferedReader(new InputStreamReader(
                     levelMapURLConnection.getInputStream()));
