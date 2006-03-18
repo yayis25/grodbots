@@ -399,7 +399,9 @@ public class CircuitEditor extends JPanel {
 		    if (inputs[i].getConnectedGate() != null) {
 		        Rectangle ir = gatePositions.get(inputs[i].getConnectedGate());
 		        if (ir != null) {
-                    if (inputs[i] == hilightWireInput) {
+                    if (inputs[i].getState() == true) {
+                        g2.setColor(getActiveColor());
+                    } else if (inputs[i] == hilightWireInput) {
                         g2.setColor(getHilightColor());
                     } else {
                         g2.setColor(getForeground());
