@@ -12,24 +12,22 @@ import java.awt.Graphics;
 import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.geom.Point2D;
 import java.beans.PropertyChangeListener;
-import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.net.URL;
 import java.net.URLConnection;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import javax.swing.AbstractAction;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JComponent;
+import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
@@ -44,6 +42,8 @@ import javax.swing.event.ChangeListener;
 public class Main {
     
     private static final String DEFAULT_MAP_RESOURCE_PATH = "ROBO-INF/default.map";
+
+    private static final int ROBOT_ICON_COUNT = 9;
 
     private class SaveCircuitAction extends AbstractAction {
         
@@ -91,13 +91,45 @@ public class Main {
         }
     }
 
+    private class LoadLevelsAction extends AbstractAction {
+        
+        JFileChooser fc;
+        
+        public LoadLevelsAction() {
+            super("Load levels...");
+            fc = new JFileChooser();
+            fc.setDialogTitle("Choose a Robot Levels File");
+        }
+        
+        public void actionPerformed(ActionEvent e) {
+            int choice = fc.showOpenDialog(null);
+            if (choice == JFileChooser.APPROVE_OPTION) {
+                File f = fc.getSelectedFile();
+                try {
+                    levels = LevelStore.loadLevels(new FileInputStream(f));
+                    setLevel(0);
+                } catch (FileNotFoundException ex) {
+                    ex.printStackTrace();
+                    JOptionPane.showMessageDialog(null, "Could not find file '"+f.getPath()+"'");
+                } catch (IOException ex) {
+                    ex.printStackTrace();
+                    JOptionPane.showMessageDialog(
+                            null,
+                            "Couldn't load the levels:\n\n"
+                               +ex.getMessage()+"\n\n"
+                               +"A stack trace is available on the Java Console.",
+                            "Load Error", JOptionPane.ERROR_MESSAGE, null);
+                }
+            }
+        }
+    }
     
     private Playfield playfield;
     
     private List<PlayfieldModel> levels;
     
     private ImageIcon goalIcon;
-    private ImageIcon robotIcon;
+    private ImageIcon[] robotIcons;
     private ImageIcon blackIcon;
     private ImageIcon whiteIcon;
     private ImageIcon redIcon;
@@ -106,6 +138,7 @@ public class Main {
 
     private SaveCircuitAction saveCircuitAction;
     private LoadCircuitAction loadCircuitAction;
+    private LoadLevelsAction loadLevelsAction;
 
     private JFrame editorFrame;
 
@@ -136,74 +169,16 @@ public class Main {
                         DEFAULT_MAP_RESOURCE_PATH);
             }
             URLConnection levelMapURLConnection = levelMapURL.openConnection();
-            BufferedReader in = new BufferedReader(new InputStreamReader(
-                    levelMapURLConnection.getInputStream()));
-            
-            Pattern magicPattern = Pattern.compile("^ROCKY ([0-9]+)\\.([0-9]+)$");
-            String magic = in.readLine();
-            Matcher magicMatcher = magicPattern.matcher(magic);
-            if (!magicMatcher.matches()) {
-                throw new IOException("Bad magic! This is not a robot applet map file!");
-            }
-            int major = Integer.parseInt(magicMatcher.group(1));
-            int minor = Integer.parseInt(magicMatcher.group(2));
-            if (major != 2) {
-                throw new IOException(
-                        "Map file major version "+major+
-                        " is not supported (only version 2 is supported)");
-            }
-            System.out.println("Reading map file version "+major+"."+minor);
-            
-            levels = new ArrayList<PlayfieldModel>();
-            String line;
-            while ((line = in.readLine()) != null) {
-                String levelName = line;
-                System.out.print("Found level \""+levelName+"\"");
-                
-                int xSize = Integer.parseInt(in.readLine());
-                int ySize = Integer.parseInt(in.readLine());
-                System.out.println(" ("+xSize+"x"+ySize+")");
-                
-                float initialX = Float.parseFloat(in.readLine());
-                float initialY = Float.parseFloat(in.readLine());
-                Point2D.Float initialPosition = new Point2D.Float(initialX, initialY);
-                
-                float roboStepSize = Float.parseFloat(in.readLine());
-                
-                Square[][] map = new Square[xSize][ySize];
-                
-                // read the level map (short lines are padded with spaces)
-                int lineNum = 0;
-                for (;;) {
-                    line = in.readLine();
-                    if (line == null) break;
-                    if (line.equals("*")) break;
-                    System.out.println(line);
-                    for (int i = 0; i < xSize; i++) {
-                        if (i < line.length()) {
-                            map[i][lineNum] = new Square(line.charAt(i));
-                        } else {
-                            map[i][lineNum] = new Square(Square.EMPTY);
-                        }
-                    }
-                    lineNum += 1;
-                }
-                
-                // pad out unspecified lines with spaces
-                for (; lineNum < ySize; lineNum++) {
-                    for (int i = 0; i < xSize; i++) {
-                        map[i][lineNum] = new Square(Square.EMPTY);
-                    }
-                }
-                
-                PlayfieldModel pf = new PlayfieldModel(
-                        map, levelName, initialPosition, roboStepSize);
-                levels.add(pf);
-            }
+            levels = LevelStore.loadLevels(levelMapURLConnection.getInputStream());
             
             goalIcon = new ImageIcon(ClassLoader.getSystemResource("ROBO-INF/images/cake.png"));
-            robotIcon = new ImageIcon(ClassLoader.getSystemResource("ROBO-INF/images/robot.png"));
-            
+            robotIcons = new ImageIcon[ROBOT_ICON_COUNT];
+            for (int i = 0; i < ROBOT_ICON_COUNT; i++) {
+                String resname = String.format("ROBO-INF/images/robot_%02d.png", i);
+                URL imgurl = ClassLoader.getSystemResource(resname);
+                if (imgurl == null) throw new RuntimeException("Couldn't load resource "+resname);
+                robotIcons[i] = new ImageIcon(imgurl);
+            }
             blackIcon = new ImageIcon(ClassLoader.getSystemResource("ROBO-INF/images/blacktile.png"));
             whiteIcon = new ImageIcon(ClassLoader.getSystemResource("ROBO-INF/images/whitetile.png"));
             redIcon = new ImageIcon(ClassLoader.getSystemResource("ROBO-INF/images/redtile.png"));
@@ -242,12 +217,13 @@ public class Main {
     void setLevel(int levelNum) {
         level = levelNum;
         final PlayfieldModel pfModel = levels.get(levelNum);
-        final Robot robot = new Robot(pfModel, robotIcon);
+        final Robot robot = new Robot(pfModel, robotIcons);
         playfield = new Playfield(pfModel, robot);
         final CircuitEditor ce = new CircuitEditor(robot.getOutputs(), robot.getInputsGate(), sm);
         
         saveCircuitAction = new SaveCircuitAction(ce);
         loadCircuitAction = new LoadCircuitAction(ce, robot);
+        loadLevelsAction = new LoadLevelsAction();
         
         playfield.setGoalIcon(goalIcon);
         playfield.setBlackIcon(blackIcon);
@@ -275,6 +251,7 @@ public class Main {
         startButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 if (!gameLoop.isRunning()) {
+                    ce.setLocked(true);
                     gameLoop.setFrameDelay(((Integer) frameDelaySpinner.getValue()).intValue());
                     new Thread(gameLoop).start();
                     pauseButton.setEnabled(true);
@@ -302,18 +279,21 @@ public class Main {
             public void actionPerformed(ActionEvent e) {
                 gameLoop.resetState();
                 playfield.repaint();
-                ce.repaint();
+                ce.setLocked(false);
                 startButton.setEnabled(true);
                 pauseButton.setEnabled(false);
                 stepButton.setEnabled(false);
                 resetButton.setEnabled(false);
             }
         });
-        final JButton saveButton = new JButton();
-        saveButton.setAction(saveCircuitAction);
+        final JButton saveCircuitButton = new JButton();
+        saveCircuitButton.setAction(saveCircuitAction);
 
-        final JButton loadButton = new JButton();
-        loadButton.setAction(loadCircuitAction);
+        final JButton loadCircuitButton = new JButton();
+        loadCircuitButton.setAction(loadCircuitAction);
+
+        final JButton loadLevelsButton = new JButton();
+        loadLevelsButton.setAction(loadLevelsAction);
 
         gameLoop.addPropertyChangeListener("running", new PropertyChangeListener() {
             public void propertyChange(java.beans.PropertyChangeEvent evt) {
@@ -324,7 +304,7 @@ public class Main {
                                 Graphics g = playfield.getGraphics();
                                 g.setFont(g.getFont().deriveFont(50f));
                                 g.setColor(Color.BLACK);
-                                g.drawString("CAKE! You Win?", 20, playfield.getHeight()/2);
+                                g.drawString("CAKE! You Win!", 20, playfield.getHeight()/2);
                                 g.setColor(Color.RED);
                                 g.drawString("CAKE! You Win!", 15, playfield.getHeight()/2-5);
                                 sm.play("win");
@@ -361,11 +341,12 @@ public class Main {
         topButtonPanel.add(pauseButton);
         topButtonPanel.add(stepButton);
         topButtonPanel.add(resetButton);
-        topButtonPanel.add(loadButton);
-        topButtonPanel.add(saveButton);
         
         JPanel bottomButtonPanel = new JPanel(new FlowLayout());
-        bottomButtonPanel.add(new JLabel("Delay between frames (ms):"));
+        bottomButtonPanel.add(loadCircuitButton);
+        bottomButtonPanel.add(saveCircuitButton);
+        bottomButtonPanel.add(loadLevelsButton);
+        bottomButtonPanel.add(new JLabel("Frame Delay:"));
         bottomButtonPanel.add(frameDelaySpinner);
         bottomButtonPanel.add(new JLabel("Level: "));
         bottomButtonPanel.add(levelSpinner);
