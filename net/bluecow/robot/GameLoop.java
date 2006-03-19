@@ -66,8 +66,6 @@ public class GameLoop implements Runnable {
         pcs.firePropertyChange("running", false, true);
         
         try {
-            
-                        
             while (running) {
                 
                 singleStep();
@@ -81,7 +79,6 @@ public class GameLoop implements Runnable {
         } finally {
             halt();
         }
-
     }
 
     public void singleStep() {
@@ -105,11 +102,15 @@ public class GameLoop implements Runnable {
     }
 
     private void halt() {
+        boolean wasRunning;
         synchronized (this) {
+            wasRunning = running;
             running = false;
             stopRequested = false;
         }
-        pcs.firePropertyChange("running", true, false);
+        if (wasRunning) {
+            pcs.firePropertyChange("running", true, false);
+        }
     }
     
     /**
