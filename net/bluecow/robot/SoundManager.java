@@ -33,6 +33,8 @@ import javax.sound.sampled.UnsupportedAudioFileException;
  */
 public class SoundManager {
     
+    private static boolean debug = false;
+    
     /**
      * Maps names (which are supplied by the client code) to audio clips.
      */
@@ -79,6 +81,9 @@ public class SoundManager {
             System.out.println("Can't play clip '"+name+"' because it doesn't exist");
             return;
         }
+        if (debug) {
+            System.out.println("Playing clip "+name);
+        }
         c.setFramePosition(0);
         c.start();
     }
@@ -92,6 +97,9 @@ public class SoundManager {
             System.out.println("Can't stop clip '"+name+"' because it doesn't exist");
             return;
         }
+        if (debug) {
+            System.out.println("Stopping clip "+name);
+        }
         c.stop();
     }
 
@@ -104,6 +112,9 @@ public class SoundManager {
         if (c == null) {
             System.out.println("Can't loop clip '"+name+"' because it doesn't exist");
             return;
+        }
+        if (debug) {
+            System.out.println("Looping clip "+name);
         }
         c.setFramePosition(0);
         c.loop(Clip.LOOP_CONTINUOUSLY);
