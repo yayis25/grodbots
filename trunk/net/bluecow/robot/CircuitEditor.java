@@ -1,11 +1,13 @@
 package net.bluecow.robot;
 
+import java.awt.AlphaComposite;
 import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Container;
 import java.awt.Dimension;
 import java.awt.Font;
+import java.awt.FontMetrics;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.LayoutManager;
@@ -48,6 +50,7 @@ public class CircuitEditor extends JPanel {
         }
 
         public void actionPerformed(ActionEvent e) {
+            if (locked) return;
             if (hilightWireInput != null) {
                 hilightWireInput.connect(null);
                 hilightWireInput = null;
@@ -175,6 +178,7 @@ public class CircuitEditor extends JPanel {
         }
         
         public void actionPerformed(ActionEvent e) {
+            if (locked) return;
             try {
                 Gate newGate = (Gate) gateClass.newInstance();
                 Point p = new Point(newGatePosition);
@@ -274,6 +278,14 @@ public class CircuitEditor extends JPanel {
     private RemoveAction removeAction;
     
     private SoundManager sm;
+
+    /**
+     * When locked is true, this component should not allow the circuit to be
+     * modified.
+     */
+    private boolean locked;
+    
+    private MouseInput mouseListener;
     
 	private static final int DEFAULT_GATE_WIDTH = 85;
 
@@ -282,6 +294,7 @@ public class CircuitEditor extends JPanel {
 	private static final int INPUT_STICK_LENGTH = 20;
 	
 	private static final int OUTPUT_STICK_LENGTH = 20;
+
 	
 	public CircuitEditor(Gate[] outputs, Gate inputs, SoundManager sm) {
 	    setupKeyActions();
@@ -289,10 +302,9 @@ public class CircuitEditor extends JPanel {
 	    this.outputs = outputs;
 	    this.inputsGate = inputs;
 	    this.sm = sm;
-	    MouseInput mouseListener = new MouseInput();
-	    addMouseListener(mouseListener);
-	    addMouseMotionListener(mouseListener);
-	    setLayout(new CircuitEditorLayout());
+	    mouseListener = new MouseInput();
+        setLocked(false);
+        setLayout(new CircuitEditorLayout());
 	}
 
 	private void setupKeyActions() {
@@ -468,6 +480,18 @@ public class CircuitEditor extends JPanel {
             Point p1 = pendingConnectionLine.getCursorEnd();
             Point p2 = pendingConnectionLine.getFixedEnd();
             g2.drawLine(p1.x, p1.y, p2.x, p2.y);
+        }
+        
+        if (locked) {
+            final String message = "Locked";
+            Font f = getFont().deriveFont(20f);
+            FontMetrics fm = getFontMetrics(f);
+            g2.setFont(f);
+            g2.setColor(Color.RED);
+            g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.4f));
+            g2.drawString(message,
+                    getWidth() / 2 - fm.stringWidth(message) / 2,
+                    fm.getHeight() * 2);
         }
 	}
 	
@@ -809,6 +833,17 @@ public class CircuitEditor extends JPanel {
         return Collections.unmodifiableMap(gatePositions);
     }
     
+    public void setLocked(boolean v) {
+        locked = v;
+        if (locked) {
+            removeMouseListener(mouseListener);
+            removeMouseMotionListener(mouseListener);
+        } else {
+            addMouseListener(mouseListener);
+            addMouseMotionListener(mouseListener);
+        }
+        repaint();
+    }
     /**
      * Returns the sound manager name for the given gate.  For example,
      * if it's an AND gate, return value is "AND"; for an OR gate, the
