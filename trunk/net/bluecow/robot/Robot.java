@@ -10,10 +10,26 @@ import net.bluecow.robot.gate.Gate;
  * The robot.
  */
 public class Robot {
+    
+    private static final int MOVING_UP = 1 << 0;
+    private static final int MOVING_DOWN = 1 << 1;
+    private static final int MOVING_LEFT = 1 << 2;
+    private static final int MOVING_RIGHT = 1 << 3;
 	
+    /**
+     * A bitmask of the directions this robot is currently moving.
+     */
+    private int movingDirection = 0;
+    
+    /**
+     * A count of how many frames in a row this robot has been moving
+     * in the same direction.
+     */
+    private int movingFrame = 0;
+    
 	private PlayfieldModel pfm;
 	private Point2D.Float position;
-	private ImageIcon icon;
+	private ImageIcon[] icons;
 	
 	// Inputs that make the robot do stuff
 	private RobotInput upInput = new RobotInput("Up");
@@ -29,25 +45,37 @@ public class Robot {
 	private RobotSensorOutput blueSensorOutput = new RobotSensorOutput("Blue");
 	private RobotSensorOutput[] outputs = new RobotSensorOutput[] {redSensorOutput, greenSensorOutput, blueSensorOutput};
 	
-	public Robot(PlayfieldModel pfm, ImageIcon icon) {
+	public Robot(PlayfieldModel pfm, ImageIcon[] icons) {
         this.pfm = pfm;
         this.position = pfm.getStartPosition();
-        this.icon = icon;
+        this.icons = icons;
 	}
 	
 	public void move() {
+        int direction = 0;
 	    if (upInput.getState() == true) {
 	        moveUp();
+            direction |= MOVING_UP;
 	    }
 	    if (downInput.getState() == true) {
 	        moveDown();
+            direction |= MOVING_DOWN;
 	    }
 	    if (leftInput.getState() == true) {
 	        moveLeft();
+            direction |= MOVING_LEFT;
 	    }
 	    if (rightInput.getState() == true) {
 	        moveRight();
+            direction |= MOVING_RIGHT;
 	    }
+        
+        if (direction == movingDirection) {
+            movingFrame++;
+        } else {
+            movingDirection = direction;
+            movingFrame = 0;
+        }
 	}
 	
 	public void updateSensors() {
@@ -255,13 +283,9 @@ public class Robot {
 	// ACCESSORS and MUTATORS
 	
 	public ImageIcon getIcon() {
-		return icon;
+		return icons[movingFrame % icons.length];
 	}
-	
-	public void setIcon(ImageIcon icon) {
-		this.icon = icon;
-	}
-	
+
 	public Point2D.Float getPosition() {
 		return new Point2D.Float(position.x, position.y);
 	}
