@@ -1,7 +1,5 @@
 Game Features:
--Single-step button for debugging (and redo interface with Start/Pause/Single Step/Reset)
--Lock circuit editor when game is running (unlock after reset)
--Multi-frame robot sprite
+-Multi-frame robot sprite (partly done)
 -Score keeping (based on squares worth certain point values)
 -Goodies to pick up along the way
 -Batteries
@@ -18,4 +16,9 @@ Sounds:
  -"you suck" sound (for trying to delete undeletable stuff)
  -entering a connectable region while dragging a wire
  -exiting a connectable region while dragging a wire
+
  
+Completed:
+-Single-step button for debugging (and redo interface with Start/Pause/Single Step/Reset)
+-Lock circuit editor when game is running (unlock after reset)
+-Be able to load new levels from a chosen file
