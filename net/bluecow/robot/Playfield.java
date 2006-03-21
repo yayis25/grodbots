@@ -29,6 +29,7 @@ public class Playfield extends JPanel {
     private ImageIcon greenIcon;
     
     private ImageIcon blueIcon;
+    private boolean winMessageOn;
 
     /**
      * Creates a playfield of spaces (mainly for testing).
@@ -92,6 +93,14 @@ public class Playfield extends JPanel {
                 (squareWidth * roboPos.y) - robot.getIcon().getIconHeight() / 2));
         g2.drawImage(robot.getIcon().getImage(), robot.getIconTransform(), null);
         g2.setTransform(backupXform);
+        
+        if (winMessageOn) {
+            g2.setFont(g2.getFont().deriveFont(50f));
+            g2.setColor(Color.BLACK);
+            g2.drawString("CAKE! You Win!", 20, getHeight()/2);
+            g2.setColor(Color.RED);
+            g2.drawString("CAKE! You Win!", 15, getHeight()/2-5);
+        }
     }
     
     public Dimension getPreferredSize() {
@@ -167,5 +176,10 @@ public class Playfield extends JPanel {
     
     public PlayfieldModel getModel() {
         return pfm;
+    }
+
+    public void setWinMessage(boolean b) {
+        this.winMessageOn = b;
+        repaint();
     }
 }

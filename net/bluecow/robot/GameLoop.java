@@ -95,9 +95,7 @@ public class GameLoop implements Runnable {
         playfield.repaint();
         
         if (playfield.getSquareAt(robot.getPosition()).isGoal()) {
-            synchronized (this) {
-                goalReached = true;
-            }
+            setGoalReached(true);
         }
     }
 
@@ -147,6 +145,13 @@ public class GameLoop implements Runnable {
     public synchronized boolean isGoalReached() {
         return goalReached;
     }
+    
+    private synchronized void setGoalReached(boolean v) {
+        if (goalReached != v) {
+            goalReached = v;
+            pcs.firePropertyChange("goalReached", !goalReached, goalReached);
+        }
+    }
 
     /**
      * Sets the amount of time that the loop will sleep between frames.
@@ -167,7 +172,7 @@ public class GameLoop implements Runnable {
         if (isRunning()) {
             throw new IllegalStateException("You can't reset the loop when it's running.");
         }
-        goalReached = false;
+        setGoalReached(false);
         loopCount = 0;
         robot.setPosition(playfield.getModel().getStartPosition());
         circuitEditor.resetState();

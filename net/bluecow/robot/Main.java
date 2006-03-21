@@ -240,54 +240,66 @@ public class Main {
         frameDelaySpinner.setValue(new Integer(50));
 
         final JButton startButton = new JButton("Start");
-        final JButton resetButton = new JButton("Reset");
         final JButton stepButton = new JButton("Step");
-        startButton.setEnabled(true);
-        stepButton.setEnabled(false);
-        resetButton.setEnabled(false);
+        final JButton resetButton = new JButton("Reset");
 
         startButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 if (gameLoop.isRunning()) {
                     // pause
                     gameLoop.requestStop();
+                    startButton.setText("Resume");
                 } else if (gameLoop.isGoalReached()) {
-                    // reset
+                    // restart
                     gameLoop.resetState();
-                    playfield.repaint();
-                    ce.setLocked(false);
+                    playfield.setWinMessage(false);
+                    ce.setLocked(true);
+                    new Thread(gameLoop).start();
+                    startButton.setText("Pause");
+                    stepButton.setText("Step");
+                    resetButton.setText("Reset");
                 } else {
                     // start
                     ce.setLocked(true);
                     gameLoop.setFrameDelay(((Integer) frameDelaySpinner.getValue()).intValue());
                     new Thread(gameLoop).start();
-                    startButton.setEnabled(false);
-                    stepButton.setEnabled(false);
-                    resetButton.setEnabled(false);
+                    startButton.setText("Pause");
+                    stepButton.setText("Step");
+                    resetButton.setText("Reset");
                 }
             }
         });
         stepButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 if (gameLoop.isRunning()) {
-                    // pause
+                    // pause (but label still says step)
                     gameLoop.requestStop();
                 } else if (gameLoop.isGoalReached()) {
                     // re-step (thanks dallas!)
-                    
+                    gameLoop.resetState();
+                    playfield.setWinMessage(false);
+                    gameLoop.setFrameDelay(((Integer) frameDelaySpinner.getValue()).intValue());
+                    gameLoop.singleStep();
+                } else {
+                    // start and single-step
+                    ce.setLocked(true);
+                    playfield.setWinMessage(false);
+                    gameLoop.singleStep();
                 }
-                    
-                gameLoop.singleStep();
+                startButton.setText("Resume");
+                stepButton.setText("Step");
+                resetButton.setText("Reset");
             }
         });
         resetButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                gameLoop.resetState();
-                playfield.repaint();
+                gameLoop.requestStop();
+                gameLoop.resetState();  // race! have to do this after the loop really stops!
+                playfield.setWinMessage(false);
                 ce.setLocked(false);
-                startButton.setEnabled(true);
-                stepButton.setEnabled(false);
-                resetButton.setEnabled(false);
+                startButton.setText("Start");
+                stepButton.setText("Step");
+                resetButton.setText("Reset");
             }
         });
         final JButton saveCircuitButton = new JButton();
@@ -298,30 +310,26 @@ public class Main {
 
         final JButton loadLevelsButton = new JButton();
         loadLevelsButton.setAction(loadLevelsAction);
-
-        gameLoop.addPropertyChangeListener("running", new PropertyChangeListener() {
+        
+        gameLoop.addPropertyChangeListener("goalReached", new PropertyChangeListener() {
             public void propertyChange(java.beans.PropertyChangeEvent evt) {
+                System.out.println("Property change! goalReached "+evt.getOldValue()+" -> "+evt.getNewValue()+" (running="+gameLoop.isRunning()+"; goalReached="+gameLoop.isGoalReached()+")");
                 SwingUtilities.invokeLater(new Runnable() {
                     public void run() {
-                        if (!gameLoop.isRunning()) {
-                            if (gameLoop.isGoalReached()) {
-                                Graphics g = playfield.getGraphics();
-                                g.setFont(g.getFont().deriveFont(50f));
-                                g.setColor(Color.BLACK);
-                                g.drawString("CAKE! You Win!", 20, playfield.getHeight()/2);
-                                g.setColor(Color.RED);
-                                g.drawString("CAKE! You Win!", 15, playfield.getHeight()/2-5);
-                                sm.play("win");
-                                startButton.setEnabled(false);
-                                stepButton.setEnabled(false);
-                                resetButton.setEnabled(true);
-                            }
+                        if (gameLoop.isGoalReached()) {
+                            playfield.setWinMessage(true);
+                            sm.play("win");
+                            startButton.setText("Restart");
+                            stepButton.setText("Restep");
+                            resetButton.setText("Reset");
+                        } else {
+                            playfield.setWinMessage(false);
                         }
                     }
                 });
             }
         });
-        
+
         final JSpinner levelSpinner = new JSpinner();
         levelSpinner.setValue(new Integer(level));
         levelSpinner.addChangeListener(new ChangeListener() {
