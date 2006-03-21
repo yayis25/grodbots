@@ -6,6 +6,7 @@ import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Point;
 import java.awt.Rectangle;
+import java.awt.geom.AffineTransform;
 import java.awt.geom.Point2D;
 
 import javax.swing.ImageIcon;
@@ -85,9 +86,12 @@ public class Playfield extends JPanel {
             }
         }
         Point2D.Float roboPos = robot.getPosition();
-        robot.getIcon().paintIcon(this, g2,
-                (int) (squareWidth * roboPos.x) - robot.getIcon().getIconWidth() / 2,
-                (int) (squareWidth * roboPos.y) - robot.getIcon().getIconHeight() / 2);
+        AffineTransform backupXform = g2.getTransform();
+        g2.setTransform(AffineTransform.getTranslateInstance(
+                (squareWidth * roboPos.x) - robot.getIcon().getIconWidth() / 2,
+                (squareWidth * roboPos.y) - robot.getIcon().getIconHeight() / 2));
+        g2.drawImage(robot.getIcon().getImage(), robot.getIconTransform(), null);
+        g2.setTransform(backupXform);
     }
     
     public Dimension getPreferredSize() {

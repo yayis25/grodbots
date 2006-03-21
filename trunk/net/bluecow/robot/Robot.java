@@ -1,5 +1,6 @@
 package net.bluecow.robot;
 
+import java.awt.geom.AffineTransform;
 import java.awt.geom.Point2D;
 
 import javax.swing.ImageIcon;
@@ -281,7 +282,35 @@ public class Robot {
 	}
 
 	// ACCESSORS and MUTATORS
-	
+
+    public AffineTransform getIconTransform() {
+        double width = icons[0].getIconWidth();
+        double height = icons[0].getIconHeight();
+        double theta;
+        if (movingDirection == MOVING_UP) {
+            theta = 0.0;
+        } else if (movingDirection == (MOVING_UP | MOVING_RIGHT)) {
+            theta = 0.25 * Math.PI;
+        } else if (movingDirection == MOVING_RIGHT) {
+            theta = 0.5 * Math.PI;
+        } else if (movingDirection == (MOVING_DOWN | MOVING_RIGHT)) {
+            theta = 0.75 * Math.PI;
+        } else if (movingDirection == MOVING_DOWN) {
+            theta = 1.0 * Math.PI;
+        } else if (movingDirection == (MOVING_DOWN | MOVING_LEFT)) {
+            theta = 1.25 * Math.PI;
+        } else if (movingDirection == MOVING_LEFT) {
+            theta = 1.5 * Math.PI;
+        } else if (movingDirection == (MOVING_UP | MOVING_LEFT)) {
+            theta = 1.75 * Math.PI;
+        } else {
+            // Robot is working against itself! Just spin around wildly
+            System.out.printf("Illegal moving direction: %04x", movingDirection);
+            theta = Math.random() * Math.PI * 2.0;
+        }
+        return AffineTransform.getRotateInstance(theta, width/2.0, height/2.0);
+    }
+    
 	public ImageIcon getIcon() {
 		return icons[movingFrame % icons.length];
 	}

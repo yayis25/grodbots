@@ -1,12 +1,15 @@
 Game Features:
--Multi-frame robot sprite (partly done)
+-another reworking of the start/pause/step/reset UI
+-Fix the "You Win!!" message
+-Put in the number of steps counter on the play field
 -Score keeping (based on squares worth certain point values)
--Goodies to pick up along the way
+-Goodies to pick up along the way or numbered checkpoints
 -Batteries
 -Be able to specify how many circuit evaluations per step in a level
 -Different floor textures that the robot can detect (metal, carpet, dirt, tile, ...)
 
 Images:
+-Smaller robot sprite and/or larger tiles?
 -Start/Pause/Single Step/Reset buttons
 -Images for different floor textures
 
@@ -16,9 +19,10 @@ Sounds:
  -"you suck" sound (for trying to delete undeletable stuff)
  -entering a connectable region while dragging a wire
  -exiting a connectable region while dragging a wire
-
+-music for circuit editor and running game
  
 Completed:
 -Single-step button for debugging (and redo interface with Start/Pause/Single Step/Reset)
 -Lock circuit editor when game is running (unlock after reset)
 -Be able to load new levels from a chosen file
+-Multi-frame robot sprite

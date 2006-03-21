@@ -43,7 +43,7 @@ public class Main {
     
     private static final String DEFAULT_MAP_RESOURCE_PATH = "ROBO-INF/default.map";
 
-    private static final int ROBOT_ICON_COUNT = 9;
+    private static final int ROBOT_ICON_COUNT = 8;
 
     private class SaveCircuitAction extends AbstractAction {
         
@@ -240,38 +240,43 @@ public class Main {
         frameDelaySpinner.setValue(new Integer(50));
 
         final JButton startButton = new JButton("Start");
-        final JButton pauseButton = new JButton("Pause");
         final JButton resetButton = new JButton("Reset");
         final JButton stepButton = new JButton("Step");
         startButton.setEnabled(true);
-        pauseButton.setEnabled(false);
         stepButton.setEnabled(false);
         resetButton.setEnabled(false);
 
         startButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                if (!gameLoop.isRunning()) {
+                if (gameLoop.isRunning()) {
+                    // pause
+                    gameLoop.requestStop();
+                } else if (gameLoop.isGoalReached()) {
+                    // reset
+                    gameLoop.resetState();
+                    playfield.repaint();
+                    ce.setLocked(false);
+                } else {
+                    // start
                     ce.setLocked(true);
                     gameLoop.setFrameDelay(((Integer) frameDelaySpinner.getValue()).intValue());
                     new Thread(gameLoop).start();
-                    pauseButton.setEnabled(true);
                     startButton.setEnabled(false);
                     stepButton.setEnabled(false);
                     resetButton.setEnabled(false);
                 }
             }
         });
-        pauseButton.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                gameLoop.requestStop();
-                startButton.setEnabled(true);
-                pauseButton.setEnabled(false);
-                stepButton.setEnabled(true);
-                resetButton.setEnabled(true);
-            }
-        });
         stepButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
+                if (gameLoop.isRunning()) {
+                    // pause
+                    gameLoop.requestStop();
+                } else if (gameLoop.isGoalReached()) {
+                    // re-step (thanks dallas!)
+                    
+                }
+                    
                 gameLoop.singleStep();
             }
         });
@@ -281,7 +286,6 @@ public class Main {
                 playfield.repaint();
                 ce.setLocked(false);
                 startButton.setEnabled(true);
-                pauseButton.setEnabled(false);
                 stepButton.setEnabled(false);
                 resetButton.setEnabled(false);
             }
@@ -309,7 +313,6 @@ public class Main {
                                 g.drawString("CAKE! You Win!", 15, playfield.getHeight()/2-5);
                                 sm.play("win");
                                 startButton.setEnabled(false);
-                                pauseButton.setEnabled(false);
                                 stepButton.setEnabled(false);
                                 resetButton.setEnabled(true);
                             }
@@ -338,7 +341,6 @@ public class Main {
         
         JPanel topButtonPanel = new JPanel(new FlowLayout());
         topButtonPanel.add(startButton);
-        topButtonPanel.add(pauseButton);
         topButtonPanel.add(stepButton);
         topButtonPanel.add(resetButton);
         
