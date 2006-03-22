@@ -86,12 +86,17 @@ public class Playfield extends JPanel {
                 
             }
         }
+        ImageIcon icon = robot.getIcon();
+        double iconScale = 0.4;
         Point2D.Float roboPos = robot.getPosition();
         AffineTransform backupXform = g2.getTransform();
         g2.setTransform(AffineTransform.getTranslateInstance(
-                (squareWidth * roboPos.x) - robot.getIcon().getIconWidth() / 2,
-                (squareWidth * roboPos.y) - robot.getIcon().getIconHeight() / 2));
-        g2.drawImage(robot.getIcon().getImage(), robot.getIconTransform(), null);
+                (squareWidth * roboPos.x) - (icon.getIconWidth() * iconScale / 2.0),
+                (squareWidth * roboPos.y) - (icon.getIconHeight() * iconScale / 2.0)));
+        AffineTransform iconXform = new AffineTransform();
+        iconXform.rotate(robot.getIconHeading(), icon.getIconWidth()*iconScale/2.0, icon.getIconHeight()*iconScale/2.0);
+        iconXform.scale(iconScale, iconScale);
+        g2.drawImage(icon.getImage(), iconXform, null);
         g2.setTransform(backupXform);
         
         if (winMessageOn) {

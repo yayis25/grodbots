@@ -283,9 +283,11 @@ public class Robot {
 
 	// ACCESSORS and MUTATORS
 
-    public AffineTransform getIconTransform() {
-        double width = icons[0].getIconWidth();
-        double height = icons[0].getIconHeight();
+    /**
+     * Tells the icon's appropriate heading (in radians) based in its current direction
+     * of travel.
+     */
+    public double getIconHeading() {
         double theta;
         if (movingDirection == MOVING_UP) {
             theta = 0.0;
@@ -308,7 +310,7 @@ public class Robot {
             System.out.printf("Illegal moving direction: %04x", movingDirection);
             theta = Math.random() * Math.PI * 2.0;
         }
-        return AffineTransform.getRotateInstance(theta, width/2.0, height/2.0);
+        return theta;
     }
     
 	public ImageIcon getIcon() {
