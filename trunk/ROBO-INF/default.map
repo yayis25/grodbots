@@ -145,7 +145,7 @@ X                  X
 X B B B B B B B B BX
 XXXXXXXXXXXXXXXXXXXX
 *
-Dallas's Map
+Delta
 13
 10
 10.5
@@ -155,33 +155,12 @@ XXXXXXXXXXXXX
 X           X
 X G       B X
 X   X @ X   X
-X     G     X
+X       X   X
 X       X   X
 X           X
 X     R     X
 X           X
 XXXXXXXXXXXXX
-*
-Dallas's Second Map
-14
-14
-12.5
-2.5
-0.1
-XXXXXXXXXXXXXX
-X  X  XX  X  X
-XB           X
-XX  XX  B X  X
-X     XX   XXX
-X R   BX X  BX
-X      XG X  X
-XXX X       GX
-X  X X       X
-XB X     X X X
-X   BX       X
-X X  XR  X X X
-X@X RX       X
-XXXXXXXXXXXXXX
 *
 Under the Volcano
 15
@@ -305,23 +284,6 @@ XX XX XX XX
 X B  X@ B X
 XX XX XX XX
  XXXXXXXXX
-*
-Delta
-13
-10
-10.5
-6.5
-0.1
-XXXXXXXXXXXXX
-X           X
-X G       B X
-X   X @ X   X
-X       X   X
-X       X   X
-X           X
-X     R     X
-X           X
-XXXXXXXXXXXXX
 *
 Even Possible..?
 14
