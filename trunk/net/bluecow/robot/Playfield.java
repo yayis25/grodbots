@@ -6,11 +6,14 @@ import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Point;
 import java.awt.Rectangle;
+import java.awt.event.ActionEvent;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Point2D;
 
+import javax.swing.AbstractAction;
 import javax.swing.ImageIcon;
 import javax.swing.JPanel;
+import javax.swing.KeyStroke;
 
 /**
  * Playfield
@@ -30,6 +33,7 @@ public class Playfield extends JPanel {
     
     private ImageIcon blueIcon;
     private boolean winMessageOn;
+    private double robotIconScale = 0.4;
 
     /**
      * Creates a playfield of spaces (mainly for testing).
@@ -45,6 +49,7 @@ public class Playfield extends JPanel {
             }
         }
         pfm = new PlayfieldModel(squares, "Test Playfield", new Point2D.Float(0.5f, 0.5f), 0.1f);
+        setupKeyboardActions();
     }
     
     /**
@@ -55,6 +60,25 @@ public class Playfield extends JPanel {
     public Playfield(PlayfieldModel model, Robot robot) {
        this.pfm = model;
        this.robot = robot;
+       setupKeyboardActions();
+    }
+    
+    private void setupKeyboardActions() {
+        getActionMap().put("grow_grod", new AbstractAction() {
+            public void actionPerformed(ActionEvent evt) {
+                setRobotIconScale(robotIconScale + 1.0);
+            }
+        });
+
+        getActionMap().put("shrink_grod", new AbstractAction() {
+            public void actionPerformed(ActionEvent evt) {
+                setRobotIconScale(robotIconScale - 1.0);
+            }
+        });
+        
+        getInputMap().put(KeyStroke.getKeyStroke('='), "grow_grod");
+        getInputMap().put(KeyStroke.getKeyStroke('+'), "grow_grod");
+        getInputMap().put(KeyStroke.getKeyStroke('-'), "shrink_grod");
     }
 
     public void paintComponent(Graphics g) {
@@ -87,15 +111,14 @@ public class Playfield extends JPanel {
             }
         }
         ImageIcon icon = robot.getIcon();
-        double iconScale = 0.4;
         Point2D.Float roboPos = robot.getPosition();
         AffineTransform backupXform = g2.getTransform();
         g2.setTransform(AffineTransform.getTranslateInstance(
-                (squareWidth * roboPos.x) - (icon.getIconWidth() * iconScale / 2.0),
-                (squareWidth * roboPos.y) - (icon.getIconHeight() * iconScale / 2.0)));
+                (squareWidth * roboPos.x) - (icon.getIconWidth() * robotIconScale / 2.0),
+                (squareWidth * roboPos.y) - (icon.getIconHeight() * robotIconScale / 2.0)));
         AffineTransform iconXform = new AffineTransform();
-        iconXform.rotate(robot.getIconHeading(), icon.getIconWidth()*iconScale/2.0, icon.getIconHeight()*iconScale/2.0);
-        iconXform.scale(iconScale, iconScale);
+        iconXform.rotate(robot.getIconHeading(), icon.getIconWidth()*robotIconScale/2.0, icon.getIconHeight()*robotIconScale/2.0);
+        iconXform.scale(robotIconScale, robotIconScale);
         g2.drawImage(icon.getImage(), iconXform, null);
         g2.setTransform(backupXform);
         
@@ -187,4 +210,14 @@ public class Playfield extends JPanel {
         this.winMessageOn = b;
         repaint();
     }
+
+    public double getRobotIconScale() {
+        return robotIconScale;
+    }
+
+    public void setRobotIconScale(double robotIconScale) {
+        this.robotIconScale = robotIconScale;
+        repaint();
+    }
+    
 }
