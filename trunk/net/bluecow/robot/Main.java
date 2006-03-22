@@ -12,6 +12,7 @@ import java.awt.Graphics;
 import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -45,6 +46,25 @@ public class Main {
 
     private static final int ROBOT_ICON_COUNT = 8;
 
+    private class GameLoopResetter implements PropertyChangeListener {
+        private GameLoop gl;
+        public GameLoopResetter(GameLoop gl) {
+            this.gl = gl;
+            if (gl.isRunning()) {
+                gl.addPropertyChangeListener(this);
+                gl.requestStop();
+            } else {
+                gl.resetState();
+            }
+        }
+        
+        public void propertyChange(PropertyChangeEvent evt) {
+            if (evt.getPropertyName().equals("running") && evt.getNewValue().equals(false)) {
+                gl.resetState();
+                gl.removePropertyChangeListener(this);
+            }
+        }
+    }
     private class SaveCircuitAction extends AbstractAction {
         
         private CircuitEditor ce;
@@ -293,8 +313,7 @@ public class Main {
         });
         resetButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                gameLoop.requestStop();
-                gameLoop.resetState();  // race! have to do this after the loop really stops!
+                new GameLoopResetter(gameLoop);
                 playfield.setWinMessage(false);
                 ce.setLocked(false);
                 startButton.setText("Start");
