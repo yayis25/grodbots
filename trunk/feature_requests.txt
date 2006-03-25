@@ -1,8 +1,7 @@
 Game Features:
--Clear old gates when loading circuit
--Fix single-step
--Use files to load and save circuits
 -Put in the number of steps counter on the play field
+-Load a "ghost" robot and circuit so you can compare solutions
+-Make loading levels and circuits more fault-tolerant and provide specific error messages
 -Score keeping (based on squares worth certain point values)
 -Goodies to pick up along the way or numbered checkpoints
 -Batteries
@@ -17,13 +16,22 @@ Images:
 
 Sounds:
 -When game is running
+ -AND/OR/NOT gate goes on/off
+ -robot steps up/down/left/right
+ -robot is confused about which direction to step
 -Circuit Editor
  -"you suck" sound (for trying to delete undeletable stuff)
  -entering a connectable region while dragging a wire
  -exiting a connectable region while dragging a wire
+ -removing a wire
+ -deleting all gates at once (clearing the circuit out)
 -music for circuit editor and running game
+-little ditties for the beginning of each level (maybe this would be better suited to the MIDI sequencer api)
  
 Completed:
+-Use files to load and save circuits
+-Fix single-step
+-Clear old gates when loading circuit
 -Button for clearing circuit editor
 -Fix the "You Win!!" message (incl. when single-stepping into the cake)
 -Fix reset when game is running
