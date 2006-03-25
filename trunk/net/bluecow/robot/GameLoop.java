@@ -7,6 +7,9 @@ package net.bluecow.robot;
 
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
 
 /**
  * The GameLoop represents the main loop of the game while it is in operation.
@@ -16,9 +19,27 @@ import java.beans.PropertyChangeSupport;
  */
 public class GameLoop implements Runnable {
 
-    private Robot robot;
+    private class RoboStuff {
+        private Robot robot;
+        private CircuitEditor circuitEditor;
+        
+        public RoboStuff(Robot robot, CircuitEditor circuitEditor) {
+            this.robot = robot;
+            this.circuitEditor = circuitEditor;
+        }
+
+        public CircuitEditor getCircuitEditor() {
+            return circuitEditor;
+        }
+
+        public Robot getRobot() {
+            return robot;
+        }
+    }
+    
+    private List<RoboStuff> robots = new ArrayList<RoboStuff>();
+    
     private Playfield playfield;
-    private CircuitEditor circuitEditor;
     
     /**
      * Set this to true to abort the current game.
@@ -53,11 +74,25 @@ public class GameLoop implements Runnable {
      * @param ce
      */
     public GameLoop(Robot robot, Playfield playfield, CircuitEditor circuitEditor) {
-        this.robot = robot;
         this.playfield = playfield;
-        this.circuitEditor = circuitEditor;
+        addRobot(robot, circuitEditor);
     }
     
+    public final void addRobot(Robot robot, CircuitEditor circuitEditor) {
+        robots.add(new RoboStuff(robot, circuitEditor));
+    }
+
+    /**
+     * Removes the given robot from this game loop.
+     */
+    public final void removeRobot(Robot robot) {
+        for (Iterator<RoboStuff> it = robots.iterator(); it.hasNext(); ) {
+            if (it.next().getRobot() == robot) {
+                it.remove();
+            }
+        }
+    }
+
     public void run() {
         synchronized (this) {
             if (running) {
@@ -94,13 +129,21 @@ public class GameLoop implements Runnable {
             loopCount++;
         }
 
-        robot.updateSensors();
-        circuitEditor.evaluateOnce();
-        robot.move();
+        boolean allGoalsReached = true;
+        for (RoboStuff rs : robots) {
+            boolean thisGoalReached = playfield.getSquareAt(rs.getRobot().getPosition()).isGoal();
+            if (!thisGoalReached) {
+                rs.getRobot().updateSensors();
+                rs.getCircuitEditor().evaluateOnce();
+                rs.getRobot().move();
+            }
+            allGoalsReached &= thisGoalReached; 
+        }
+        
         playfield.setFrameCount(loopCount);
         playfield.repaint();
         
-        if (playfield.getSquareAt(robot.getPosition()).isGoal()) {
+        if (allGoalsReached) {
             setGoalReached(true);
         }
     }
@@ -185,8 +228,10 @@ public class GameLoop implements Runnable {
         }
         setGoalReached(false);
         loopCount = 0;
-        robot.setPosition(playfield.getModel().getStartPosition());
-        circuitEditor.resetState();
+        for (RoboStuff rs : robots) {
+            rs.getRobot().setPosition(playfield.getModel().getStartPosition());
+            rs.getCircuitEditor().resetState();
+        }
         playfield.setFrameCount(null);
     }
 
