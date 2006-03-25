@@ -306,7 +306,6 @@ public class Robot {
             theta = 1.75 * Math.PI;
         } else {
             // Robot is working against itself! Just spin around wildly
-            System.out.printf("Illegal moving direction: %04x", movingDirection);
             theta = Math.random() * Math.PI * 2.0;
         }
         return theta;

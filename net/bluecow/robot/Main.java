@@ -76,7 +76,7 @@ public class Main {
         
         private void finishReset() {
             gl.resetState();
-            playfield.setWinMessage(false);
+            playfield.setWinMessage(null);
             ce.setLocked(false);
             stateHandler.setState(nextState);
         }
@@ -168,7 +168,7 @@ public class Main {
             } else if (newState == GameState.WON) {
                 state = newState;
                 ce.setLocked(true);
-                playfield.setWinMessage(true);
+                playfield.setWinMessage("¡¡CAKE!! ¿You Win?");
                 sm.play("win");
                 start.setText("Restart");
                 step.setText("Restep");
@@ -427,8 +427,6 @@ public class Main {
                     public void run() {
                         if (gameLoop.isGoalReached()) {
                             gameStateHandler.setState(GameState.WON);
-                        } else {
-                            playfield.setWinMessage(false);
                         }
                     }
                 });
