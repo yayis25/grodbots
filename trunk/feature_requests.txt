@@ -1,7 +1,4 @@
 Game Features:
--Fix the "You Win!!" message (incl. when single-stepping into the cake)
--Fix reset when game is running
--Button for clearing circuit editor
 -Clear old gates when loading circuit
 -Fix single-step
 -Use files to load and save circuits
@@ -27,6 +24,9 @@ Sounds:
 -music for circuit editor and running game
  
 Completed:
+-Button for clearing circuit editor
+-Fix the "You Win!!" message (incl. when single-stepping into the cake)
+-Fix reset when game is running
 -another reworking of the start/pause/step/reset UI
 -Single-step button for debugging (and redo interface with Start/Pause/Single Step/Reset)
 -Lock circuit editor when game is running (unlock after reset)

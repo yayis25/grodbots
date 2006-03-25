@@ -6,20 +6,19 @@
 package net.bluecow.robot;
 
 import java.awt.BorderLayout;
-import java.awt.Color;
 import java.awt.FlowLayout;
-import java.awt.Graphics;
 import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.URL;
 import java.net.URLConnection;
 import java.util.List;
@@ -33,9 +32,7 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
-import javax.swing.JScrollPane;
 import javax.swing.JSpinner;
-import javax.swing.JTextArea;
 import javax.swing.SwingUtilities;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
@@ -46,43 +43,169 @@ public class Main {
 
     private static final int ROBOT_ICON_COUNT = 8;
 
+    private static enum GameState { NOT_STARTED, RESET, STEP, RUNNING, PAUSED, WON };
+    
+    private GameState state = GameState.NOT_STARTED;
+
     private class GameLoopResetter implements PropertyChangeListener {
+
         private GameLoop gl;
-        public GameLoopResetter(GameLoop gl) {
+        private GameStateHandler stateHandler;
+        private CircuitEditor ce;
+        private GameState nextState;
+        
+        public GameLoopResetter(GameLoop gl, GameStateHandler stateHandler, CircuitEditor ce, GameState nextState) {
             this.gl = gl;
+            this.stateHandler = stateHandler;
+            this.ce = ce;
+            this.nextState = nextState;
             if (gl.isRunning()) {
                 gl.addPropertyChangeListener(this);
-                gl.requestStop();
+                gl.setStopRequested(true);
             } else {
-                gl.resetState();
+                finishReset();
             }
         }
         
         public void propertyChange(PropertyChangeEvent evt) {
             if (evt.getPropertyName().equals("running") && evt.getNewValue().equals(false)) {
-                gl.resetState();
                 gl.removePropertyChangeListener(this);
+                finishReset();
+            }
+        }
+        
+        private void finishReset() {
+            gl.resetState();
+            playfield.setWinMessage(false);
+            ce.setLocked(false);
+            stateHandler.setState(nextState);
+        }
+    }
+
+    private class GameStateHandler implements ActionListener {
+        private final GameLoop loop;
+
+        private final JButton start;
+
+        private final JButton reset;
+
+        private final CircuitEditor ce;
+
+        private final JButton step;
+
+        private GameStateHandler(GameLoop loop, JButton start, JButton reset, CircuitEditor ce, JButton step) {
+            super();
+            this.loop = loop;
+            this.start = start;
+            this.reset = reset;
+            this.ce = ce;
+            this.step = step;
+        }
+
+        public void actionPerformed(ActionEvent e) {
+            JButton source = (JButton) e.getSource();
+            if (source == start) {
+                if (state == GameState.RUNNING) {
+                    setState(GameState.PAUSED);
+                } else {
+                    setState(GameState.RUNNING);
+                }
+            } else if (source == step) {
+                setState(GameState.STEP);
+            } else if (source == reset) {
+                setState(GameState.RESET);
+            }
+        }
+
+        public void setState(GameState newState) {
+            System.out.printf("Switch state %s -> %s\n", state, newState);
+            if (newState == GameState.RESET) {
+                state = newState;
+                new GameLoopResetter(loop, this, ce, GameState.NOT_STARTED);
+                // the rest of the work is deferred until the loop is really stopped
+            } else if (newState == GameState.PAUSED) {
+                state = newState;
+                loop.setStopRequested(true);
+                ce.setLocked(true);
+                start.setText("Resume");
+                step.setText("Step");
+                reset.setText("Reset");
+            } else if (newState == GameState.NOT_STARTED) {
+                state = newState;
+                ce.setLocked(false);
+                start.setText("Start");
+                step.setText("Step");
+                reset.setText("Reset");
+            } else if (newState == GameState.RUNNING) {
+                if (state == GameState.WON) {
+                    state = GameState.RESET;
+                    new GameLoopResetter(loop, this, ce, GameState.RUNNING);
+                } else {
+                    state = newState;
+                    ce.setLocked(true);
+                    loop.setStopRequested(false);
+                    new Thread(loop).start();
+                    start.setText("Pause");
+                    step.setText("Step");
+                    reset.setText("Reset");
+                }
+            } else if (newState == GameState.STEP) {
+                if (state == GameState.WON) {
+                    state = GameState.RESET;
+                    new GameLoopResetter(loop, this, ce, GameState.STEP);
+                } else if (state == GameState.RUNNING) {
+                    state = newState;
+                    ce.setLocked(true);
+                    loop.setStopRequested(true);
+                    setState(GameState.PAUSED);
+                } else {
+                    state = newState;
+                    ce.setLocked(true);
+                    loop.setStopRequested(false);
+                    loop.singleStep();
+                    setState(GameState.PAUSED);
+                }
+            } else if (newState == GameState.WON) {
+                state = newState;
+                ce.setLocked(true);
+                playfield.setWinMessage(true);
+                sm.play("win");
+                start.setText("Restart");
+                step.setText("Restep");
+                reset.setText("Reset");
             }
         }
     }
+    
     private class SaveCircuitAction extends AbstractAction {
         
         private CircuitEditor ce;
+        private JFileChooser fc;
         
         public SaveCircuitAction(CircuitEditor ce) {
             super("Save Circuit");
             this.ce = ce;
+            fc = new JFileChooser();
+            fc.setDialogTitle("Save Circuit Description File");
         }
         
         public void actionPerformed(ActionEvent e) {
+            OutputStream out = null;
             try {
-                ByteArrayOutputStream buf = new ByteArrayOutputStream();
-                CircuitStore.save(buf, ce);
-                buf.close();
-                JTextArea ta = new JTextArea(buf.toString(), 24, 80);
-                JOptionPane.showMessageDialog(ce, new JScrollPane(ta));
+                int choice = fc.showSaveDialog(ce);
+                if (choice == JFileChooser.APPROVE_OPTION) {
+                    out = new FileOutputStream(fc.getSelectedFile());
+                    CircuitStore.save(out, ce);
+                }
             } catch (IOException ex) {
                 JOptionPane.showMessageDialog(ce, "Save Failed: "+ex.getMessage());
+            } finally {
+                try {
+                    if (out != null) out.close();
+                } catch (IOException e1) {
+                    System.out.println("Bad luck.. couldn't close output file!");
+                    e1.printStackTrace();
+                }
             }
         }
     }
@@ -91,22 +214,35 @@ public class Main {
         
         private CircuitEditor ce;
         private Robot robot;
+        private JFileChooser fc;
         
         public LoadCircuitAction(CircuitEditor ce, Robot robot) {
             super("Load Circuit");
             this.ce = ce;
             this.robot = robot;
+            fc = new JFileChooser();
+            fc.setDialogTitle("Open Circuit Description File");
         }
         
         public void actionPerformed(ActionEvent e) {
+            InputStream in = null;
             try {
-                JTextArea ta = new JTextArea("Paste Circuit Here", 24, 80);
-                JOptionPane.showMessageDialog(ce, new JScrollPane(ta));
-                ByteArrayInputStream buf = new ByteArrayInputStream(ta.getText().getBytes());
-                CircuitStore.load(buf, ce, robot);
-                buf.close();
+                int choice = fc.showOpenDialog(ce);
+                if (choice == JFileChooser.APPROVE_OPTION) {
+                    File f = fc.getSelectedFile();
+                    in = new FileInputStream(f);
+                    ce.removeAllGates();
+                    CircuitStore.load(in, ce, robot);
+                }
             } catch (IOException ex) {
                 JOptionPane.showMessageDialog(ce, "Load Failed: "+ex.getMessage());
+            } finally {
+                try {
+                    if (in != null) in.close();
+                } catch (IOException e1) {
+                    System.out.println("Bad luck.. couldn't close input file!");
+                    e1.printStackTrace();
+                }
             }
         }
     }
@@ -257,70 +393,24 @@ public class Main {
         final GameLoop gameLoop = new GameLoop(robot, playfield, ce);
 
         final JSpinner frameDelaySpinner = new JSpinner();
-        frameDelaySpinner.setValue(new Integer(50));
+        frameDelaySpinner.setValue(new Integer(gameLoop.getFrameDelay()));
+        frameDelaySpinner.addChangeListener(new ChangeListener() {
+            public void stateChanged(ChangeEvent e) {
+                gameLoop.setFrameDelay((Integer) frameDelaySpinner.getValue());
+            }
+        });
 
         final JButton startButton = new JButton("Start");
         final JButton stepButton = new JButton("Step");
         final JButton resetButton = new JButton("Reset");
 
-        startButton.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                if (gameLoop.isRunning()) {
-                    // pause
-                    gameLoop.requestStop();
-                    startButton.setText("Resume");
-                } else if (gameLoop.isGoalReached()) {
-                    // restart
-                    gameLoop.resetState();
-                    playfield.setWinMessage(false);
-                    ce.setLocked(true);
-                    new Thread(gameLoop).start();
-                    startButton.setText("Pause");
-                    stepButton.setText("Step");
-                    resetButton.setText("Reset");
-                } else {
-                    // start
-                    ce.setLocked(true);
-                    gameLoop.setFrameDelay(((Integer) frameDelaySpinner.getValue()).intValue());
-                    new Thread(gameLoop).start();
-                    startButton.setText("Pause");
-                    stepButton.setText("Step");
-                    resetButton.setText("Reset");
-                }
-            }
-        });
-        stepButton.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                if (gameLoop.isRunning()) {
-                    // pause (but label still says step)
-                    gameLoop.requestStop();
-                } else if (gameLoop.isGoalReached()) {
-                    // re-step (thanks dallas!)
-                    gameLoop.resetState();
-                    playfield.setWinMessage(false);
-                    gameLoop.setFrameDelay(((Integer) frameDelaySpinner.getValue()).intValue());
-                    gameLoop.singleStep();
-                } else {
-                    // start and single-step
-                    ce.setLocked(true);
-                    playfield.setWinMessage(false);
-                    gameLoop.singleStep();
-                }
-                startButton.setText("Resume");
-                stepButton.setText("Step");
-                resetButton.setText("Reset");
-            }
-        });
-        resetButton.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                new GameLoopResetter(gameLoop);
-                playfield.setWinMessage(false);
-                ce.setLocked(false);
-                startButton.setText("Start");
-                stepButton.setText("Step");
-                resetButton.setText("Reset");
-            }
-        });
+        final GameStateHandler gameStateHandler = new GameStateHandler(
+                gameLoop, startButton, resetButton, ce, stepButton);
+
+        startButton.addActionListener(gameStateHandler);
+        stepButton.addActionListener(gameStateHandler);
+        resetButton.addActionListener(gameStateHandler);
+        
         final JButton saveCircuitButton = new JButton();
         saveCircuitButton.setAction(saveCircuitAction);
 
@@ -336,11 +426,7 @@ public class Main {
                 SwingUtilities.invokeLater(new Runnable() {
                     public void run() {
                         if (gameLoop.isGoalReached()) {
-                            playfield.setWinMessage(true);
-                            sm.play("win");
-                            startButton.setText("Restart");
-                            stepButton.setText("Restep");
-                            resetButton.setText("Reset");
+                            gameStateHandler.setState(GameState.WON);
                         } else {
                             playfield.setWinMessage(false);
                         }

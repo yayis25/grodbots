@@ -19,9 +19,13 @@ import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 import java.awt.geom.Line2D;
 import java.awt.geom.QuadCurve2D;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import javax.swing.AbstractAction;
 import javax.swing.Action;
@@ -73,8 +77,7 @@ public class CircuitEditor extends JPanel {
                     hilightGate.getInputs()[i].connect(null);
                 }
                 
-                if (hilightGate instanceof Robot.RobotInputsGate ||
-                        hilightGate instanceof Robot.RobotSensorOutput) {
+                if (permanentGates.contains(hilightGate)) {
                     // TODO: play a "you suck" type sound
                     return;
                 }
@@ -85,6 +88,18 @@ public class CircuitEditor extends JPanel {
             }
         }
 
+    }
+    
+    private class RemoveAllAction extends AbstractAction {
+        public RemoveAllAction() {
+            super("Clear");
+        }
+        
+        public void actionPerformed(ActionEvent e) {
+            if (locked) return;
+            removeAllGates();
+            // TODO: play a sound
+        }
     }
 
     private static final class ConnectionLine {
@@ -150,10 +165,10 @@ public class CircuitEditor extends JPanel {
         public void layoutContainer(Container parent) {
             CircuitEditor ce = (CircuitEditor) parent;
             double height = ce.getHeight();
-            double n = ce.outputs.length;
-            for (int i = 0; i < ce.outputs.length; i++) {
+            double n = ce.outputs.size();
+            for (int i = 0; i < ce.outputs.size(); i++) {
                 int y = (int) ( ((double) i) * (height / n) + (height / n / 2.0) - DEFAULT_GATE_HEIGHT/2.0 );
-                ce.gatePositions.put(ce.outputs[i], new Rectangle(0, y, OUTPUT_STICK_LENGTH, DEFAULT_GATE_HEIGHT));
+                ce.gatePositions.put(ce.outputs.get(i), new Rectangle(0, y, OUTPUT_STICK_LENGTH, DEFAULT_GATE_HEIGHT));
             }
             ce.gatePositions.put(ce.inputsGate, new Rectangle(ce.getWidth() - INPUT_STICK_LENGTH, 0, INPUT_STICK_LENGTH + OUTPUT_STICK_LENGTH, ce.getHeight()));
         }
@@ -195,7 +210,7 @@ public class CircuitEditor extends JPanel {
         }
         
 	}
-	private Gate[] outputs;
+	private List<Gate> outputs;
 
 	private Gate inputsGate;
 
@@ -204,6 +219,11 @@ public class CircuitEditor extends JPanel {
 	 */
 	private Map<Gate,Rectangle> gatePositions = new HashMap<Gate,Rectangle>();
 	
+    /**
+     * The gates in this set should not be deletable by the user.
+     */
+    private Set<Gate> permanentGates = new HashSet<Gate>();
+    
 	/**
 	 * The gate that should be highlighted.  This is the gate that currently 
 	 * has keyboard and mouse focus.
@@ -277,6 +297,8 @@ public class CircuitEditor extends JPanel {
 
     private RemoveAction removeAction;
     
+    private RemoveAllAction removeAllAction;
+    
     private SoundManager sm;
 
     /**
@@ -299,10 +321,15 @@ public class CircuitEditor extends JPanel {
 	public CircuitEditor(Gate[] outputs, Gate inputs, SoundManager sm) {
 	    setupKeyActions();
 	    setPreferredSize(new Dimension(400, 400));
-	    this.outputs = outputs;
 	    this.inputsGate = inputs;
+	    this.outputs = new ArrayList<Gate>();
+	    for (Gate g : outputs) this.outputs.add(g);
+	    permanentGates.addAll(this.outputs);
+	    permanentGates.add(inputs);
 	    this.sm = sm;
 	    mouseListener = new MouseInput();
+        addMouseListener(mouseListener);
+        addMouseMotionListener(mouseListener);
         setLocked(false);
         setLayout(new CircuitEditorLayout());
 	}
@@ -313,16 +340,19 @@ public class CircuitEditor extends JPanel {
         getInputMap().put(KeyStroke.getKeyStroke('n'), "addGate(NOT)");
         getInputMap().put(KeyStroke.getKeyStroke(KeyEvent.VK_DELETE, 0), "remove");
         getInputMap().put(KeyStroke.getKeyStroke(KeyEvent.VK_BACK_SPACE, 0), "remove");
+        getInputMap().put(KeyStroke.getKeyStroke('!'), "removeAll");
         
 	    addAndGateAction = new AddGateAction(AndGate.class, "New AND Gate", "create-AND");
 	    addOrGateAction = new AddGateAction(OrGate.class, "New OR Gate", "create-OR");
 	    addNotGateAction = new AddGateAction(NotGate.class, "New NOT Gate", "create-NOT");
         removeAction = new RemoveAction("Remove");
+        removeAllAction = new RemoveAllAction();
 	    
 	    getActionMap().put("addGate(AND)", addAndGateAction);
 	    getActionMap().put("addGate(OR)", addOrGateAction);
 	    getActionMap().put("addGate(NOT)", addNotGateAction);
         getActionMap().put("remove", removeAction);
+        getActionMap().put("removeAll", removeAllAction);
 	}
 
 	private void paintGate(Graphics2D g2, Gate gate, Rectangle r) {
@@ -495,6 +525,20 @@ public class CircuitEditor extends JPanel {
         }
 	}
 	
+    public void removeAllGates() {
+        // disconnect everything (to be fancy, we could have only removed
+        // things connected to the permanent gates, but that's more work)
+        for (Gate g : gatePositions.keySet()) {
+            for (Gate.Input inp : g.getInputs()) {
+                inp.connect(null);
+            }
+        }
+
+        gatePositions.keySet().retainAll(permanentGates);
+        
+        repaint();
+    }
+    
 	public void addGate(Gate g, Point p) {
 		gatePositions.put(g, new Rectangle(p.x, p.y, DEFAULT_GATE_WIDTH, DEFAULT_GATE_HEIGHT));
 		repaint();
@@ -579,9 +623,11 @@ public class CircuitEditor extends JPanel {
 	    public static final int MODE_CONNECTING_FROM_OUTPUT = 4;
 	    
 	    private int mode = MODE_IDLE;
-        private Point dragOffset;
+	    private Point dragOffset;
 	    
+	    @Override
 		public void mouseDragged(MouseEvent e) {
+            if (locked) return;
 		    Point p = e.getPoint();
 		    if (mode == MODE_CONNECTING_FROM_INPUT) {
 		        pendingConnectionLine = pendingConnectionLine.moveCursor(p, getGateAt(p) != null);
@@ -599,7 +645,9 @@ public class CircuitEditor extends JPanel {
 		    }
 		}
 
+        @Override
 		public void mouseMoved(MouseEvent e) {
+            if (locked) return;
 		    Point p = e.getPoint();
 		    if (mode == MODE_IDLE) {
 		        Gate g = getGateAt(p);
@@ -632,17 +680,14 @@ public class CircuitEditor extends JPanel {
 		    newGatePosition = p;
 		}
 
+        @Override
         public void mousePressed(MouseEvent e) {
+            if (locked) return;
             if (mode == MODE_IDLE) {
                 Point p = e.getPoint();
                 Gate g = getGateAt(p);
                 if (e.isPopupTrigger()) {
-                    JPopupMenu menu = new JPopupMenu();
-                    menu.add(addAndGateAction);
-                    menu.add(addOrGateAction);
-                    menu.add(addNotGateAction);
-                    menu.add(removeAction);
-                    menu.show(CircuitEditor.this, e.getX(), e.getY());
+                    showPopup(e.getPoint());
                 } else {
                     if (g != null) {
                         Gate.Input inp = getGateInput(g, p.x, p.y); 
@@ -670,8 +715,12 @@ public class CircuitEditor extends JPanel {
             }
 		}
 
+        @Override
         public void mouseReleased(MouseEvent e) {
-            if (mode == MODE_CONNECTING_FROM_INPUT) {
+            if (locked) return;
+            if (e.isPopupTrigger()) {
+                showPopup(e.getPoint());
+            } else if (mode == MODE_CONNECTING_FROM_INPUT) {
                 Gate g = getGateAt(e.getPoint());
                 if (g != null) {
                     connectGates(g, connectionStartInput);
@@ -706,6 +755,23 @@ public class CircuitEditor extends JPanel {
                 mode = MODE_IDLE;
             }
             repaint();
+        }
+        
+        @Override
+        public void mouseClicked(MouseEvent e) {
+            if (e.isPopupTrigger()) {
+                showPopup(e.getPoint());
+            }
+        }
+        
+        private void showPopup(Point p) {
+            JPopupMenu menu = new JPopupMenu();
+            menu.add(addAndGateAction);
+            menu.add(addOrGateAction);
+            menu.add(addNotGateAction);
+            menu.add(removeAction);
+            menu.add(removeAllAction);
+            menu.show(CircuitEditor.this, p.x, p.y);
         }
 	}
 	
@@ -835,13 +901,6 @@ public class CircuitEditor extends JPanel {
     
     public void setLocked(boolean v) {
         locked = v;
-        if (locked) {
-            removeMouseListener(mouseListener);
-            removeMouseMotionListener(mouseListener);
-        } else {
-            addMouseListener(mouseListener);
-            addMouseMotionListener(mouseListener);
-        }
         repaint();
     }
     /**
