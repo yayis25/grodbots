@@ -5,11 +5,15 @@
  */
 package net.bluecow.robot;
 
+import java.awt.AlphaComposite;
 import java.awt.BorderLayout;
 import java.awt.FlowLayout;
 import java.awt.Toolkit;
+import java.awt.Window;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.io.File;
@@ -21,6 +25,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URL;
 import java.net.URLConnection;
+import java.util.ArrayList;
 import java.util.List;
 
 import javax.swing.AbstractAction;
@@ -30,6 +35,9 @@ import javax.swing.JComponent;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
+import javax.swing.JMenu;
+import javax.swing.JMenuBar;
+import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JSpinner;
@@ -182,9 +190,8 @@ public class Main {
         private CircuitEditor ce;
         private JFileChooser fc;
         
-        public SaveCircuitAction(CircuitEditor ce) {
-            super("Save Circuit");
-            this.ce = ce;
+        public SaveCircuitAction() {
+            super("Save Circuit...");
             fc = new JFileChooser();
             fc.setDialogTitle("Save Circuit Description File");
         }
@@ -208,6 +215,10 @@ public class Main {
                 }
             }
         }
+
+        public void setCircuitEditor(CircuitEditor ce) {
+            this.ce = ce;
+        }
     }
 
     private class LoadCircuitAction extends AbstractAction {
@@ -216,10 +227,8 @@ public class Main {
         private Robot robot;
         private JFileChooser fc;
         
-        public LoadCircuitAction(CircuitEditor ce, Robot robot) {
-            super("Load Circuit");
-            this.ce = ce;
-            this.robot = robot;
+        public LoadCircuitAction() {
+            super("Load Circuit...");
             fc = new JFileChooser();
             fc.setDialogTitle("Open Circuit Description File");
         }
@@ -245,6 +254,86 @@ public class Main {
                 }
             }
         }
+
+        public void setCircuitEditor(CircuitEditor ce) {
+            this.ce = ce;
+        }
+
+        public void setRobot(Robot robot) {
+            this.robot = robot;
+        }
+    }
+
+    private class LoadGhostAction extends AbstractAction {
+        
+        private JFileChooser fc;
+        
+        private GameLoop gameLoop;
+
+        private Playfield playfield;
+        
+        public LoadGhostAction() {
+            super("Load Circuit Into New Ghost...");
+            fc = new JFileChooser();
+            fc.setDialogTitle("Open Circuit Description File For Ghost");
+        }
+        
+        public void actionPerformed(ActionEvent e) {
+            InputStream in = null;
+            try {
+                int choice = fc.showOpenDialog(playfieldFrame);
+                if (choice == JFileChooser.APPROVE_OPTION) {
+                    File f = fc.getSelectedFile();
+                    in = new FileInputStream(f);
+                    Robot ghost = new Robot(playfield.getModel(), robotIcons);
+                    CircuitEditor ghostCE = new CircuitEditor(ghost.getOutputs(), ghost.getInputsGate(), sm);
+                    CircuitStore.load(in, ghostCE, ghost);
+                    gameLoop.addRobot(ghost, ghostCE);
+                    playfield.addRobot(ghost, AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.5f));
+                    JFrame ghostFrame = new JFrame("Ghost from "+f.getName());
+                    ghostFrame.addWindowListener(new BuffyTheGhostKiller(ghost));
+                    ghostFrame.setContentPane(ghostCE);
+                    ghostFrame.pack();
+                    ghostFrame.setLocationRelativeTo(editorFrame);
+                    ghostFrame.setVisible(true);
+                    windowsToClose.add(ghostFrame);
+                }
+            } catch (IOException ex) {
+                JOptionPane.showMessageDialog(playfieldFrame, "Load Failed: "+ex.getMessage());
+            } finally {
+                try {
+                    if (in != null) in.close();
+                } catch (IOException e1) {
+                    System.out.println("Bad luck.. couldn't close ghost input file!");
+                    e1.printStackTrace();
+                }
+            }
+        }
+        
+        public void setGameLoop(GameLoop gameLoop) {
+            this.gameLoop = gameLoop;
+        }
+
+        public void setPlayfield(Playfield playfield) {
+            this.playfield = playfield;
+        }
+
+        private class BuffyTheGhostKiller extends WindowAdapter {
+            
+            private Robot ghostToKill;
+            
+            public BuffyTheGhostKiller(Robot ghostToKill) {
+                this.ghostToKill = ghostToKill;
+            }
+
+            @Override
+            public void windowClosing(WindowEvent e) {
+                System.out.println("Killing ghost!");
+                playfield.removeRobot(ghostToKill);
+                gameLoop.removeRobot(ghostToKill);
+                e.getWindow().dispose();
+            }
+        }
     }
 
     private class LoadLevelsAction extends AbstractAction {
@@ -252,7 +341,7 @@ public class Main {
         JFileChooser fc;
         
         public LoadLevelsAction() {
-            super("Load levels...");
+            super("Load Levels...");
             fc = new JFileChooser();
             fc.setDialogTitle("Choose a Robot Levels File");
         }
@@ -280,6 +369,16 @@ public class Main {
         }
     }
     
+    private class QuitAction extends AbstractAction {
+        public QuitAction() {
+            super("Exit");
+        }
+        
+        public void actionPerformed(ActionEvent e) {
+            System.exit(0);
+        }
+    }
+    
     private Playfield playfield;
     
     private List<PlayfieldModel> levels;
@@ -292,14 +391,21 @@ public class Main {
     private ImageIcon greenIcon;
     private ImageIcon blueIcon;
 
-    private SaveCircuitAction saveCircuitAction;
-    private LoadCircuitAction loadCircuitAction;
-    private LoadLevelsAction loadLevelsAction;
-
+    private SaveCircuitAction saveCircuitAction = new SaveCircuitAction();
+    private LoadCircuitAction loadCircuitAction = new LoadCircuitAction();
+    private LoadLevelsAction loadLevelsAction = new LoadLevelsAction();
+    private LoadGhostAction loadGhostAction = new LoadGhostAction();
+    private QuitAction quitAction = new QuitAction();
+    
     private JFrame editorFrame;
 
     private JFrame playfieldFrame;
 
+    /**
+     * A list of windows that should get closed before moving to the next level.
+     */
+    private List<Window> windowsToClose = new ArrayList<Window>();
+    
     private int level;
 
     private SoundManager sm;
@@ -315,8 +421,19 @@ public class Main {
     
     public Main() {
         editorFrame = new JFrame("Circuit Editor");
-        editorFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        playfieldFrame = new JFrame("CakeBots!");
+        editorFrame.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
+        playfieldFrame = new JFrame("Grod - The Cake Assimilator!");
+        playfieldFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+
+        JMenuBar mb;
+        JMenu menu;
+        playfieldFrame.setJMenuBar(mb = new JMenuBar());
+        mb.add(menu = new JMenu("File"));
+        menu.add(new JMenuItem(loadLevelsAction));
+        menu.add(new JMenuItem(loadCircuitAction));
+        menu.add(new JMenuItem(saveCircuitAction));
+        menu.add(new JMenuItem(loadGhostAction));
+        menu.add(new JMenuItem(quitAction));
 
         try {
             URL levelMapURL = ClassLoader.getSystemResource(DEFAULT_MAP_RESOURCE_PATH);
@@ -372,15 +489,22 @@ public class Main {
     }
 
     void setLevel(int levelNum) {
+        for (Window w : windowsToClose) {
+            w.dispose();
+        }
+        
         level = levelNum;
         final PlayfieldModel pfModel = levels.get(levelNum);
         final Robot robot = new Robot(pfModel, robotIcons);
         playfield = new Playfield(pfModel, robot);
         final CircuitEditor ce = new CircuitEditor(robot.getOutputs(), robot.getInputsGate(), sm);
-        
-        saveCircuitAction = new SaveCircuitAction(ce);
-        loadCircuitAction = new LoadCircuitAction(ce, robot);
-        loadLevelsAction = new LoadLevelsAction();
+        final GameLoop gameLoop = new GameLoop(robot, playfield, ce);
+
+        saveCircuitAction.setCircuitEditor(ce);
+        loadCircuitAction.setCircuitEditor(ce);
+        loadCircuitAction.setRobot(robot);
+        loadGhostAction.setGameLoop(gameLoop);
+        loadGhostAction.setPlayfield(playfield);
         
         playfield.setGoalIcon(goalIcon);
         playfield.setBlackIcon(blackIcon);
@@ -391,8 +515,6 @@ public class Main {
 
         System.out.println("Starting level "+pfModel.getName());
         
-        final GameLoop gameLoop = new GameLoop(robot, playfield, ce);
-
         final JSpinner frameDelaySpinner = new JSpinner();
         frameDelaySpinner.setValue(new Integer(gameLoop.getFrameDelay()));
         frameDelaySpinner.addChangeListener(new ChangeListener() {

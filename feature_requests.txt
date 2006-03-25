@@ -1,13 +1,17 @@
 Game Features:
--Load a "ghost" robot and circuit so you can compare solutions
+-Remember preferences: window location, load and save dialog paths
+-Figure out why grod appears in wrong spot when level first starts
 -Make loading levels and circuits more fault-tolerant and provide specific error messages
 -Make all exceptions (even on the game loop thread) become user-visible dialogs
+-NAND and NOR gates (and buffers?)
 -Score keeping (based on squares worth certain point values)
 -Goodies to pick up along the way or numbered checkpoints
 -Batteries
 -Be able to specify how many circuit evaluations per step in a level
 -Random gate delays in "hard" mode?
 -Different floor textures that the robot can detect (metal, carpet, dirt, tile, ...)
+-Be able to group and label sets of gates
+-Be able to shrink groups of gates into small ICs
 
 Images:
 -Smaller robot sprite and/or larger tiles?
@@ -29,6 +33,7 @@ Sounds:
 -little ditties for the beginning of each level (maybe this would be better suited to the MIDI sequencer api)
  
 Completed:
+-Load multiple "ghost" robots and circuits so you can compare solutions
 -Make the game actually exit when you quit on Windows/X11
 -Put in the number of steps counter on the play field
 -Use files to load and save circuits

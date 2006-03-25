@@ -1,29 +1,58 @@
 package net.bluecow.robot;
 
+import java.awt.AlphaComposite;
 import java.awt.Color;
+import java.awt.Composite;
 import java.awt.Dimension;
 import java.awt.FontMetrics;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Point;
 import java.awt.Rectangle;
-import java.awt.event.ActionEvent;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Point2D;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
 
-import javax.swing.AbstractAction;
 import javax.swing.ImageIcon;
 import javax.swing.JPanel;
-import javax.swing.KeyStroke;
 
 /**
  * Playfield
  */
 public class Playfield extends JPanel {
+    
+    private class RoboStuff {
+        private Robot robot;
+        private double iconScale = 0.4;
+        private Composite composite;
+        
+        public RoboStuff(Robot robot, double iconScale, Composite composite) {
+            this.robot = robot;
+            this.iconScale = iconScale;
+            this.composite = composite;
+        }
+
+        public double getIconScale() {
+            return iconScale;
+        }
+
+        public Robot getRobot() {
+            return robot;
+        }
+
+        public Composite getComposite() {
+            return composite;
+        }
+    }
+    
     private PlayfieldModel pfm;
+    
     private int squareWidth = 25;
+    
     private ImageIcon goalIcon;
-    private Robot robot;
+
     private ImageIcon blackIcon;
     
     private ImageIcon whiteIcon;
@@ -38,8 +67,8 @@ public class Playfield extends JPanel {
     
     private Integer frameCount;
     
-    private double robotIconScale = 0.4;
-
+    private List<RoboStuff> robots = new ArrayList<RoboStuff>();
+    
     /**
      * Creates a playfield of spaces (mainly for testing).
      * 
@@ -64,26 +93,33 @@ public class Playfield extends JPanel {
      */
     public Playfield(PlayfieldModel model, Robot robot) {
        this.pfm = model;
-       this.robot = robot;
        setupKeyboardActions();
+       addRobot(robot, AlphaComposite.SrcOver);
+    }
+    
+    /**
+     * Adds the given robot to this playfield.  The robot will be drawn with
+     * the specified composite operation.
+     */
+    public final void addRobot(Robot robot, Composite drawComposite) {
+        robots.add(new RoboStuff(robot, 0.4, drawComposite));
+        repaint();
+    }
+    
+    /**
+     * Removes the given robot from this playfield.
+     */
+    public final void removeRobot(Robot robot) {
+        for (Iterator<RoboStuff> it = robots.iterator(); it.hasNext(); ) {
+            if (it.next().getRobot() == robot) {
+                it.remove();
+            }
+        }
+        repaint();
     }
     
     private void setupKeyboardActions() {
-        getActionMap().put("grow_grod", new AbstractAction() {
-            public void actionPerformed(ActionEvent evt) {
-                setRobotIconScale(robotIconScale + 1.0);
-            }
-        });
-
-        getActionMap().put("shrink_grod", new AbstractAction() {
-            public void actionPerformed(ActionEvent evt) {
-                setRobotIconScale(robotIconScale - 1.0);
-            }
-        });
-        
-        getInputMap().put(KeyStroke.getKeyStroke('='), "grow_grod");
-        getInputMap().put(KeyStroke.getKeyStroke('+'), "grow_grod");
-        getInputMap().put(KeyStroke.getKeyStroke('-'), "shrink_grod");
+        // no actions right now
     }
 
     public void paintComponent(Graphics g) {
@@ -115,17 +151,26 @@ public class Playfield extends JPanel {
                 
             }
         }
-        ImageIcon icon = robot.getIcon();
-        Point2D.Float roboPos = robot.getPosition();
-        AffineTransform backupXform = g2.getTransform();
-        g2.setTransform(AffineTransform.getTranslateInstance(
-                (squareWidth * roboPos.x) - (icon.getIconWidth() * robotIconScale / 2.0),
-                (squareWidth * roboPos.y) - (icon.getIconHeight() * robotIconScale / 2.0)));
-        AffineTransform iconXform = new AffineTransform();
-        iconXform.rotate(robot.getIconHeading(), icon.getIconWidth()*robotIconScale/2.0, icon.getIconHeight()*robotIconScale/2.0);
-        iconXform.scale(robotIconScale, robotIconScale);
-        g2.drawImage(icon.getImage(), iconXform, null);
-        g2.setTransform(backupXform);
+        
+        Composite backupComposite = g2.getComposite();
+        for (RoboStuff rs : robots) {
+            Robot robot = rs.getRobot();
+            double iconScale = rs.getIconScale();
+            g2.setComposite(rs.getComposite());
+            
+            ImageIcon icon = robot.getIcon();
+            Point2D.Float roboPos = robot.getPosition();
+            AffineTransform backupXform = g2.getTransform();
+            g2.setTransform(AffineTransform.getTranslateInstance(
+                    (squareWidth * roboPos.x) - (icon.getIconWidth() * iconScale / 2.0),
+                    (squareWidth * roboPos.y) - (icon.getIconHeight() * iconScale / 2.0)));
+            AffineTransform iconXform = new AffineTransform();
+            iconXform.rotate(robot.getIconHeading(), icon.getIconWidth()*iconScale/2.0, icon.getIconHeight()*iconScale/2.0);
+            iconXform.scale(iconScale, iconScale);
+            g2.drawImage(icon.getImage(), iconXform, null);
+            g2.setTransform(backupXform);
+        }
+        g2.setComposite(backupComposite);
         
         if (frameCount != null) {
             FontMetrics fm = getFontMetrics(getFont());
@@ -232,14 +277,4 @@ public class Playfield extends JPanel {
     public void setFrameCount(Integer c) {
         frameCount = c;
     }
-
-    public double getRobotIconScale() {
-        return robotIconScale;
-    }
-
-    public void setRobotIconScale(double robotIconScale) {
-        this.robotIconScale = robotIconScale;
-        repaint();
-    }
-    
 }
