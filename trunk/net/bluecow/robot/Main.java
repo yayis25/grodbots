@@ -315,6 +315,7 @@ public class Main {
     
     public Main() {
         editorFrame = new JFrame("Circuit Editor");
+        editorFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         playfieldFrame = new JFrame("CakeBots!");
 
         try {
