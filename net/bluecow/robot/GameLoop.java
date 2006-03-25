@@ -41,7 +41,11 @@ public class GameLoop implements Runnable {
      * Gets set to true if and when the robot reaches the goal.
      */
     private boolean goalReached;
-    private int frameDelay;
+    
+    /**
+     * Time to sleep between loops (in milliseconds).
+     */
+    private int frameDelay = 50;
     
     /**
      * @param robot
@@ -83,7 +87,10 @@ public class GameLoop implements Runnable {
 
     public void singleStep() {
         synchronized (this) {
-            if (stopRequested || goalReached) halt();
+            if (stopRequested || goalReached) {
+                halt();
+                return;
+            }
             loopCount++;
         }
 
@@ -121,12 +128,13 @@ public class GameLoop implements Runnable {
     }
     
     /**
-     * Calling this method will cause the game loop to halt during the next loop
-     * iteration.  If you need to be notified when the loop has halted, you can
-     * sign up for the "running" property change event.
+     * Calling this method with the parameter <tt>true</tt> will cause the
+     * game loop to halt during the next loop iteration. If you need to be
+     * notified when the loop has halted, you can sign up for the "running"
+     * property change event.
      */
-    public synchronized void requestStop() {
-        stopRequested = true;
+    public synchronized void setStopRequested(boolean v) {
+        stopRequested = v;
     }
 
     /**
@@ -160,6 +168,10 @@ public class GameLoop implements Runnable {
      */
     public void setFrameDelay(int delayInMS) {
         frameDelay = delayInMS;
+    }
+    
+    public int getFrameDelay() {
+        return frameDelay;
     }
     
     /**
