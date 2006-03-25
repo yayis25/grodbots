@@ -94,11 +94,10 @@ public class GameLoop implements Runnable {
             loopCount++;
         }
 
-        System.out.println("Starting loop "+loopCount);
-        
         robot.updateSensors();
         circuitEditor.evaluateOnce();
         robot.move();
+        playfield.setFrameCount(loopCount);
         playfield.repaint();
         
         if (playfield.getSquareAt(robot.getPosition()).isGoal()) {
@@ -188,6 +187,7 @@ public class GameLoop implements Runnable {
         loopCount = 0;
         robot.setPosition(playfield.getModel().getStartPosition());
         circuitEditor.resetState();
+        playfield.setFrameCount(null);
     }
 
     

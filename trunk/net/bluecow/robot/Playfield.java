@@ -2,6 +2,7 @@ package net.bluecow.robot;
 
 import java.awt.Color;
 import java.awt.Dimension;
+import java.awt.FontMetrics;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Point;
@@ -32,7 +33,11 @@ public class Playfield extends JPanel {
     private ImageIcon greenIcon;
     
     private ImageIcon blueIcon;
-    private boolean winMessageOn;
+    
+    private String winMessage;
+    
+    private Integer frameCount;
+    
     private double robotIconScale = 0.4;
 
     /**
@@ -122,12 +127,25 @@ public class Playfield extends JPanel {
         g2.drawImage(icon.getImage(), iconXform, null);
         g2.setTransform(backupXform);
         
-        if (winMessageOn) {
+        if (frameCount != null) {
+            FontMetrics fm = getFontMetrics(getFont());
+            String fc = String.format("%4d", frameCount);
+            int width = fm.stringWidth(fc);
+            int height = fm.getHeight();
+            int x = getWidth() - width - 3;
+            int y = 3;
+            g2.setColor(Color.BLACK);
+            g2.fillRect(x, y, width, height);
+            g2.setColor(Color.WHITE);
+            g2.drawString(fc, x, y + height - fm.getDescent());
+        }
+        
+        if (winMessage != null) {
             g2.setFont(g2.getFont().deriveFont(50f));
             g2.setColor(Color.BLACK);
-            g2.drawString("CAKE! You Win!", 20, getHeight()/2);
+            g2.drawString(winMessage, 20, getHeight()/2);
             g2.setColor(Color.RED);
-            g2.drawString("CAKE! You Win!", 15, getHeight()/2-5);
+            g2.drawString(winMessage, 15, getHeight()/2-5);
         }
     }
     
@@ -206,9 +224,13 @@ public class Playfield extends JPanel {
         return pfm;
     }
 
-    public void setWinMessage(boolean b) {
-        this.winMessageOn = b;
+    public void setWinMessage(String m) {
+        winMessage = m;
         repaint();
+    }
+    
+    public void setFrameCount(Integer c) {
+        frameCount = c;
     }
 
     public double getRobotIconScale() {
