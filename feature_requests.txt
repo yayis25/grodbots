@@ -1,7 +1,7 @@
 Game Features:
--Put in the number of steps counter on the play field
 -Load a "ghost" robot and circuit so you can compare solutions
 -Make loading levels and circuits more fault-tolerant and provide specific error messages
+-Make all exceptions (even on the game loop thread) become user-visible dialogs
 -Score keeping (based on squares worth certain point values)
 -Goodies to pick up along the way or numbered checkpoints
 -Batteries
@@ -29,6 +29,8 @@ Sounds:
 -little ditties for the beginning of each level (maybe this would be better suited to the MIDI sequencer api)
  
 Completed:
+-Make the game actually exit when you quit on Windows/X11
+-Put in the number of steps counter on the play field
 -Use files to load and save circuits
 -Fix single-step
 -Clear old gates when loading circuit
