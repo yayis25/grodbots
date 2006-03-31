@@ -12,7 +12,7 @@
 	</target>
 
 	<target name="compile" depends="init">
-		<javac srcdir="${src}" destdir="${build}" debug="true" />
+		<javac srcdir="${src}" destdir="${build}" debug="true" encoding="UTF-8"/>
 	</target>
 
 	<target name="copyresources" depends="init">
