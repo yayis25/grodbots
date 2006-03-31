@@ -1,6 +1,4 @@
 Game Features:
--Remember preferences: window location, load and save dialog paths
--Figure out why grod appears in wrong spot when level first starts
 -Make loading levels and circuits more fault-tolerant and provide specific error messages
 -Make all exceptions (even on the game loop thread) become user-visible dialogs
 -NAND and NOR gates (and buffers?)
@@ -33,6 +31,8 @@ Sounds:
 -little ditties for the beginning of each level (maybe this would be better suited to the MIDI sequencer api)
  
 Completed:
+-Figure out why grod appears in wrong spot when level first starts
+-Remember preferences: window location, load and save dialog paths
 -Load multiple "ghost" robots and circuits so you can compare solutions
 -Make the game actually exit when you quit on Windows/X11
 -Put in the number of steps counter on the play field
