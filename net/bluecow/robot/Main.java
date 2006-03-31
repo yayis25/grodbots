@@ -183,7 +183,7 @@ public class Main {
             } else if (newState == GameState.WON) {
                 state = newState;
                 ce.setLocked(true);
-                playfield.setWinMessage("ÁÁCAKE!! ÀYou Win?");
+                playfield.setWinMessage("Â¡Â¡CAKE!! Â¿You Win?");
                 sm.play("win");
                 start.setText("Restart");
                 step.setText("Restep");
