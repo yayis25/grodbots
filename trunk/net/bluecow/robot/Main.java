@@ -12,6 +12,9 @@ import java.awt.Toolkit;
 import java.awt.Window;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.ComponentAdapter;
+import java.awt.event.ComponentEvent;
+import java.awt.event.KeyEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.beans.PropertyChangeEvent;
@@ -27,6 +30,8 @@ import java.net.URL;
 import java.net.URLConnection;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.prefs.BackingStoreException;
+import java.util.prefs.Preferences;
 
 import javax.swing.AbstractAction;
 import javax.swing.ImageIcon;
@@ -54,6 +59,8 @@ public class Main {
     private static enum GameState { NOT_STARTED, RESET, STEP, RUNNING, PAUSED, WON };
     
     private GameState state = GameState.NOT_STARTED;
+    
+    private Preferences prefs = Preferences.userNodeForPackage(Main.class);
 
     private class GameLoopResetter implements PropertyChangeListener {
 
@@ -188,24 +195,30 @@ public class Main {
     private class SaveCircuitAction extends AbstractAction {
         
         private CircuitEditor ce;
-        private JFileChooser fc;
         
         public SaveCircuitAction() {
             super("Save Circuit...");
-            fc = new JFileChooser();
-            fc.setDialogTitle("Save Circuit Description File");
+            putValue(MNEMONIC_KEY, KeyEvent.VK_S);
         }
         
         public void actionPerformed(ActionEvent e) {
+            Preferences recentFiles = prefs.node("recentCircuitFiles");
             OutputStream out = null;
             try {
+                JFileChooser fc = new JFileChooser();
+                fc.setDialogTitle("Save Circuit Description File");
+                fc.setCurrentDirectory(new File(recentFiles.get("0", System.getProperty("user.home"))));
                 int choice = fc.showSaveDialog(ce);
                 if (choice == JFileChooser.APPROVE_OPTION) {
                     out = new FileOutputStream(fc.getSelectedFile());
                     CircuitStore.save(out, ce);
+                    RobotUtils.updateRecentFiles(recentFiles, fc.getSelectedFile());
                 }
             } catch (IOException ex) {
                 JOptionPane.showMessageDialog(ce, "Save Failed: "+ex.getMessage());
+            } catch (BackingStoreException ex) {
+                System.out.println("Couldn't update user prefs");
+                ex.printStackTrace();
             } finally {
                 try {
                     if (out != null) out.close();
@@ -225,26 +238,34 @@ public class Main {
         
         private CircuitEditor ce;
         private Robot robot;
-        private JFileChooser fc;
         
         public LoadCircuitAction() {
-            super("Load Circuit...");
-            fc = new JFileChooser();
-            fc.setDialogTitle("Open Circuit Description File");
+            super("Open Circuit...");
+            putValue(MNEMONIC_KEY, KeyEvent.VK_O);
         }
         
         public void actionPerformed(ActionEvent e) {
             InputStream in = null;
+            Preferences recentFiles = prefs.node("recentCircuitFiles");
             try {
-                int choice = fc.showOpenDialog(ce);
-                if (choice == JFileChooser.APPROVE_OPTION) {
-                    File f = fc.getSelectedFile();
-                    in = new FileInputStream(f);
-                    ce.removeAllGates();
-                    CircuitStore.load(in, ce, robot);
+                File f = new File(e.getActionCommand() == null ? "!@#$%^&*" : e.getActionCommand());
+                if ( ! (f.isFile() && f.canRead()) ) {
+                    JFileChooser fc = new JFileChooser();
+                    fc.setDialogTitle("Open Circuit Description File");
+                    fc.setCurrentDirectory(new File(recentFiles.get("0", System.getProperty("user.home"))));
+                    int choice = fc.showOpenDialog(ce);
+                    if (choice != JFileChooser.APPROVE_OPTION) return;
+                    f = fc.getSelectedFile();
                 }
+                in = new FileInputStream(f);
+                ce.removeAllGates();
+                CircuitStore.load(in, ce, robot);
+                RobotUtils.updateRecentFiles(recentFiles, f);
             } catch (IOException ex) {
                 JOptionPane.showMessageDialog(ce, "Load Failed: "+ex.getMessage());
+            } catch (BackingStoreException ex) {
+                System.out.println("Couldn't update user prefs");
+                ex.printStackTrace();
             } finally {
                 try {
                     if (in != null) in.close();
@@ -265,41 +286,48 @@ public class Main {
     }
 
     private class LoadGhostAction extends AbstractAction {
-        
-        private JFileChooser fc;
-        
+                
         private GameLoop gameLoop;
 
         private Playfield playfield;
         
         public LoadGhostAction() {
-            super("Load Circuit Into New Ghost...");
-            fc = new JFileChooser();
-            fc.setDialogTitle("Open Circuit Description File For Ghost");
+            super("Open Circuit Into New Ghost...");
+            putValue(MNEMONIC_KEY, KeyEvent.VK_O);
         }
         
         public void actionPerformed(ActionEvent e) {
             InputStream in = null;
+            Preferences recentFiles = prefs.node("recentGhostFiles");
             try {
-                int choice = fc.showOpenDialog(playfieldFrame);
-                if (choice == JFileChooser.APPROVE_OPTION) {
-                    File f = fc.getSelectedFile();
-                    in = new FileInputStream(f);
-                    Robot ghost = new Robot(playfield.getModel(), robotIcons);
-                    CircuitEditor ghostCE = new CircuitEditor(ghost.getOutputs(), ghost.getInputsGate(), sm);
-                    CircuitStore.load(in, ghostCE, ghost);
-                    gameLoop.addRobot(ghost, ghostCE);
-                    playfield.addRobot(ghost, AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.5f));
-                    JFrame ghostFrame = new JFrame("Ghost from "+f.getName());
-                    ghostFrame.addWindowListener(new BuffyTheGhostKiller(ghost));
-                    ghostFrame.setContentPane(ghostCE);
-                    ghostFrame.pack();
-                    ghostFrame.setLocationRelativeTo(editorFrame);
-                    ghostFrame.setVisible(true);
-                    windowsToClose.add(ghostFrame);
+                File f = new File(e.getActionCommand() == null ? "!@#$%^&*" : e.getActionCommand());
+                if ( ! (f.isFile() && f.canRead()) ) {
+                    JFileChooser fc = new JFileChooser();
+                    fc.setDialogTitle("Open Circuit Description File For Ghost");
+                    fc.setCurrentDirectory(new File(recentFiles.get("0", System.getProperty("user.home"))));
+                    int choice = fc.showOpenDialog(playfieldFrame);
+                    if (choice != JFileChooser.APPROVE_OPTION) return;
+                    f = fc.getSelectedFile();
                 }
+                in = new FileInputStream(f);
+                Robot ghost = new Robot(playfield.getModel(), robotIcons);
+                CircuitEditor ghostCE = new CircuitEditor(ghost.getOutputs(), ghost.getInputsGate(), sm);
+                CircuitStore.load(in, ghostCE, ghost);
+                gameLoop.addRobot(ghost, ghostCE);
+                playfield.addRobot(ghost, AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.5f));
+                JFrame ghostFrame = new JFrame("Ghost from "+f.getName());
+                ghostFrame.addWindowListener(new BuffyTheGhostKiller(ghost));
+                ghostFrame.setContentPane(ghostCE);
+                ghostFrame.pack();
+                ghostFrame.setLocationRelativeTo(editorFrame);
+                ghostFrame.setVisible(true);
+                windowsToClose.add(ghostFrame);
+                RobotUtils.updateRecentFiles(recentFiles, f);
             } catch (IOException ex) {
                 JOptionPane.showMessageDialog(playfieldFrame, "Load Failed: "+ex.getMessage());
+            } catch (BackingStoreException ex) {
+                System.out.println("Couldn't update user prefs");
+                ex.printStackTrace();
             } finally {
                 try {
                     if (in != null) in.close();
@@ -341,7 +369,8 @@ public class Main {
         JFileChooser fc;
         
         public LoadLevelsAction() {
-            super("Load Levels...");
+            super("Open Levels...");
+            putValue(MNEMONIC_KEY, KeyEvent.VK_L);
             fc = new JFileChooser();
             fc.setDialogTitle("Choose a Robot Levels File");
         }
@@ -372,6 +401,7 @@ public class Main {
     private class QuitAction extends AbstractAction {
         public QuitAction() {
             super("Exit");
+            putValue(MNEMONIC_KEY, KeyEvent.VK_X);
         }
         
         public void actionPerformed(ActionEvent e) {
@@ -424,16 +454,35 @@ public class Main {
         editorFrame.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
         playfieldFrame = new JFrame("Grod - The Cake Assimilator!");
         playfieldFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-
+        playfieldFrame.addComponentListener(new ComponentAdapter() {
+            @Override
+            public void componentMoved(ComponentEvent e) {
+                prefs.putInt("PlayfieldFrame.x", playfieldFrame.getX());
+                prefs.putInt("PlayfieldFrame.y", playfieldFrame.getY());
+            }
+        });
+        playfieldFrame.setLocation(
+                prefs.getInt("PlayfieldFrame.x", 30),
+                prefs.getInt("PlayfieldFrame.y", 30));
+        
         JMenuBar mb;
         JMenu menu;
+        JMenuItem item;
         playfieldFrame.setJMenuBar(mb = new JMenuBar());
         mb.add(menu = new JMenu("File"));
-        menu.add(new JMenuItem(loadLevelsAction));
-        menu.add(new JMenuItem(loadCircuitAction));
-        menu.add(new JMenuItem(saveCircuitAction));
-        menu.add(new JMenuItem(loadGhostAction));
-        menu.add(new JMenuItem(quitAction));
+        menu.setMnemonic(KeyEvent.VK_F);
+        menu.add(item = new JMenuItem(loadLevelsAction));
+        menu.add(item = new RecentFilesMenu("Open Recent Circuit", loadCircuitAction, prefs.node("recentCircuitFiles")));
+        item.setMnemonic(KeyEvent.VK_R);
+        menu.add(item = new JMenuItem(loadCircuitAction));
+        menu.add(item = new JMenuItem(saveCircuitAction));
+        menu.add(item = new JMenuItem(quitAction));
+        
+        mb.add(menu = new JMenu("Ghost"));
+        menu.setMnemonic(KeyEvent.VK_G);
+        menu.add(item = new JMenuItem(loadGhostAction));
+        menu.add(item = new RecentFilesMenu("Open Recent Ghost", loadGhostAction, prefs.node("recentGhostFiles")));
+        item.setMnemonic(KeyEvent.VK_R);
 
         try {
             URL levelMapURL = ClassLoader.getSystemResource(DEFAULT_MAP_RESOURCE_PATH);
