@@ -382,9 +382,12 @@ public class Main {
                 try {
                     levels = LevelStore.loadLevels(new FileInputStream(f));
                     setLevel(0);
+                } catch (FileFormatException ex) {
+                    showFileFormatException(ex);
                 } catch (FileNotFoundException ex) {
                     ex.printStackTrace();
-                    JOptionPane.showMessageDialog(null, "Could not find file '"+f.getPath()+"'");
+                    JOptionPane.showMessageDialog(null,
+                            "Could not find file '"+f.getPath()+"'");
                 } catch (IOException ex) {
                     ex.printStackTrace();
                     JOptionPane.showMessageDialog(
@@ -523,7 +526,9 @@ public class Main {
             sm.addClip("unterminated_wire", ClassLoader.getSystemResource("ROBO-INF/sounds/unterminated_wire.wav"));
             sm.addClip("terminated_wire", ClassLoader.getSystemResource("ROBO-INF/sounds/terminated_wire.wav"));
             sm.addClip("win", ClassLoader.getSystemResource("ROBO-INF/sounds/win.wav"));
-            
+        } catch (FileFormatException ex) {
+            ex.printStackTrace();
+            showFileFormatException(ex);
         } catch (Exception e) {
             e.printStackTrace();
             JOptionPane.showMessageDialog(
@@ -662,6 +667,13 @@ public class Main {
     
     public List<PlayfieldModel> getLevels() {
         return levels;
+    }
+
+    private void showFileFormatException(FileFormatException ex) {
+        JOptionPane.showMessageDialog(null, 
+                "Syntax error in project file:\n\n" +
+                ex.getMessage() + "\n\n" +
+                "at line "+ex.getLineNum()+": "+ex.getBadLine());
     }
 
 }

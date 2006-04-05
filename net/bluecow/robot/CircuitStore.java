@@ -7,11 +7,11 @@ package net.bluecow.robot;
 
 import java.awt.Point;
 import java.awt.Rectangle;
-import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.LineNumberReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
@@ -30,6 +30,8 @@ import net.bluecow.robot.gate.Gate;
  * @version $Id$
  */
 public class CircuitStore {
+
+    public static final String MAGIC = "CIRCUIT 1.0";
     
     /**
      * Saves a description of all the gates in the given circuit editor to
@@ -39,7 +41,7 @@ public class CircuitStore {
         PrintWriter pw = new PrintWriter(new BufferedWriter(new OutputStreamWriter(out)));
         int nextId = 0;
         Map<Gate,String> idmap = new HashMap<Gate,String>();
-        pw.printf("CIRCUIT 1.0\n");
+        pw.printf(MAGIC+"\n");
         for (Map.Entry<Gate, Rectangle> ent : ce.getGatePositions().entrySet()) {
             Gate g = ent.getKey();
             Rectangle r = ent.getValue();
@@ -82,71 +84,95 @@ public class CircuitStore {
     public static void load(InputStream in, CircuitEditor ce, Robot robot) throws IOException {
         Pattern gateLine = Pattern.compile("(\\w+) \\[([0-9]+),([0-9]+),([0-9]+),([0-9]+)\\] (.*)");
         Pattern connLine = Pattern.compile("(\\w+):([0-9]+) <- (\\w+)");
-        BufferedReader br = new BufferedReader(new InputStreamReader(in));
+        LineNumberReader br = new LineNumberReader(new InputStreamReader(in));
         String gateClassName = null; // declared here so exception messages can use it
         Map<String,Gate> idmap = new HashMap<String,Gate>();
-        try {
-            String line = br.readLine();
-            if (!"CIRCUIT 1.0".equals(line)) {
-                throw new IOException("Invalid first line '"+line+"'");
+        
+        String line = br.readLine();
+        if (!MAGIC.equals(line)) {
+            throw new FileFormatException(
+                    "The first line must be exactly '"+MAGIC+"'" +
+                    " (with no leading or trailing space)", 1, line, -1);
+        }
+        
+        // read gate positions and fill idmap
+        while ( (line = br.readLine()) != null) {
+            line = line.trim();
+            if (line.equals("*Connections")) break;
+            Matcher m = gateLine.matcher(line);
+            if (!m.matches()) {
+                throw new FileFormatException(
+                        "Invalid line format for gate position",
+                        br.getLineNumber(), line, -1);
             }
-            
-            // read gate positions and fill idmap
-            while ( (line = br.readLine()) != null) {
-                if (line.equals("*Connections")) break;
-                Matcher m = gateLine.matcher(line);
-                if (!m.matches()) {
-                    throw new IOException("Invalid gate position line '"+line+"' ");
-                }
-                String id = m.group(1);
-                int x = Integer.parseInt(m.group(2));
-                int y = Integer.parseInt(m.group(3));
-                gateClassName = m.group(6);
-                Point p = new Point(x, y);
-                Gate g;
-                if ("net.bluecow.robot.Robot$RobotSensorOutput".equals(gateClassName)) {
-                    Gate[] robotGates = robot.getOutputs();
-                    g = null;
-                    for (Gate roboGate : robotGates) {
-                        if (roboGate.getLabel().equals(id)) {
-                            g = roboGate; 
-                        }
+            String id = m.group(1);
+            int x = 0;
+            int y = 0;
+            try {
+                x = Integer.parseInt(m.group(2));
+            } catch (NumberFormatException ex) {
+                throw new FileFormatException("Could not parse X coordinate", br.getLineNumber(), line, m.start(2));
+            }
+            try {
+                y = Integer.parseInt(m.group(3));
+            } catch (NumberFormatException ex) {
+                throw new FileFormatException("Could not parse Y coordinate", br.getLineNumber(), line, m.start(3));
+            }
+            gateClassName = m.group(6);
+            Point p = new Point(x, y);
+            Gate g;
+            if ("net.bluecow.robot.Robot$RobotSensorOutput".equals(gateClassName)) {
+                Gate[] robotGates = robot.getOutputs();
+                g = null;
+                for (Gate roboGate : robotGates) {
+                    if (roboGate.getLabel().equals(id)) {
+                        g = roboGate; 
                     }
-                    if (g == null) throw new IOException("Unknwon Robot Sensor '"+id+"'");
-                } else if ("net.bluecow.robot.Robot$RobotInputsGate".equals(gateClassName)) {
-                    g = robot.getInputsGate();
-                } else {
+                }
+                if (g == null) throw new IOException("Unknwon Robot Sensor '"+id+"'");
+            } else if ("net.bluecow.robot.Robot$RobotInputsGate".equals(gateClassName)) {
+                g = robot.getInputsGate();
+            } else {
+                try {
                     g = (Gate) Class.forName(gateClassName).newInstance();
                     ce.addGate(g, p);
+                } catch (InstantiationException e) {
+                    e.printStackTrace();
+                    throw new FileFormatException(
+                            "Couldn't create gate class: "+e.getMessage(),
+                            br.getLineNumber(), line, -1);
+                } catch (IllegalAccessException e) {
+                    e.printStackTrace();
+                    throw new FileFormatException(
+                            "Couldn't access gate constructor: "+e.getMessage(),
+                            br.getLineNumber(), line, -1);
+                } catch (ClassNotFoundException e) {
+                    e.printStackTrace();
+                    throw new FileFormatException(
+                            "Couldn't find gate class: "+e.getMessage(),
+                            br.getLineNumber(), line, -1);
                 }
-                idmap.put(id, g);
             }
+            idmap.put(id, g);
+        }
+        
+        // read gate connections
+        while ( (line = br.readLine()) != null) {
+            Matcher m = connLine.matcher(line);
+            if (!m.matches()) {
+                throw new FileFormatException(
+                        "Invalid connection line. Required form is " +
+                        "TARGETID:INPUT# <- CONNECTTO", br.getLineNumber(), line, -1);
+            }
+            String id = m.group(1);
+            int inpNum = Integer.parseInt(m.group(2));
+            String connTo = m.group(3);
             
-            // read gate connections
-            while ( (line = br.readLine()) != null) {
-                Matcher m = connLine.matcher(line);
-                if (!m.matches()) {
-                    throw new IOException("Invalid connection line '"+line+"' ");
-                }
-                String id = m.group(1);
-                int inpNum = Integer.parseInt(m.group(2));
-                String connTo = m.group(3);
-                
-                Gate target = idmap.get(id);
-                Gate.Input targetInput = target.getInputs()[inpNum];
-                Gate source = idmap.get(connTo);
-                
-                targetInput.connect(source);
-            }
-        } catch (InstantiationException e) {
-            System.out.println("Couldn't create gate class: '"+gateClassName+"'");
-            e.printStackTrace();
-        } catch (IllegalAccessException e) {
-            System.out.println("Couldn't access gate constructor: '"+gateClassName+"'");
-            e.printStackTrace();
-        } catch (ClassNotFoundException e) {
-            System.out.println("Couldn't find gate class: '"+gateClassName+"'");
-            e.printStackTrace();
+            Gate target = idmap.get(id);
+            Gate.Input targetInput = target.getInputs()[inpNum];
+            Gate source = idmap.get(connTo);
+            
+            targetInput.connect(source);
         }
     }
 }
