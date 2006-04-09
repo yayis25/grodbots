@@ -1,6 +1,5 @@
 Game Features:
 -Make all exceptions (even on the game loop thread) become user-visible dialogs
--NAND and NOR gates (and buffers?)
 -Different floor patterns (but no terrain side-effects)
 -Secondary colour tiles (CMY) that detect as 2 colours at once (white would become all 3)
 -Score keeping (based on squares worth certain point values)
@@ -31,6 +30,7 @@ Sounds:
 -little ditties for the beginning of each level (maybe this would be better suited to the MIDI sequencer api)
  
 Completed:
+-NAND and NOR gates (and buffers?)
 -Make loading levels and circuits more fault-tolerant and provide specific error messages
 -Figure out why grod appears in wrong spot when level first starts
 -Remember preferences: window location, load and save dialog paths

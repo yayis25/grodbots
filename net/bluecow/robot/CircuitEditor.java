@@ -37,6 +37,8 @@ import javax.swing.event.MouseInputAdapter;
 
 import net.bluecow.robot.gate.AndGate;
 import net.bluecow.robot.gate.Gate;
+import net.bluecow.robot.gate.NandGate;
+import net.bluecow.robot.gate.NorGate;
 import net.bluecow.robot.gate.NotGate;
 import net.bluecow.robot.gate.OrGate;
 import net.bluecow.robot.gate.Gate.Input;
@@ -208,8 +210,10 @@ public class CircuitEditor extends JPanel {
                 JOptionPane.showMessageDialog(CircuitEditor.this, "Couldn't access new Gate instance:\n"+e1.getMessage());
             }
         }
-        
 	}
+    
+    private enum GateBodyType { BLANK, AND, OR, NOT };
+
 	private List<Gate> outputs;
 
 	private Gate inputsGate;
@@ -291,7 +295,11 @@ public class CircuitEditor extends JPanel {
 
     private AddGateAction addAndGateAction;
 
+    private AddGateAction addNandGateAction;
+
     private AddGateAction addOrGateAction;
+
+    private AddGateAction addNorGateAction;
 
     private AddGateAction addNotGateAction;
 
@@ -300,6 +308,11 @@ public class CircuitEditor extends JPanel {
     private RemoveAllAction removeAllAction;
     
     private SoundManager sm;
+    
+    /**
+     * The diameter of circles that indicate signal inversion (in pixels).
+     */
+    private int circleSize = 6;
 
     /**
      * When locked is true, this component should not allow the circuit to be
@@ -313,7 +326,7 @@ public class CircuitEditor extends JPanel {
 
 	private static final int DEFAULT_GATE_HEIGHT = 50;
 	
-	private static final int INPUT_STICK_LENGTH = 20;
+	private static final int INPUT_STICK_LENGTH = 22;
 	
 	private static final int OUTPUT_STICK_LENGTH = 20;
 
@@ -334,30 +347,59 @@ public class CircuitEditor extends JPanel {
         setLayout(new CircuitEditorLayout());
 	}
 
-	private void setupKeyActions() {
-	    getInputMap().put(KeyStroke.getKeyStroke('a'), "addGate(AND)");
-	    getInputMap().put(KeyStroke.getKeyStroke('o'), "addGate(OR)");
+    private void setupKeyActions() {
+        getInputMap().put(KeyStroke.getKeyStroke('a'), "addGate(AND)");
+        getInputMap().put(KeyStroke.getKeyStroke('A'), "addGate(NAND)");
+        getInputMap().put(KeyStroke.getKeyStroke('o'), "addGate(OR)");
+        getInputMap().put(KeyStroke.getKeyStroke('O'), "addGate(NOR)");
         getInputMap().put(KeyStroke.getKeyStroke('n'), "addGate(NOT)");
         getInputMap().put(KeyStroke.getKeyStroke(KeyEvent.VK_DELETE, 0), "remove");
         getInputMap().put(KeyStroke.getKeyStroke(KeyEvent.VK_BACK_SPACE, 0), "remove");
         getInputMap().put(KeyStroke.getKeyStroke('!'), "removeAll");
         
-	    addAndGateAction = new AddGateAction(AndGate.class, "New AND Gate", "create-AND");
-	    addOrGateAction = new AddGateAction(OrGate.class, "New OR Gate", "create-OR");
-	    addNotGateAction = new AddGateAction(NotGate.class, "New NOT Gate", "create-NOT");
+        addAndGateAction = new AddGateAction(AndGate.class, "New AND Gate", "create-AND");
+        addNandGateAction = new AddGateAction(NandGate.class, "New NAND Gate", "create-NAND");
+        addOrGateAction = new AddGateAction(OrGate.class, "New OR Gate", "create-OR");
+        addNorGateAction = new AddGateAction(NorGate.class, "New NOR Gate", "create-NOR");
+        addNotGateAction = new AddGateAction(NotGate.class, "New NOT Gate", "create-NOT");
         removeAction = new RemoveAction("Remove");
         removeAllAction = new RemoveAllAction();
-	    
-	    getActionMap().put("addGate(AND)", addAndGateAction);
-	    getActionMap().put("addGate(OR)", addOrGateAction);
-	    getActionMap().put("addGate(NOT)", addNotGateAction);
+        
+        getActionMap().put("addGate(AND)", addAndGateAction);
+        getActionMap().put("addGate(NAND)", addNandGateAction);
+        getActionMap().put("addGate(OR)", addOrGateAction);
+        getActionMap().put("addGate(NOR)", addNorGateAction);
+        getActionMap().put("addGate(NOT)", addNotGateAction);
         getActionMap().put("remove", removeAction);
         getActionMap().put("removeAll", removeAllAction);
-	}
+    }
 
 	private void paintGate(Graphics2D g2, Gate gate, Rectangle r) {
 		g2.translate(r.x, r.y);
 
+        GateBodyType bodyType;
+        boolean invertInput;
+        boolean invertOutput;
+        if (gate instanceof AndGate || gate instanceof NandGate) {
+            bodyType = GateBodyType.AND;
+            invertInput = gate instanceof NandGate;
+            invertOutput = false;
+        } else if (gate instanceof OrGate || gate instanceof NorGate) {
+            bodyType = GateBodyType.OR;
+            invertInput = false;
+            invertOutput = gate instanceof NorGate;
+        } else if (gate instanceof NotGate) {
+            bodyType = GateBodyType.NOT;
+            invertInput = false;
+            invertOutput = true;
+        } else if (gate instanceof Robot.RobotSensorOutput || gate instanceof Robot.RobotInputsGate) {
+            bodyType = GateBodyType.BLANK;
+            invertInput = false;
+            invertOutput = false;
+        } else {
+            throw new IllegalArgumentException("Unknown gate class "+gate.getClass().getName());
+        }
+        
 		// for debugging the draw routine
 		//g2.drawRect(0, 0, r.width, r.height);
 		
@@ -374,12 +416,12 @@ public class CircuitEditor extends JPanel {
             }
             
             inputLoc.y = (int) ((0.5 + i) * (double) r.height / (double) inputs.length);
-            paintInput(g2, inputLoc, inputs[i]);
+            paintInput(g2, inputLoc, inputs[i], invertInput);
 		}
 
 		// and the output
 		paintOutput(g2, new Point(r.width - OUTPUT_STICK_LENGTH, r.height/2), gate.getLabel(),
-                gate == hilightOutput, gate.getOutputState());
+                invertOutput, gate == hilightOutput, gate.getOutputState());
 		
         if (gate == hilightGate) {
             g2.setColor(getHilightColor());
@@ -388,9 +430,10 @@ public class CircuitEditor extends JPanel {
         } else {
             g2.setColor(getForeground());
         }
-		// individual gate bodies (XXX: should probably farm this out to the gates themselves)
-		if (gate instanceof OrGate) {
-		    int backX = OUTPUT_STICK_LENGTH;
+
+        // individual gate bodies (XXX: should probably farm this out to the gates themselves)
+		if (bodyType == GateBodyType.OR) {
+		    int backX = INPUT_STICK_LENGTH - INPUT_STICK_LENGTH/10;  // adjustment compensates for curve
 		    double backDepth = r.height/6.0;
 		    int pointyX = r.width-OUTPUT_STICK_LENGTH;
 		    
@@ -403,8 +446,8 @@ public class CircuitEditor extends JPanel {
 		    // Bottom curve
 		    g2.draw(new QuadCurve2D.Double(backX, r.height, backX + pointyX/2, r.height, pointyX, r.height/2));
 
-		} else if (gate instanceof AndGate) {
-		    int backX = OUTPUT_STICK_LENGTH;
+		} else if (bodyType == GateBodyType.AND) {
+		    int backX = INPUT_STICK_LENGTH;
 		    int arcRadius = r.height/2;
 		    int straightLength = r.width - arcRadius - INPUT_STICK_LENGTH - OUTPUT_STICK_LENGTH;
 		    if (straightLength < 0) straightLength = 0;
@@ -413,17 +456,13 @@ public class CircuitEditor extends JPanel {
 		    g2.drawLine(backX, r.height, backX+straightLength, r.height);
 		    g2.drawArc(backX + straightLength - arcRadius, 0, arcRadius*2, r.height, 270, 90);
 		    g2.drawArc(backX + straightLength - arcRadius, 0, arcRadius*2, r.height, 0, 90);
-		} else if (gate instanceof NotGate) {
-		    int backX = OUTPUT_STICK_LENGTH;
-		    int circleSize = 6;
+		} else if (bodyType == GateBodyType.NOT) {
+		    int backX = INPUT_STICK_LENGTH;
 		    g2.drawLine(backX, 0, backX, r.height);
-		    g2.drawLine(backX, 0, r.width-OUTPUT_STICK_LENGTH-circleSize, r.height/2);
-		    g2.drawLine(backX, r.height, r.width-OUTPUT_STICK_LENGTH-circleSize, r.height/2);
-		    g2.drawOval(r.width-OUTPUT_STICK_LENGTH-circleSize, r.height/2 - circleSize/2, circleSize, circleSize);
-		} else if (gate instanceof Robot.RobotSensorOutput) {
-		    // nothing to draw: this should be squished against the left side of the editor
-		} else if (gate instanceof Robot.RobotInputsGate) {
-		    // Again, there's no visible gate body here
+		    g2.drawLine(backX, 0, r.width-OUTPUT_STICK_LENGTH, r.height/2);
+		    g2.drawLine(backX, r.height, r.width-OUTPUT_STICK_LENGTH, r.height/2);
+		} else if (bodyType == GateBodyType.BLANK) {
+		    // no visible gate body here
 		} else {
 			g2.drawOval(0, 0, r.width, r.height);
 			g2.drawString(gate.getClass().getName(), 5, r.height/2);
@@ -455,7 +494,7 @@ public class CircuitEditor extends JPanel {
 		}
 	}
 	
-	private void paintOutput(Graphics2D g2, Point p, String label,
+	private void paintOutput(Graphics2D g2, Point p, String label, boolean invert,
             boolean highlight, boolean active) {
 	    int length = OUTPUT_STICK_LENGTH;
         if (highlight) {
@@ -465,7 +504,13 @@ public class CircuitEditor extends JPanel {
 	    } else {
 	        g2.setColor(getForeground());
 	    }
-	    g2.drawLine(p.x, p.y, p.x + length, p.y);
+        
+        if (invert) {
+            g2.drawOval(p.x, p.y - circleSize/2, circleSize, circleSize);
+            g2.drawLine(p.x + circleSize, p.y, p.x + length, p.y);
+        } else {
+            g2.drawLine(p.x, p.y, p.x + length, p.y);
+        }
 	    g2.drawLine(p.x + length, p.y, p.x + (int) (length*0.75), p.y - (int) (length*0.25));
 	    g2.drawLine(p.x + length, p.y, p.x + (int) (length*0.75), p.y + (int) (length*0.25));
 	    if (label != null) {
@@ -474,15 +519,21 @@ public class CircuitEditor extends JPanel {
 	    }
 	}
 
-	private void paintInput(Graphics2D g2, Point p, Gate.Input input) {
-	    int bubbleDiameter = 10;
-		g2.drawOval(p.x - INPUT_STICK_LENGTH, p.y - (bubbleDiameter / 2), bubbleDiameter, bubbleDiameter);
-		g2.drawLine(p.x, p.y, p.x - INPUT_STICK_LENGTH + bubbleDiameter, p.y);
+	private void paintInput(Graphics2D g2, Point p, Gate.Input input, boolean invert) {
+	    int connectorWidth = 6;
+        if (invert) {
+            // the - 1 off circlesize is because the circle outline has thickness and runs into the gate's back without the adjustment
+            g2.drawOval(p.x - circleSize - 1, p.y - circleSize/2, circleSize, circleSize);
+            g2.drawLine(p.x - circleSize - 1, p.y, p.x - INPUT_STICK_LENGTH + connectorWidth, p.y);
+        } else {
+            g2.drawLine(p.x, p.y, p.x - INPUT_STICK_LENGTH + connectorWidth, p.y);
+        }
+        g2.drawRect(p.x - INPUT_STICK_LENGTH, p.y - (connectorWidth / 2), connectorWidth, connectorWidth);
 		if (input.getLabel() != null) {
 		    g2.setFont(getLabelFont(g2));
 		    int labelLength = g2.getFontMetrics().stringWidth(input.getLabel());
 		    int ascent = g2.getFontMetrics().getAscent();
-		    g2.drawString(input.getLabel(), p.x - labelLength, p.y + ascent + bubbleDiameter);
+		    g2.drawString(input.getLabel(), p.x - labelLength, p.y + ascent + connectorWidth);
 		}
 	}
 
@@ -767,7 +818,9 @@ public class CircuitEditor extends JPanel {
         private void showPopup(Point p) {
             JPopupMenu menu = new JPopupMenu();
             menu.add(addAndGateAction);
+            menu.add(addNandGateAction);
             menu.add(addOrGateAction);
+            menu.add(addNorGateAction);
             menu.add(addNotGateAction);
             menu.add(removeAction);
             menu.add(removeAllAction);
