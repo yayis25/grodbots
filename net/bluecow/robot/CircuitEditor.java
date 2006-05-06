@@ -201,7 +201,6 @@ public class CircuitEditor extends JPanel {
                 Point p = new Point(newGatePosition);
                 addGate(newGate, p);
                 playSound(audioClipName);
-                System.out.println("Added new "+newGate.getClass().getName()+" at "+p);
             } catch (InstantiationException e1) {
                 e1.printStackTrace();
                 JOptionPane.showMessageDialog(CircuitEditor.this, "Couldn't create new Gate instance:\n"+e1.getMessage());
@@ -337,7 +336,6 @@ public class CircuitEditor extends JPanel {
 	    this.inputsGate = inputs;
 	    this.outputs = new ArrayList<Gate>();
 	    for (Gate g : outputs) this.outputs.add(g);
-        System.out.println("Creating circuit editor with outputs: "+this.outputs);
 	    permanentGates.addAll(this.outputs);
 	    permanentGates.add(inputs);
 	    this.sm = sm;

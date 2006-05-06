@@ -149,8 +149,6 @@ public class GameLoop implements Runnable {
                 if (!isSameSquare(oldPos, robot.getPosition())) {
                     Switch exitingSwitch = level.getSwitch(oldPos);
                     Switch enteringSwitch = level.getSwitch(robot.getPosition());
-                    System.out.println("Exiting "+oldPos+" ("+exitingSwitch+")," +
-                            " entering "+robot.getPosition()+" ("+enteringSwitch+")");
                     if (exitingSwitch != null) exitingSwitch.onExit(robot);
                     if (enteringSwitch != null) enteringSwitch.onEnter(robot);
                 }

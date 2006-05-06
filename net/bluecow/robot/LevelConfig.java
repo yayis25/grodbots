@@ -52,7 +52,6 @@ public class LevelConfig {
         }
         
         public void onEnter(Robot robot) {
-            System.out.println("Switch "+name+": executing onEnter code: "+onEnter);
             if (onEnter == null) return;
             try {
                 bsh.set("robot", robot);
