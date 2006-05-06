@@ -15,7 +15,6 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
-import javax.swing.ImageIcon;
 import javax.swing.JPanel;
 
 /**
@@ -47,21 +46,9 @@ public class Playfield extends JPanel {
         }
     }
     
-    private PlayfieldModel pfm;
+    private LevelConfig level;
     
     private int squareWidth = 25;
-    
-    private ImageIcon goalIcon;
-
-    private ImageIcon blackIcon;
-    
-    private ImageIcon whiteIcon;
-
-    private ImageIcon redIcon;
-
-    private ImageIcon greenIcon;
-    
-    private ImageIcon blueIcon;
     
     private String winMessage;
     
@@ -70,31 +57,16 @@ public class Playfield extends JPanel {
     private List<RoboStuff> robots = new ArrayList<RoboStuff>();
     
     /**
-     * Creates a playfield of spaces (mainly for testing).
-     * 
-     * @param x Width (in squares)
-     * @param y Height (in squares)
-     */
-    public Playfield(int x, int y) {
-        Square[][] squares = new Square[x][y];
-        for (int i = 0; i < x; i++) {
-            for (int j = 0; j < y; j++) {
-                squares[i][j] = new Square(Square.EMPTY);
-            }
-        }
-        pfm = new PlayfieldModel(squares, "Test Playfield", new Point2D.Float(0.5f, 0.5f), 0.1f);
-        setupKeyboardActions();
-    }
-    
-    /**
      * Creates a new playfield with the specified map.
      * 
      * @param map The map.
      */
-    public Playfield(PlayfieldModel model, Robot robot) {
-       this.pfm = model;
-       setupKeyboardActions();
-       addRobot(robot, AlphaComposite.SrcOver);
+    public Playfield(LevelConfig level) {
+        this.level = level;
+        setupKeyboardActions();
+        for (Robot r : level.getRobots()) {
+            addRobot(r, AlphaComposite.SrcOver);
+        }
     }
     
     /**
@@ -125,31 +97,25 @@ public class Playfield extends JPanel {
     public void paintComponent(Graphics g) {
         super.paintComponent(g);
         Graphics2D g2 = (Graphics2D) g;
-        Square[][] squares = pfm.getMap();
+        Square[][] squares = level.getMap();
         for (int i = 0; i < squares.length; i++) {
             for (int j = 0; j < squares[0].length; j++) {
                 Rectangle r = new Rectangle(i*squareWidth, j*squareWidth, squareWidth, squareWidth);
-                if (squares[i][j].getType() == Square.EMPTY) {
-                    whiteIcon.paintIcon(this, g2, r.x, r.y);
-                } else if (squares[i][j].getType() == Square.WALL) {
-                    blackIcon.paintIcon(this, g2, r.x, r.y);
-                } else if (squares[i][j].getType() == Square.RED) {
-                    redIcon.paintIcon(this, g2, r.x, r.y);
-                } else if (squares[i][j].getType() == Square.GREEN) {
-                    greenIcon.paintIcon(this, g2, r.x, r.y);
-                } else if (squares[i][j].getType() == Square.BLUE) {
-                    blueIcon.paintIcon(this, g2, r.x, r.y);
-                } else if (squares[i][j].getType() == Square.GOAL) {
-                    whiteIcon.paintIcon(this, g2, r.x, r.y);
-                    goalIcon.paintIcon(this, g2, r.x+1, r.y+1);
+                if (squares[i][j] != null) {
+                    squares[i][j].getSprite().paint(g2, r.x, r.y);
                 } else {
                     g2.setColor(Color.red);
                     g2.fillRect(r.x, r.y, r.width, r.height);
                     g2.setColor(Color.white);
-                    g2.drawString("BAD: "+squares[i][j].getType(), r.x, r.y+10);
+                    g2.drawString("null", r.x, r.y+10);
                 }
                 
             }
+        }
+        
+        for (LevelConfig.Switch s : level.getSwitches()) {
+            Point p = s.getLocation();
+            s.getSprite().paint(g2, p.x*squareWidth, p.y*squareWidth);
         }
         
         Composite backupComposite = g2.getComposite();
@@ -157,19 +123,20 @@ public class Playfield extends JPanel {
             Robot robot = rs.getRobot();
             double iconScale = rs.getIconScale();
             g2.setComposite(rs.getComposite());
-            
-            ImageIcon icon = robot.getIcon();
+
+            Sprite sprite = robot.getSprite();
             Point2D.Float roboPos = robot.getPosition();
             AffineTransform backupXform = g2.getTransform();
 
             g2.translate(
-                    (squareWidth * roboPos.x) - (icon.getIconWidth() * iconScale / 2.0),
-                    (squareWidth * roboPos.y) - (icon.getIconHeight() * iconScale / 2.0));
+                    (squareWidth * roboPos.x) - (sprite.getWidth() * iconScale / 2.0),
+                    (squareWidth * roboPos.y) - (sprite.getHeight() * iconScale / 2.0));
             
             AffineTransform iconXform = new AffineTransform();
-            iconXform.rotate(robot.getIconHeading(), icon.getIconWidth()*iconScale/2.0, icon.getIconHeight()*iconScale/2.0);
+            iconXform.rotate(robot.getIconHeading(), sprite.getWidth()*iconScale/2.0, sprite.getHeight()*iconScale/2.0);
             iconXform.scale(iconScale, iconScale);
-            g2.drawImage(icon.getImage(), iconXform, null);
+            g2.transform(iconXform);
+            sprite.paint(g2, 0, 0); // was: g2.drawImage(icon.getImage(), iconXform, null);
             g2.setTransform(backupXform);
         }
         g2.setComposite(backupComposite);
@@ -197,60 +164,12 @@ public class Playfield extends JPanel {
     }
     
     public Dimension getPreferredSize() {
-        return new Dimension(pfm.getWidth() * getSquareWidth(),
-                			 pfm.getHeight() * getSquareWidth());
+        return new Dimension(level.getWidth() * getSquareWidth(),
+                			 level.getHeight() * getSquareWidth());
     }
     
     // ACCESSORS AND MUTATORS
     
-    public ImageIcon getGoalIcon() {
-        return goalIcon;
-    }
-
-    public void setGoalIcon(ImageIcon goalIcon) {
-        this.goalIcon = goalIcon;
-    }
-
-    public ImageIcon getBlackIcon() {
-        return blackIcon;
-    }
-
-    public void setBlackIcon(ImageIcon blackIcon) {
-        this.blackIcon = blackIcon;
-    }
-
-    public ImageIcon getBlueIcon() {
-        return blueIcon;
-    }
-
-    public void setBlueIcon(ImageIcon blueIcon) {
-        this.blueIcon = blueIcon;
-    }
-
-    public ImageIcon getGreenIcon() {
-        return greenIcon;
-    }
-
-    public void setGreenIcon(ImageIcon greenIcon) {
-        this.greenIcon = greenIcon;
-    }
-
-    public ImageIcon getRedIcon() {
-        return redIcon;
-    }
-
-    public void setRedIcon(ImageIcon redIcon) {
-        this.redIcon = redIcon;
-    }
-
-    public ImageIcon getWhiteIcon() {
-        return whiteIcon;
-    }
-
-    public void setWhiteIcon(ImageIcon whiteIcon) {
-        this.whiteIcon = whiteIcon;
-    }
-
     public int getSquareWidth() {
         return squareWidth;
     }
@@ -260,17 +179,13 @@ public class Playfield extends JPanel {
     }
     
     public Square getSquareAt(Point p) {
-        return pfm.getSquare(p.x, p.y);
+        return level.getSquare(p.x, p.y);
     }
 
     public Square getSquareAt(Point2D.Float p) {
-        return pfm.getSquare(p.x, p.y);
+        return level.getSquare(p.x, p.y);
     }
     
-    public PlayfieldModel getModel() {
-        return pfm;
-    }
-
     public void setWinMessage(String m) {
         winMessage = m;
         repaint();
@@ -278,5 +193,12 @@ public class Playfield extends JPanel {
     
     public void setFrameCount(Integer c) {
         frameCount = c;
+    }
+
+    /**
+     * Returns the LevelConfig that determines this playfield's configuration.
+     */
+    public LevelConfig getLevel() {
+        return level;
     }
 }

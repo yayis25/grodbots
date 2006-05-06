@@ -1,40 +1,34 @@
 package net.bluecow.robot;
 
+import java.util.Collection;
+
+import net.bluecow.robot.GameConfig.SensorConfig;
+
 /**
  * Represents a square in the playfield.
  */
-public class Square {
-    public static final char EMPTY = ' ';
-    public static final char WALL  = 'X';
-    public static final char RED   = 'R';
-    public static final char GREEN = 'G';
-    public static final char BLUE  = 'B';
-    public static final char GOAL  = '@';
-    
-    private char type;
-    
-    public Square(char type) {
-        this.type = type;
-    }
-
-    /**
-     * Returns the Square Type.
-     */
-    public char getType() {
-        return type;
-    }
+public interface Square {
 
     /**
      * @return true iff this square can be occupied by the robot.
      */
-    public boolean isOccupiable() {
-        return getType() != WALL;
-    }
+    public boolean isOccupiable();
 
     /**
-     * Returns true iff this square is the goal.
+     * Returns the character that should be used to represent this square
+     * in an ASCII rendition of a level map.
      */
-    public boolean isGoal() {
-        return getType() == GOAL;
-    }
+    public char getMapChar();
+    
+    /**
+     * Returns this square's graphical representation.
+     */
+    public Sprite getSprite();
+    
+    /**
+     * Returns the types of sensors that are activated by stepping onto this
+     * square.
+     */
+    public Collection<SensorConfig> getSensorTypes();
+
 }
