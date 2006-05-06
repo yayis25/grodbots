@@ -5,11 +5,15 @@
  */
 package net.bluecow.robot;
 
+import java.awt.geom.Point2D;
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
+
+import net.bluecow.robot.LevelConfig.Switch;
 
 /**
  * The GameLoop represents the main loop of the game while it is in operation.
@@ -41,6 +45,8 @@ public class GameLoop implements Runnable {
     
     private Playfield playfield;
     
+    private LevelConfig level;
+    
     /**
      * Set this to true to abort the current game.
      */
@@ -71,11 +77,13 @@ public class GameLoop implements Runnable {
     /**
      * @param robot
      * @param playfield
-     * @param ce
      */
-    public GameLoop(Robot robot, Playfield playfield, CircuitEditor circuitEditor) {
+    public GameLoop(Map<Robot,CircuitEditor> robots, LevelConfig level, Playfield playfield) {
+        this.level = level;
         this.playfield = playfield;
-        addRobot(robot, circuitEditor);
+        for (Map.Entry<Robot,CircuitEditor> entry : robots.entrySet()) {
+            addRobot(entry.getKey(), entry.getValue());
+        }
     }
     
     public final void addRobot(Robot robot, CircuitEditor circuitEditor) {
@@ -131,11 +139,22 @@ public class GameLoop implements Runnable {
 
         boolean allGoalsReached = true;
         for (RoboStuff rs : robots) {
-            boolean thisGoalReached = playfield.getSquareAt(rs.getRobot().getPosition()).isGoal();
+            Robot robot = rs.getRobot();
+            boolean thisGoalReached = robot.isGoalReached();
             if (!thisGoalReached) {
-                rs.getRobot().updateSensors();
+                robot.updateSensors();
                 rs.getCircuitEditor().evaluateOnce();
-                rs.getRobot().move();
+                Point2D.Float oldPos = robot.getPosition();
+                robot.move();
+                if (!isSameSquare(oldPos, robot.getPosition())) {
+                    Switch exitingSwitch = level.getSwitch(oldPos);
+                    Switch enteringSwitch = level.getSwitch(robot.getPosition());
+                    System.out.println("Exiting "+oldPos+" ("+exitingSwitch+")," +
+                            " entering "+robot.getPosition()+" ("+enteringSwitch+")");
+                    if (exitingSwitch != null) exitingSwitch.onExit(robot);
+                    if (enteringSwitch != null) enteringSwitch.onEnter(robot);
+                }
+                // XXX: should we re-check if the goal is reached, or wait for the next loop?
             }
             allGoalsReached &= thisGoalReached; 
         }
@@ -160,6 +179,10 @@ public class GameLoop implements Runnable {
         }
     }
     
+    private static boolean isSameSquare(Point2D.Float p1, Point2D.Float p2) {
+        return (Math.floor(p1.x) == Math.floor(p2.x)) &&
+               (Math.floor(p1.y) == Math.floor(p2.y));
+    }
     /**
      * Tells whether or not the game loop is currently running.  This is a bound
      * property; to recieve change notifications, register a property change listener
@@ -229,7 +252,7 @@ public class GameLoop implements Runnable {
         setGoalReached(false);
         loopCount = 0;
         for (RoboStuff rs : robots) {
-            rs.getRobot().setPosition(playfield.getModel().getStartPosition());
+            rs.getRobot().resetState();
             rs.getCircuitEditor().resetState();
         }
         playfield.setFrameCount(null);

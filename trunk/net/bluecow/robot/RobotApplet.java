@@ -23,7 +23,7 @@ public class RobotApplet extends JApplet {
             public void run() {
                 JComponent cp = (JComponent) getContentPane();
                 cp.setLayout(new FlowLayout(FlowLayout.CENTER));
-                if (main.getLevels().isEmpty()) {
+                if (main.getGameConfig().getLevels().isEmpty()) {
                     cp.add(new JLabel("Oops, can't find any levels!"));
                 } else {
                     JButton startButton = new JButton("Start Game");

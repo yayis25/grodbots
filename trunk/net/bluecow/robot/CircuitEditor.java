@@ -20,6 +20,7 @@ import java.awt.event.MouseEvent;
 import java.awt.geom.Line2D;
 import java.awt.geom.QuadCurve2D;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -337,6 +338,7 @@ public class CircuitEditor extends JPanel {
 	    this.inputsGate = inputs;
 	    this.outputs = new ArrayList<Gate>();
 	    for (Gate g : outputs) this.outputs.add(g);
+        System.out.println("Creating circuit editor with outputs: "+this.outputs);
 	    permanentGates.addAll(this.outputs);
 	    permanentGates.add(inputs);
 	    this.sm = sm;

@@ -1,9 +1,14 @@
 package net.bluecow.robot;
 
 import java.awt.geom.Point2D;
+import java.io.FileNotFoundException;
+import java.util.Collection;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
-import javax.swing.ImageIcon;
-
+import net.bluecow.robot.GameConfig.GateConfig;
+import net.bluecow.robot.GameConfig.SensorConfig;
 import net.bluecow.robot.gate.Gate;
 
 /**
@@ -27,10 +32,11 @@ public class Robot {
      */
     private int movingFrame = 0;
     
-	private PlayfieldModel pfm;
+	private LevelConfig level;
 	private Point2D.Float position;
-	private ImageIcon[] icons;
-	
+	private Sprite sprite;
+	private float stepSize;
+    
 	// Inputs that make the robot do stuff
 	private RobotInput upInput = new RobotInput("Up");
 	private RobotInput downInput = new RobotInput("Down");
@@ -39,19 +45,38 @@ public class Robot {
     private RobotInputsGate robotInputsGate 
     				= new RobotInputsGate(new RobotInput[] {upInput, downInput, leftInput, rightInput});
 	
-	// Outputs that report the robot's current state and surroundings
-	private RobotSensorOutput redSensorOutput = new RobotSensorOutput("Red");
-	private RobotSensorOutput greenSensorOutput = new RobotSensorOutput("Green");
-	private RobotSensorOutput blueSensorOutput = new RobotSensorOutput("Blue");
-	private RobotSensorOutput[] outputs = new RobotSensorOutput[] {redSensorOutput, greenSensorOutput, blueSensorOutput};
+	/** A collection of outputs that report the robot's current state and surroundings. */
+	private Map<SensorConfig,RobotSensorOutput> outputs;
+
+    /** Indicates whether or not this robot has reached its goal. */
+    private boolean goalReached;
+    
+    /** The position that this robot starts out on. */
+    private Point2D.Float startPosition;
+    
+    /** This robot's name */
+    private String name;
 	
-	public Robot(PlayfieldModel pfm, ImageIcon[] icons) {
-        this.pfm = pfm;
-        this.position = pfm.getStartPosition();
-        this.icons = icons;
+    public Robot(String name, LevelConfig level, List<SensorConfig> sensorList, String spritePath, Point2D.Float startPosition, float stepSize) throws FileNotFoundException {
+        this(name, level, sensorList, SpriteManager.load(spritePath), startPosition, stepSize);
+    }
+
+    public Robot(String name, LevelConfig level, List<SensorConfig> sensorList, Sprite sprite, Point2D.Float startPosition, float stepSize) {
+        this.name = name;
+        this.level = level;
+        this.sprite = sprite;
+        this.startPosition = startPosition;
+        setPosition(startPosition);
+        this.stepSize = stepSize;
+        
+        System.out.println("Creating robot with sensor list: "+sensorList);
+        outputs = new LinkedHashMap<SensorConfig, RobotSensorOutput>();
+        for (SensorConfig sensor : sensorList) {
+            outputs.put(sensor, new RobotSensorOutput(sensor));
+        }
 	}
 	
-	public void move() {
+    public void move() {
         int direction = 0;
 	    if (upInput.getState() == true) {
 	        moveUp();
@@ -78,39 +103,44 @@ public class Robot {
         }
 	}
 	
+    /**
+     * Updates all the sensor outputs to correspond with the square this robot
+     * is currently occupying.
+     */
 	public void updateSensors() {
-		Square s = pfm.getSquare(position.x, position.y); 
-		redSensorOutput.setState(s.getType() == Square.RED);
-		greenSensorOutput.setState(s.getType() == Square.GREEN);
-		blueSensorOutput.setState(s.getType() == Square.BLUE);
+	    Square s = level.getSquare(position.x, position.y);
+        Collection squareSensors = s.getSensorTypes();
+        for (Map.Entry<SensorConfig, RobotSensorOutput> entry : outputs.entrySet()) {
+            entry.getValue().setState(squareSensors.contains(entry.getKey()));
+        }
 	}
 	
 	private void moveLeft() {
 		if (position.x > 0
-				&& pfm.getSquare(position.x-pfm.getStepSize(), position.y).isOccupiable()) {
-			position.x -= pfm.getStepSize();
+				&& level.getSquare(position.x-stepSize, position.y).isOccupiable()) {
+			position.x -= stepSize;
 		}
 	}
 	
 	private void moveRight() {
-		if (position.x < pfm.getWidth()
-				&& pfm.getSquare(position.x+pfm.getStepSize(), position.y).isOccupiable()) {
-			position.x += pfm.getStepSize();
+		if (position.x < level.getWidth()
+				&& level.getSquare(position.x+stepSize, position.y).isOccupiable()) {
+			position.x += stepSize;
 		}
 	}
 	
 	private void moveDown() {
-        boolean atBottom = position.y >= pfm.getHeight();
-        boolean obstacleInTheWay = !pfm.getSquare(position.x, position.y+pfm.getStepSize()).isOccupiable();
+        boolean atBottom = position.y >= level.getHeight();
+        boolean obstacleInTheWay = !level.getSquare(position.x, position.y+stepSize).isOccupiable();
         if ( (!atBottom)	&& (!obstacleInTheWay)) {
-			position.y += pfm.getStepSize();
+			position.y += stepSize;
 		}
 	}
 	
 	private void moveUp() {
 		if (position.y > 0
-				&& pfm.getSquare(position.x, position.y-pfm.getStepSize()).isOccupiable()) {
-			position.y -= pfm.getStepSize();
+				&& level.getSquare(position.x, position.y-stepSize).isOccupiable()) {
+			position.y -= stepSize;
 		}
 	}
 		
@@ -123,10 +153,10 @@ public class Robot {
 	 */
 	class RobotSensorOutput implements Gate {
 		private boolean state;
-		private String label;
+		private SensorConfig config;
 
-		public RobotSensorOutput(String label) {
-			this.label = label;
+		public RobotSensorOutput(SensorConfig config) {
+			this.config = config;
 		}
 		
 		public boolean getOutputState() {
@@ -145,7 +175,7 @@ public class Robot {
 		}
 		
 		public String getLabel() {
-			return label;
+			return config.getId();
 		}
 
         public void evaluateInput() {
@@ -311,27 +341,59 @@ public class Robot {
         return theta;
     }
     
-	public ImageIcon getIcon() {
-		return icons[movingFrame % icons.length];
+    public String getName() {
+        return name;
+    }
+    
+	public Sprite getSprite() {
+		return sprite;
 	}
 
 	public Point2D.Float getPosition() {
 		return new Point2D.Float(position.x, position.y);
 	}
 	
-	public void setPosition(Point2D.Float position) {
+    /**
+     * Sets this robot's position by making a copy of the given point.
+     * 
+     * <p>This method is final because it is called from the constructor.
+     */
+	public final void setPosition(Point2D.Float position) {
 		this.position = new Point2D.Float(position.x, position.y);
 	}
-	
+
+    /** Sets this robot's position. */
+    public void setPosition(double x, double y) {
+        setPosition(new Point2D.Float((float) x, (float) y));
+    }
+    
 	public RobotInput[] getInputs() {
 	    return robotInputsGate.inputs;
 	}
 	
 	public RobotSensorOutput[] getOutputs() {
-		return outputs;
+        System.out.println("Converting outputs map to set.  Map = "+outputs+"; set = "+outputs.entrySet());
+		return outputs.values().toArray(new RobotSensorOutput[outputs.size()]);
 	}
 
     public Gate getInputsGate() {
         return robotInputsGate;
+    }
+
+    public void addGateAllowance(GateConfig gate, int count) {
+        System.err.println("Robot.addGateAllowance is not implemented");
+    }
+
+    public boolean isGoalReached() {
+        return goalReached;
+    }
+    
+    public void setGoalReached(boolean v) {
+        goalReached = v;
+    }
+
+    public void resetState() {
+        setGoalReached(false);
+        setPosition(startPosition);
     }
 }
