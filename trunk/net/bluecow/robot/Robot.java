@@ -69,7 +69,6 @@ public class Robot {
         setPosition(startPosition);
         this.stepSize = stepSize;
         
-        System.out.println("Creating robot with sensor list: "+sensorList);
         outputs = new LinkedHashMap<SensorConfig, RobotSensorOutput>();
         for (SensorConfig sensor : sensorList) {
             outputs.put(sensor, new RobotSensorOutput(sensor));
@@ -372,7 +371,6 @@ public class Robot {
 	}
 	
 	public RobotSensorOutput[] getOutputs() {
-        System.out.println("Converting outputs map to set.  Map = "+outputs+"; set = "+outputs.entrySet());
 		return outputs.values().toArray(new RobotSensorOutput[outputs.size()]);
 	}
 

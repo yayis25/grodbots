@@ -24,17 +24,11 @@ public class Playfield extends JPanel {
     
     private class RoboStuff {
         private Robot robot;
-        private double iconScale = 0.4;
         private Composite composite;
         
-        public RoboStuff(Robot robot, double iconScale, Composite composite) {
+        public RoboStuff(Robot robot, Composite composite) {
             this.robot = robot;
-            this.iconScale = iconScale;
             this.composite = composite;
-        }
-
-        public double getIconScale() {
-            return iconScale;
         }
 
         public Robot getRobot() {
@@ -74,7 +68,7 @@ public class Playfield extends JPanel {
      * the specified composite operation.
      */
     public final void addRobot(Robot robot, Composite drawComposite) {
-        robots.add(new RoboStuff(robot, 0.4, drawComposite));
+        robots.add(new RoboStuff(robot, drawComposite));
         repaint();
     }
     
@@ -121,7 +115,6 @@ public class Playfield extends JPanel {
         Composite backupComposite = g2.getComposite();
         for (RoboStuff rs : robots) {
             Robot robot = rs.getRobot();
-            double iconScale = rs.getIconScale();
             g2.setComposite(rs.getComposite());
 
             Sprite sprite = robot.getSprite();
@@ -129,14 +122,13 @@ public class Playfield extends JPanel {
             AffineTransform backupXform = g2.getTransform();
 
             g2.translate(
-                    (squareWidth * roboPos.x) - (sprite.getWidth() * iconScale / 2.0),
-                    (squareWidth * roboPos.y) - (sprite.getHeight() * iconScale / 2.0));
+                    (squareWidth * roboPos.x) - (sprite.getWidth() / 2.0),
+                    (squareWidth * roboPos.y) - (sprite.getHeight() / 2.0));
             
             AffineTransform iconXform = new AffineTransform();
-            iconXform.rotate(robot.getIconHeading(), sprite.getWidth()*iconScale/2.0, sprite.getHeight()*iconScale/2.0);
-            iconXform.scale(iconScale, iconScale);
+            iconXform.rotate(robot.getIconHeading(), sprite.getWidth()/2.0, sprite.getHeight()/2.0);
             g2.transform(iconXform);
-            sprite.paint(g2, 0, 0); // was: g2.drawImage(icon.getImage(), iconXform, null);
+            sprite.paint(g2, 0, 0);
             g2.setTransform(backupXform);
         }
         g2.setComposite(backupComposite);

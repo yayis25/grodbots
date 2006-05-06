@@ -1,12 +1,14 @@
 Game Features:
+-Specify sprite image scale factor in config file
+-Show labels on robots and switches when game is in "not started" state
+-Score keeping (based on switches that modify the score)
+-Make load/save circuits and ghosts work with multiple robots per level
+-Animated sprites for anything that can use a static image
+-init sound manager sound set from config file
+-Make sound manager available to onEnter/onExit scripts
 -Make all exceptions (even on the game loop thread) become user-visible dialogs
--Different floor patterns (but no terrain side-effects)
--Secondary colour tiles (CMY) that detect as 2 colours at once (white would become all 3)
--Score keeping (based on squares worth certain point values)
--Goodies to pick up along the way or numbered checkpoints
 -Batteries
 -Be able to specify how many circuit evaluations per step in a level
--Random gate delays in "hard" mode?
 -Be able to group and label sets of gates
 -Be able to shrink groups of gates into small ICs
 
@@ -14,6 +16,7 @@ Images:
 -Smaller robot sprite and/or larger tiles?
 -Start/Pause/Single Step/Reset buttons
 -Images for different floor textures
+-Different floor patterns in various colours
 
 Sounds:
 -When game is running
@@ -30,6 +33,8 @@ Sounds:
 -little ditties for the beginning of each level (maybe this would be better suited to the MIDI sequencer api)
  
 Completed:
+-Goodies to pick up along the way or numbered checkpoints
+-Secondary colour tiles (CMY) that detect as 2 colours at once (white would become all 3)
 -NAND and NOR gates (and buffers?)
 -Make loading levels and circuits more fault-tolerant and provide specific error messages
 -Figure out why grod appears in wrong spot when level first starts
@@ -51,3 +56,4 @@ Completed:
 
 Dismissed/Changed/Bad Ideas:
 -Different floor textures that the robot can detect (metal, carpet, dirt, tile, ...)
+-Random gate delays in "hard" mode

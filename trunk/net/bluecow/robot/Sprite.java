@@ -34,4 +34,16 @@ public interface Sprite {
      * this sprite.
      */
     int getHeight();
+    
+    /**
+     * Reports the scaling factor that will be applied to the source image data
+     * before it is drawn (the scale factor also affects the reported width and
+     * height reported by the sprite).
+     */
+    double getScale();
+    
+    /**
+     * Sets the sprite's scale factor.
+     */
+    void setScale(double scale);
 }

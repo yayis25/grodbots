@@ -21,12 +21,12 @@ Square Types
  WHITE . W ROBO-INF/images/whitetile.png Red,Green,Blue
 Map Easy Map
 Grods
- Grod ROBO-INF/images/robot_00.png 0.1 2.5,2.5 AND:10 OR:10 NOT:10 NAND:10 NOR:10
+ Grod ROBO-INF/images/robot_00.png,scale=0.4 0.1 2.5,2.5 AND:10 OR:10 NOT:10 NAND:10 NOR:10
  Gregory ROBO-INF/images/robot.png 0.1 8,8 NOT:10 NAND:3
 Size 15x10
 Switches
  7,1 Cake ROBO-INF/images/cake.png robot.setGoalReached(true);
- 2,3 Teleport ROBO-INF/images/cow.png Gregory.setPosition(4.5f,4.5f);
+ 7,4 Teleport ROBO-INF/images/cow.png Gregory.setPosition(4.5,4.5);
 XXXXXXXXXXXXXXX
 X R  X Y      X
 X R  X B      X

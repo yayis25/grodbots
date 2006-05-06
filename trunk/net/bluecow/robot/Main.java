@@ -371,7 +371,6 @@ public class Main {
 
             @Override
             public void windowClosing(WindowEvent e) {
-                System.out.println("Killing ghost!");
                 playfield.removeRobot(ghostToKill);
                 gameLoop.removeRobot(ghostToKill);
                 e.getWindow().dispose();

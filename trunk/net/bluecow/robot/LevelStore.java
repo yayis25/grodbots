@@ -338,7 +338,6 @@ public class LevelStore {
                 if (line.equals("*")) break;
                 for (int x = 0; x < xSize; x++) {
                     if (x < line.length()) {
-                        System.out.printf("Square '%c' : %s\n", line.charAt(x), config.getSquare(line.charAt(x)));
                         level.setSquare(x, y, config.getSquare(line.charAt(x)));
                     } else {
                         level.setSquare(x, y, config.getSquare(' '));
