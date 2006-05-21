@@ -51,26 +51,30 @@ public class LevelConfig {
             this.onEnter = onEnter;
         }
         
-        public void onEnter(Robot robot) {
-            if (onEnter == null) return;
-            try {
-                bsh.set("robot", robot);
-                bsh.eval(onEnter);
-                bsh.set("robot", null);
-            } catch (EvalError e) {
-                throw new RuntimeException(e);
-            }
+        /**
+         * Copy constructor.  Creates a switch instance with all the same properties
+         * as the given switch.
+         */
+        public Switch(Switch copyMe) {
+            this.location = new Point(copyMe.location);
+            this.name = copyMe.name;
+            this.sprite = copyMe.sprite;
+            this.onEnter = copyMe.onEnter;
+            this.onExit = copyMe.onExit;
         }
 
-        public void onExit(Robot robot) {
+        public void onEnter(Robot robot) throws EvalError {
+            if (onEnter == null) return;
+            bsh.set("robot", robot);
+            bsh.eval(onEnter);
+            bsh.set("robot", null);
+        }
+
+        public void onExit(Robot robot) throws EvalError {
             if (onExit == null) return;
-            try {
-                bsh.set("robot", robot);
-                bsh.eval(onExit);
-                bsh.set("robot", null);
-            } catch (EvalError e) {
-                throw new RuntimeException(e);
-            }
+            bsh.set("robot", robot);
+            bsh.eval(onExit);
+            bsh.set("robot", null);
         }
 
         public Point getLocation() {
@@ -100,9 +104,24 @@ public class LevelConfig {
     private Map<Point, Switch> switches = new HashMap<Point, Switch>();
     private Square[][] map = new Square[0][0];
     private Interpreter bsh;
+    private int score;
+    
+    /**
+     * A snapshot of this configuration which can be restored at a later time.
+     */
+    private LevelConfig snapshot;
     
     public LevelConfig() {
+        try {
+            initInterpreter();
+        } catch (EvalError e) {
+            throw new RuntimeException("Couldn't add level config to bsh context");
+        }
+    }
+
+    private void initInterpreter() throws EvalError {
         bsh = new Interpreter();
+        bsh.set("level", this);
     }
     
     public String getName() {
@@ -129,7 +148,11 @@ public class LevelConfig {
      * If there was a map before, it will be wiped out.
      */
     public void setSize(int width, int height) {
-        map = new Square[width][height];
+        setMap(new Square[width][height]);
+    }
+    
+    public void setMap(Square[][] map) {
+        this.map = map;
         try {
             bsh.set("map", map);
         } catch (EvalError e) {
@@ -171,6 +194,16 @@ public class LevelConfig {
         switches.put(p, new Switch(p, switchName, SpriteManager.load(imagePath), switchCode));
     }
 
+    public void addSwitch(Switch s) {
+        Point p = new Point(s.getLocation());
+        switches.put(p, s);
+        try {
+            bsh.set(s.getName(), s);
+        } catch (EvalError e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     /** Returns an unmodifiable list of this level's switches. */
     public Collection<Switch> getSwitches() {
         return Collections.unmodifiableCollection(switches.values());
@@ -200,5 +233,51 @@ public class LevelConfig {
      */
     public Square[][] getMap() {
         return map;
+    }
+    
+    public void increaseScore(int amount) {
+        score += amount;
+    }
+    
+    public int getScore() {
+        return score;
+    }
+    
+    /**
+     * Resets this level's state to its values last time snapshotState() was called.
+     */
+    public void resetState() {
+        if (snapshot == null) throw new IllegalStateException("No snapshot has been made yet.");
+        copyState(snapshot, this);
+    }
+    
+    /**
+     * Takes a snapshot of this level's state so that it can be restored by a future
+     * call to resetState().
+     *
+     */
+    public void snapshotState() {
+        snapshot = new LevelConfig();
+        copyState(this, snapshot);
+    }
+
+    private static void copyState(LevelConfig src, LevelConfig dst) {
+        try {
+            dst.initInterpreter();
+            dst.setMap(src.map.clone()); // Square objects are immutable, so they can be shared
+            dst.setName(src.name);
+            dst.robots = new ArrayList<Robot>();
+            for (Robot r : src.robots) {
+                dst.addRobot(r); // was dst.addRobot(new Robot(r));
+            }
+            dst.score = src.score;
+            // don't modify snapshot, so that resetState() will work multiple times
+            dst.switches = new HashMap<Point, Switch>();
+            for (Map.Entry<Point, Switch> ent : src.switches.entrySet()) {
+                dst.addSwitch(dst.new Switch(ent.getValue()));
+            }
+        } catch (EvalError e) {
+            throw new RuntimeException(e);
+        }
     }
 }

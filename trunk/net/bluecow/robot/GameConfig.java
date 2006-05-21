@@ -50,9 +50,10 @@ public class GameConfig {
     }
 
     public static class GateConfig {
-        String name;
-        KeyStroke accelerator;
-        Class<Gate> clazz;
+        private String name;
+        private KeyStroke accelerator;
+        private Class<Gate> gateClass;
+        
         /**
          * @param name The gate's identifier in this config
          * @param accelerator The accelerator key for creating a gate of this type
@@ -61,14 +62,14 @@ public class GameConfig {
         public GateConfig(String name, KeyStroke accelerator, Class<Gate> clazz) {
             this.name = name;
             this.accelerator = accelerator;
-            this.clazz = clazz;
+            this.gateClass = clazz;
         }
 
         public KeyStroke getAccelerator() {
             return accelerator;
         }
-        public Class<Gate> getClazz() {
-            return clazz;
+        public Class<Gate> getGateClass() {
+            return gateClass;
         }
         public String getName() {
             return name;
@@ -138,7 +139,7 @@ public class GameConfig {
     private List<LevelConfig> levels = new ArrayList<LevelConfig>();
     
     @SuppressWarnings("unchecked")
-    public void addGate(String gateName, String accelKey, String gateClass) throws ClassNotFoundException {
+    public void addGate(String gateName, char accelKey, String gateClass) throws ClassNotFoundException {
         gateTypes.put(gateName,
                 new GateConfig(gateName,
                         KeyStroke.getKeyStroke(accelKey),

@@ -35,6 +35,7 @@ import javax.swing.JPopupMenu;
 import javax.swing.KeyStroke;
 import javax.swing.event.MouseInputAdapter;
 
+import net.bluecow.robot.GameConfig.GateConfig;
 import net.bluecow.robot.gate.AndGate;
 import net.bluecow.robot.gate.Gate;
 import net.bluecow.robot.gate.NandGate;
@@ -181,26 +182,24 @@ public class CircuitEditor extends JPanel {
 	 */
     public class AddGateAction extends AbstractAction implements Action {
         
-        /**
-         * The type of gate that will be created when this action is invoked.
-         */
-        private Class gateClass;
+        private GateConfig gc;
         
-        private String audioClipName;
-        
-        public AddGateAction(Class gateClass, String name, String audioClipName) {
-            super(name);
-            this.gateClass = gateClass;
-            this.audioClipName = audioClipName;
+        public AddGateAction(GateConfig gc) {
+            super(gc.getName() + " ("+robot.getGateAllowances().get(gc)+")");
+            this.gc = gc;
         }
         
         public void actionPerformed(ActionEvent e) {
             if (locked) return;
+            if (robot.getGateAllowances().get(gc) == 0) {
+                // TODO: play buzzer sound
+                return;
+            }
             try {
-                Gate newGate = (Gate) gateClass.newInstance();
+                Gate newGate = gc.getGateClass().newInstance();
                 Point p = new Point(newGatePosition);
                 addGate(newGate, p);
-                playSound(audioClipName);
+                playSound("create-"+gc.getName());
             } catch (InstantiationException e1) {
                 e1.printStackTrace();
                 JOptionPane.showMessageDialog(CircuitEditor.this, "Couldn't create new Gate instance:\n"+e1.getMessage());
@@ -216,6 +215,11 @@ public class CircuitEditor extends JPanel {
 	private List<Gate> outputs;
 
 	private Gate inputsGate;
+
+    /**
+     * Maps each type of gate to its GateConfig instance.
+     */
+    private Map<Class<Gate>, GateConfig> gateConfigs = new HashMap<Class<Gate>, GateConfig>();
 
 	/**
 	 * Maps Gate instances to Rectangles that say where and how big to paint them.
@@ -292,19 +296,11 @@ public class CircuitEditor extends JPanel {
 	 */
 	private Font labelFont;
 
-    private AddGateAction addAndGateAction;
-
-    private AddGateAction addNandGateAction;
-
-    private AddGateAction addOrGateAction;
-
-    private AddGateAction addNorGateAction;
-
-    private AddGateAction addNotGateAction;
-
     private RemoveAction removeAction;
     
     private RemoveAllAction removeAllAction;
+
+    private Robot robot;
     
     private SoundManager sm;
     
@@ -330,16 +326,20 @@ public class CircuitEditor extends JPanel {
 	private static final int OUTPUT_STICK_LENGTH = 20;
 
 	
-	public CircuitEditor(Gate[] outputs, Gate inputs, SoundManager sm) {
-	    setupKeyActions();
-	    setPreferredSize(new Dimension(400, 400));
-	    this.inputsGate = inputs;
-	    this.outputs = new ArrayList<Gate>();
-	    for (Gate g : outputs) this.outputs.add(g);
-	    permanentGates.addAll(this.outputs);
-	    permanentGates.add(inputs);
+	public CircuitEditor(Robot robot, SoundManager sm) {
+	    this.robot = robot;
 	    this.sm = sm;
+	    setPreferredSize(new Dimension(400, 400));
+	    inputsGate = robot.getInputsGate();
+	    outputs = new ArrayList<Gate>();
+        for (GateConfig gc : robot.getGateAllowances().keySet()) {
+            gateConfigs.put(gc.getGateClass(), gc);
+        }
+	    for (Gate g : robot.getOutputs()) outputs.add(g);
+	    permanentGates.addAll(outputs);
+	    permanentGates.add(inputsGate);
 	    mouseListener = new MouseInput();
+	    setupKeyActions();
         addMouseListener(mouseListener);
         addMouseMotionListener(mouseListener);
         setLocked(false);
@@ -347,29 +347,19 @@ public class CircuitEditor extends JPanel {
 	}
 
     private void setupKeyActions() {
-        getInputMap().put(KeyStroke.getKeyStroke('a'), "addGate(AND)");
-        getInputMap().put(KeyStroke.getKeyStroke('A'), "addGate(NAND)");
-        getInputMap().put(KeyStroke.getKeyStroke('o'), "addGate(OR)");
-        getInputMap().put(KeyStroke.getKeyStroke('O'), "addGate(NOR)");
-        getInputMap().put(KeyStroke.getKeyStroke('n'), "addGate(NOT)");
+        for (GateConfig gc : robot.getGateAllowances().keySet()) {
+            getInputMap().put(gc.getAccelerator(), "addGate("+gc.getName()+")");
+            Action addGateAction = new AddGateAction(gc);
+            getActionMap().put("addGate("+gc.getName()+")", addGateAction);
+        }
+
         getInputMap().put(KeyStroke.getKeyStroke(KeyEvent.VK_DELETE, 0), "remove");
         getInputMap().put(KeyStroke.getKeyStroke(KeyEvent.VK_BACK_SPACE, 0), "remove");
-        getInputMap().put(KeyStroke.getKeyStroke('!'), "removeAll");
-        
-        addAndGateAction = new AddGateAction(AndGate.class, "New AND Gate", "create-AND");
-        addNandGateAction = new AddGateAction(NandGate.class, "New NAND Gate", "create-NAND");
-        addOrGateAction = new AddGateAction(OrGate.class, "New OR Gate", "create-OR");
-        addNorGateAction = new AddGateAction(NorGate.class, "New NOR Gate", "create-NOR");
-        addNotGateAction = new AddGateAction(NotGate.class, "New NOT Gate", "create-NOT");
         removeAction = new RemoveAction("Remove");
-        removeAllAction = new RemoveAllAction();
-        
-        getActionMap().put("addGate(AND)", addAndGateAction);
-        getActionMap().put("addGate(NAND)", addNandGateAction);
-        getActionMap().put("addGate(OR)", addOrGateAction);
-        getActionMap().put("addGate(NOR)", addNorGateAction);
-        getActionMap().put("addGate(NOT)", addNotGateAction);
         getActionMap().put("remove", removeAction);
+
+        getInputMap().put(KeyStroke.getKeyStroke('!'), "removeAll");
+        removeAllAction = new RemoveAllAction();
         getActionMap().put("removeAll", removeAllAction);
     }
 
@@ -816,11 +806,9 @@ public class CircuitEditor extends JPanel {
         
         private void showPopup(Point p) {
             JPopupMenu menu = new JPopupMenu();
-            menu.add(addAndGateAction);
-            menu.add(addNandGateAction);
-            menu.add(addOrGateAction);
-            menu.add(addNorGateAction);
-            menu.add(addNotGateAction);
+            for (GateConfig gc : robot.getGateAllowances().keySet()) {
+                menu.add(new AddGateAction(gc));
+            }
             menu.add(removeAction);
             menu.add(removeAllAction);
             menu.show(CircuitEditor.this, p.x, p.y);
@@ -955,19 +943,13 @@ public class CircuitEditor extends JPanel {
         locked = v;
         repaint();
     }
+    
     /**
-     * Returns the sound manager name for the given gate.  For example,
-     * if it's an AND gate, return value is "AND"; for an OR gate, the
-     * return value is "OR".
-     * 
-     * @return the sound name for the given gate.  Returns "MISC" for unknown
-     * gates.
+     * Returns the sound manager name for the given gate by looking it up in
+     * that gate's GateConfig.
      */
     private String getSoundName(Gate g) {
-        if (g instanceof AndGate) return "AND";
-        else if (g instanceof OrGate) return "OR";
-        else if (g instanceof NotGate) return "NOT";
-        else return "MISC";
+        return gateConfigs.get(g.getClass()).getName();
     }
     
     private void playSound(String name) {
