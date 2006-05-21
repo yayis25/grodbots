@@ -7,7 +7,9 @@ package net.bluecow.robot;
 
 import java.awt.AlphaComposite;
 import java.awt.BorderLayout;
+import java.awt.Dimension;
 import java.awt.FlowLayout;
+import java.awt.Point;
 import java.awt.Toolkit;
 import java.awt.Window;
 import java.awt.event.ActionEvent;
@@ -152,12 +154,14 @@ public class Main {
                 start.setText("Resume");
                 step.setText("Step");
                 reset.setText("Reset");
+                playfield.setLabellingOn(false);
             } else if (newState == GameState.NOT_STARTED) {
                 state = newState;
                 lockEditors(false);
                 start.setText("Start");
                 step.setText("Step");
                 reset.setText("Reset");
+                playfield.setLabellingOn(true);
             } else if (newState == GameState.RUNNING) {
                 if (state == GameState.WON) {
                     state = GameState.RESET;
@@ -326,7 +330,7 @@ public class Main {
                 in = new FileInputStream(f);
                 // FIXME: have to update ghost format to include sprite, start position, and step size
                 Robot ghost = new Robot("Ghost", config.getLevels().get(levelNumber), config.getSensorTypes(), (Sprite) null, null, 0.1f);
-                CircuitEditor ghostCE = new CircuitEditor(ghost.getOutputs(), ghost.getInputsGate(), sm);
+                CircuitEditor ghostCE = new CircuitEditor(ghost, sm);
                 CircuitStore.load(in, ghostCE, ghost);
                 gameLoop.addRobot(ghost, ghostCE);
                 playfield.addRobot(ghost, AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.5f));
@@ -547,10 +551,13 @@ public class Main {
         
         levelNumber = newLevelNum;
         final LevelConfig level = config.getLevels().get(newLevelNum);
+        level.resetState();
         playfield = new Playfield(level);
+        playfield.setLabellingOn(true);
         Map<Robot,CircuitEditor> robots = new LinkedHashMap<Robot,CircuitEditor>();
         for (Robot robot : level.getRobots()) {
-            robots.put(robot, new CircuitEditor(robot.getOutputs(), robot.getInputsGate(), sm));
+            robots.put(robot,
+                    new CircuitEditor(robot, sm));
         }
         final GameLoop gameLoop = new GameLoop(robots, level, playfield);
 
@@ -649,6 +656,10 @@ public class Main {
         playfieldFrame.pack();
         playfieldFrame.setVisible(true);
 
+        final Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
+        Point newFrameLocation = new Point(
+                playfieldFrame.getX() + playfieldFrame.getWidth() + 5,
+                playfieldFrame.getY());
         for (Map.Entry<Robot, CircuitEditor> entry : robots.entrySet()) {
             Robot robot = entry.getKey();
             CircuitEditor ce = entry.getValue();
@@ -658,11 +669,17 @@ public class Main {
             editorFrame.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
             editorFrame.setContentPane(efcp);
             editorFrame.pack();
-            editorFrame.setLocation(
-                    playfieldFrame.getX() + playfieldFrame.getWidth() + 5,
-                    playfieldFrame.getY());
+            editorFrame.setLocation(newFrameLocation);
             editorFrame.setVisible(true);
             windowsToClose.add(editorFrame);
+            newFrameLocation.x += editorFrame.getWidth();
+            if (newFrameLocation.x + editorFrame.getWidth() > screenSize.width) {
+                newFrameLocation.x = 0;
+                newFrameLocation.y += editorFrame.getHeight();
+                if (newFrameLocation.y + editorFrame.getHeight() > screenSize.height) {
+                    newFrameLocation.y = screenSize.height - editorFrame.getHeight();
+                }
+            }
         }
     }
     

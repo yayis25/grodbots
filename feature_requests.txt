@@ -1,7 +1,8 @@
 Game Features:
--Specify sprite image scale factor in config file
--Show labels on robots and switches when game is in "not started" state
--Score keeping (based on switches that modify the score)
+-Score keeping (based on switches that modify the score).. reset score when level resets!
+-Split Circuit class out of CircuitEditor, and give it to the Robot. (Circuit will include gate allowances)
+-Gate allowances
+-Split LevelConfig and Level, where LevelConfig doesn't change and Level does. (?)
 -Make load/save circuits and ghosts work with multiple robots per level
 -Animated sprites for anything that can use a static image
 -init sound manager sound set from config file
@@ -33,6 +34,12 @@ Sounds:
 -little ditties for the beginning of each level (maybe this would be better suited to the MIDI sequencer api)
  
 Completed:
+-Fix accelerator key for adding gates (was getting the wrong Keystrokes)
+-Create a snapshot/restore facility for LevelConfig (so the level state can be reset after the switches have had at it)
+-Make an effort not to stack circuit editor windows on top of each other
+-Good debug messages for runtime eval errors on switches
+-Show labels on robots and switches when game is in "not started" state
+-Specify sprite image scale factor in config file
 -Goodies to pick up along the way or numbered checkpoints
 -Secondary colour tiles (CMY) that detect as 2 colours at once (white would become all 3)
 -NAND and NOR gates (and buffers?)

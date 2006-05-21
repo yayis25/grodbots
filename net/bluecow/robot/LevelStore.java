@@ -117,7 +117,7 @@ public class LevelStore {
                     throw new FileFormatException("Invalid gate description line.  Format is 'name key class'.", in.getLineNumber(), line, 0);
                 }
                 String gateName = m.group(1);
-                String accelKey = m.group(2);
+                char accelKey = m.group(2).charAt(0);
                 String gateClass = m.group(3);
                 
                 try {
@@ -353,8 +353,9 @@ public class LevelStore {
                     level.setSquare(i, y, config.getSquare(' '));
                 }
             }
-            
+            level.snapshotState();
             config.addLevel(level);
+            line = in.readLine();
         }
         
         return config;

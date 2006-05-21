@@ -2,6 +2,7 @@ package net.bluecow.robot;
 
 import java.awt.geom.Point2D;
 import java.io.FileNotFoundException;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -56,12 +57,14 @@ public class Robot {
     
     /** This robot's name */
     private String name;
+    private Map<GateConfig, Integer> gateAllowances;
 	
     public Robot(String name, LevelConfig level, List<SensorConfig> sensorList, String spritePath, Point2D.Float startPosition, float stepSize) throws FileNotFoundException {
         this(name, level, sensorList, SpriteManager.load(spritePath), startPosition, stepSize);
     }
 
-    public Robot(String name, LevelConfig level, List<SensorConfig> sensorList, Sprite sprite, Point2D.Float startPosition, float stepSize) {
+    public Robot(String name, LevelConfig level, List<SensorConfig> sensorList,
+            Sprite sprite, Point2D.Float startPosition, float stepSize) {
         this.name = name;
         this.level = level;
         this.sprite = sprite;
@@ -73,7 +76,23 @@ public class Robot {
         for (SensorConfig sensor : sensorList) {
             outputs.put(sensor, new RobotSensorOutput(sensor));
         }
+        
+        gateAllowances = new LinkedHashMap<GateConfig, Integer>();
 	}
+    
+    /**
+     * Copy constructor.  Makes an independant copy of the given robot, also
+     * duplicating any objects owned by the source robot which are mutable.
+     * 
+     * <p>Note that the level config is more like a parent pointer, so it's not
+     * cloned (that would be a bit awkward).
+     * 
+     * @param src The robot to copy.
+     */
+    public Robot(Robot src) {
+        this(src.name, src.level, new ArrayList<SensorConfig>(src.outputs.keySet()),
+                src.sprite, src.startPosition, src.stepSize);
+    }
 	
     public void move() {
         int direction = 0;
@@ -379,7 +398,11 @@ public class Robot {
     }
 
     public void addGateAllowance(GateConfig gate, int count) {
-        System.err.println("Robot.addGateAllowance is not implemented");
+        gateAllowances.put(gate, count);
+    }
+    
+    public Map<GateConfig, Integer> getGateAllowances() {
+        return gateAllowances; // XXX: not ideal, since this robot can't tell when the map is modified
     }
 
     public boolean isGoalReached() {

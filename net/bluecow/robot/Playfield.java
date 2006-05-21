@@ -10,12 +10,15 @@ import java.awt.Graphics2D;
 import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.geom.AffineTransform;
+import java.awt.geom.GeneralPath;
 import java.awt.geom.Point2D;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
 import javax.swing.JPanel;
+
+import net.bluecow.robot.LevelConfig.Switch;
 
 /**
  * Playfield
@@ -48,16 +51,39 @@ public class Playfield extends JPanel {
     
     private Integer frameCount;
     
-    private List<RoboStuff> robots = new ArrayList<RoboStuff>();
+    private List<RoboStuff> robots;
     
+    private boolean labellingOn;
+
+    /**
+     * The colour that drawLabel() will use to paint the box underneath labels.
+     */
+    private Color boxColor = new Color(.2f, .2f, .2f, .7f);
+
+    /**
+     * The colour that drawLabel() will use to paint the text of labels.
+     */
+    private Color labelColor = Color.WHITE;
+
     /**
      * Creates a new playfield with the specified map.
      * 
      * @param map The map.
      */
     public Playfield(LevelConfig level) {
-        this.level = level;
+        setLevel(level);
         setupKeyboardActions();
+    }
+    
+    /**
+     * Sets the value of level to the given level, and resets the list of robostuff
+     * to contain only the robots described in the level.
+     *
+     * @param level
+     */
+    final void setLevel(LevelConfig level) {
+        robots = new ArrayList<RoboStuff>();
+        this.level = level;
         for (Robot r : level.getRobots()) {
             addRobot(r, AlphaComposite.SrcOver);
         }
@@ -133,8 +159,8 @@ public class Playfield extends JPanel {
         }
         g2.setComposite(backupComposite);
         
+        FontMetrics fm = getFontMetrics(getFont());
         if (frameCount != null) {
-            FontMetrics fm = getFontMetrics(getFont());
             String fc = String.format("%4d", frameCount);
             int width = fm.stringWidth(fc);
             int height = fm.getHeight();
@@ -145,6 +171,29 @@ public class Playfield extends JPanel {
             g2.setColor(Color.WHITE);
             g2.drawString(fc, x, y + height - fm.getDescent());
         }
+
+        {
+            String score = String.format("Score: %4d", level.getScore());
+            int width = fm.stringWidth(score);
+            int height = fm.getHeight();
+            int x = getWidth() - width - 3;
+            int y = 3 + height;
+            g2.setColor(Color.BLACK);
+            g2.fillRect(x, y, width, height);
+            g2.setColor(Color.WHITE);
+            g2.drawString(score, x, y + height - fm.getDescent());
+        }        
+        
+        if (labellingOn) {
+            for (RoboStuff rs : robots) {
+                Robot robot = rs.getRobot();
+                drawLabel(g2, fm, robot.getName(), robot.getPosition());
+            }
+            
+            for (Switch s : level.getSwitches()) {
+                drawLabel(g2, fm, s.getName(), s.getLocation());
+            }
+        }
         
         if (winMessage != null) {
             g2.setFont(g2.getFont().deriveFont(50f));
@@ -153,6 +202,44 @@ public class Playfield extends JPanel {
             g2.setColor(Color.RED);
             g2.drawString(winMessage, 15, getHeight()/2-5);
         }
+    }
+
+    /**
+     * Draws a label for the centre of the square at the given position.
+     */
+    private void drawLabel(Graphics2D g2, FontMetrics fm, String label, Point position) {
+        drawLabel(g2, fm, label, new Point2D.Float(position.x + 0.5f, position.y + 0.5f));
+    }
+    
+    /**
+     * Draws a label over a background box with an arrow to given square position.
+     * 
+     * <p>See also {@link #squareWidth}, {@link #boxColor}, and {@link #labelColor}.
+     * 
+     * @param position The map position.  This is not a screen coordinate; it's
+     * a map location.  For example, the point (x,y) = (3.5, 2.5) is at the screen
+     * position (3.5*squareWidth, 2.5*squareWidth).
+     */
+    private void drawLabel(Graphics2D g2, FontMetrics fm, String label, Point2D.Float position) {
+        float x = position.x * squareWidth;
+        float y = position.y * squareWidth;
+        g2.setColor(boxColor);
+        GeneralPath arrow = new GeneralPath();
+        arrow.moveTo(x, y);
+        arrow.lineTo(x - 10, y + 5);
+        arrow.lineTo(x - 7, y + 5);
+        arrow.lineTo(x - 7, y + 10);
+        arrow.lineTo(x + 7, y + 10);
+        arrow.lineTo(x + 7, y + 5);
+        arrow.lineTo(x + 10, y + 5);
+        arrow.lineTo(x, y);
+        g2.fill(arrow);
+        Rectangle box = new Rectangle(
+                (int) x - 15, (int) y + 10 ,
+                fm.stringWidth(label) + fm.getHeight()*2, fm.getHeight()*2);
+        g2.fillRoundRect(box.x, box.y, box.width, box.height, 4, 4);
+        g2.setColor(labelColor);
+        g2.drawString(label, box.x + fm.getHeight(), box.y + fm.getHeight()/2 + fm.getAscent());
     }
     
     public Dimension getPreferredSize() {
@@ -192,5 +279,13 @@ public class Playfield extends JPanel {
      */
     public LevelConfig getLevel() {
         return level;
+    }
+    
+    public boolean isLabellingOn() {
+        return labellingOn;
+    }
+    
+    public void setLabellingOn(boolean labellingOn) {
+        this.labellingOn = labellingOn;
     }
 }

@@ -13,6 +13,10 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+import javax.swing.JOptionPane;
+
+import bsh.EvalError;
+
 import net.bluecow.robot.LevelConfig.Switch;
 
 /**
@@ -149,8 +153,12 @@ public class GameLoop implements Runnable {
                 if (!isSameSquare(oldPos, robot.getPosition())) {
                     Switch exitingSwitch = level.getSwitch(oldPos);
                     Switch enteringSwitch = level.getSwitch(robot.getPosition());
-                    if (exitingSwitch != null) exitingSwitch.onExit(robot);
-                    if (enteringSwitch != null) enteringSwitch.onEnter(robot);
+                    try {
+                        if (exitingSwitch != null) exitingSwitch.onExit(robot);
+                        if (enteringSwitch != null) enteringSwitch.onEnter(robot);
+                    } catch (EvalError e) {
+                        JOptionPane.showMessageDialog(null, "Error evaluating switch:\n"+e.getMessage());
+                    }
                 }
                 // XXX: should we re-check if the goal is reached, or wait for the next loop?
             }
@@ -249,6 +257,7 @@ public class GameLoop implements Runnable {
         }
         setGoalReached(false);
         loopCount = 0;
+        level.resetState();
         for (RoboStuff rs : robots) {
             rs.getRobot().resetState();
             rs.getCircuitEditor().resetState();

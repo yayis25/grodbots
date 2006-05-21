@@ -3,6 +3,7 @@ Sensors
  Red
  Green
  Blue
+ Stripe
 Gate Types
  AND a net.bluecow.robot.gate.AndGate
  NAND A net.bluecow.robot.gate.NandGate
@@ -19,18 +20,37 @@ Square Types
  CYAN . C ROBO-INF/images/cyantile.png Green,Blue
  MAGENTA . M ROBO-INF/images/magentatile.png Red,Blue
  WHITE . W ROBO-INF/images/whitetile.png Red,Green,Blue
+ REDSTRIPE . / ROBO-INF/images/redstripetile.png Red,Stripe
 Map Easy Map
 Grods
  Grod ROBO-INF/images/robot_00.png,scale=0.4 0.1 2.5,2.5 AND:10 OR:10 NOT:10 NAND:10 NOR:10
  Gregory ROBO-INF/images/robot.png 0.1 8,8 NOT:10 NAND:3
 Size 15x10
 Switches
- 7,1 Cake ROBO-INF/images/cake.png robot.setGoalReached(true);
- 7,4 Teleport ROBO-INF/images/cow.png Gregory.setPosition(4.5,4.5);
+ 7,1 Cake ROBO-INF/images/cake.png robot.setGoalReached(true); level.increaseScore(200);
+ 7,4 Teleport_Gregory ROBO-INF/images/cow.png Gregory.setPosition(4.5,4.5); level.increaseScore(100);
 XXXXXXXXXXXXXXX
 X R  X Y      X
-X R  X B      X
-X RCMYWB      X
-X GGGGGB      X
+X R  X /      X
+X RCMYW/      X
+X GGGGG/      X
 X             X
 XXXXXXXXXXXXXXX
+X             X
+X             X
+XXXXXXXXXXXXXXX
+*
+Map Cow Map
+Grods
+ Grod ROBO-INF/images/robot_00.png,scale=0.4 0.1 2.5,2.5 AND:10 OR:10 NOT:10 NAND:10 NOR:10
+Size 15x10
+Switches
+ 7,1 Cake ROBO-INF/images/cake.png robot.setGoalReached(true); level.increaseScore(200);
+XXXXXXXXXXXXXX
+XRRYYGGCCBBMMX
+XRRYYGGCCBBMMX
+XRRYYGGCCBBMMX
+XRRYYGGCCBBMMX
+XRRYYGGCCBBMMX
+XWWWW    WWWWX
+XXXXXXXXXXXXXX
