@@ -8,7 +8,6 @@ package net.bluecow.robot.gate;
 import java.awt.Graphics2D;
 import java.awt.Rectangle;
 
-import net.bluecow.robot.gate.Gate.Input;
 import junit.framework.TestCase;
 
 public class AndGateTest extends TestCase {
@@ -45,6 +44,14 @@ public class AndGateTest extends TestCase {
         }
 
         public void drawOutput(Graphics2D g2, Rectangle r, boolean highlight, int outputStickLength) {
+            // no gui
+        }
+
+        public void setCircleSize(int i) {
+            // no gui
+        }
+
+        public void setDrawingTerminations(boolean v) {
             // no gui
         }
     };

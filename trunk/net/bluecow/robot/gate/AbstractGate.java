@@ -142,6 +142,12 @@ public abstract class AbstractGate implements Gate {
      */
     private int circleSize = 6;
     
+    /**
+     * Controls whether or not the boxes and arrows are drawn on the ends of the
+     * inputs and outputs.
+     */
+    private boolean drawingTerminations = true;
+    
     private Font labelFont;
     
     /**
@@ -189,8 +195,12 @@ public abstract class AbstractGate implements Gate {
         } else {
             g2.drawLine(p.x, p.y, p.x + length, p.y);
         }
-        g2.drawLine(p.x + length, p.y, p.x + (int) (length*0.75), p.y - (int) (length*0.25));
-        g2.drawLine(p.x + length, p.y, p.x + (int) (length*0.75), p.y + (int) (length*0.25));
+        
+        if (drawingTerminations) {
+            g2.drawLine(p.x + length, p.y, p.x + (int) (length*0.75), p.y - (int) (length*0.25));
+            g2.drawLine(p.x + length, p.y, p.x + (int) (length*0.75), p.y + (int) (length*0.25));
+        }
+        
         if (label != null) {
             g2.setFont(getLabelFont());
             g2.drawString(label, p.x, p.y + 15);
@@ -198,7 +208,12 @@ public abstract class AbstractGate implements Gate {
     }
 
     private void drawInput(Graphics2D g2, Point p, Gate.Input input, boolean invert, int inputStickLength, int outputStickLength) {
-        int connectorWidth = 6;
+        int connectorWidth;
+        if (drawingTerminations) {
+            connectorWidth = 6;
+        } else {
+            connectorWidth = 0;
+        }
         if (invert) {
             // the - 1 off circlesize is because the circle outline has thickness and runs into the gate's back without the adjustment
             g2.drawOval(p.x - circleSize - 1, p.y - circleSize/2, circleSize, circleSize);
@@ -246,6 +261,14 @@ public abstract class AbstractGate implements Gate {
         return normalColor;
     }
     
+    public void setCircleSize(int i) {
+        circleSize = i;
+    }
+    
+    public void setDrawingTerminations(boolean v) {
+        drawingTerminations = v;
+    }
+    
     /**
      * Tells whether or not the inputs on this gate should be painted with an inversion bubble.
      */
@@ -255,4 +278,5 @@ public abstract class AbstractGate implements Gate {
      * Tells whether or not the outputs on this gate should be painted with an inversion bubble.
      */
     protected abstract boolean isOutputInverted();
+    
 }

@@ -89,6 +89,7 @@ public interface Gate {
     /**
      * Sets the size for the little inversion bubbles on the input and output sticks.
      */
-    //public void setCircleSize(int i);
+    public void setCircleSize(int i);
 
+    public void setDrawingTerminations(boolean v);
 }
