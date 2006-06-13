@@ -1,5 +1,7 @@
 package net.bluecow.robot;
 
+import java.awt.Graphics2D;
+import java.awt.Rectangle;
 import java.awt.geom.Point2D;
 import java.io.FileNotFoundException;
 import java.util.ArrayList;
@@ -10,6 +12,7 @@ import java.util.Map;
 
 import net.bluecow.robot.GameConfig.GateConfig;
 import net.bluecow.robot.GameConfig.SensorConfig;
+import net.bluecow.robot.gate.AbstractGate;
 import net.bluecow.robot.gate.Gate;
 
 /**
@@ -57,13 +60,20 @@ public class Robot {
     
     /** This robot's name */
     private String name;
-    private Map<GateConfig, Integer> gateAllowances;
+    
+    /** The circuit that controls this robot's behaviour. */
+    private Circuit circuit;
 	
-    public Robot(String name, LevelConfig level, List<SensorConfig> sensorList, String spritePath, Point2D.Float startPosition, float stepSize) throws FileNotFoundException {
-        this(name, level, sensorList, SpriteManager.load(spritePath), startPosition, stepSize);
+    public Robot(String name, LevelConfig level, List<SensorConfig> sensorList,
+            Collection<GateConfig> gateConfigs, String spritePath,
+            Point2D.Float startPosition, float stepSize) throws FileNotFoundException {
+        this(name, level, sensorList,
+                gateConfigs, SpriteManager.load(spritePath),
+                startPosition, stepSize);
     }
 
     public Robot(String name, LevelConfig level, List<SensorConfig> sensorList,
+            Collection<GateConfig> gateConfigs,
             Sprite sprite, Point2D.Float startPosition, float stepSize) {
         this.name = name;
         this.level = level;
@@ -77,7 +87,7 @@ public class Robot {
             outputs.put(sensor, new RobotSensorOutput(sensor));
         }
         
-        gateAllowances = new LinkedHashMap<GateConfig, Integer>();
+        this.circuit = new Circuit(robotInputsGate, outputs.values(), gateConfigs);
 	}
     
     /**
@@ -91,6 +101,7 @@ public class Robot {
      */
     public Robot(Robot src) {
         this(src.name, src.level, new ArrayList<SensorConfig>(src.outputs.keySet()),
+                new ArrayList<GateConfig>(src.circuit.getGateConfigs().values()),
                 src.sprite, src.startPosition, src.stepSize);
     }
 	
@@ -169,12 +180,13 @@ public class Robot {
 	 * moves from a red square to a green square, the red output will
 	 * change to false and the green output will change to true.
 	 */
-	class RobotSensorOutput implements Gate {
+	class RobotSensorOutput extends AbstractGate {
 		private boolean state;
 		private SensorConfig config;
 
 		public RobotSensorOutput(SensorConfig config) {
-			this.config = config;
+            super(config.getId());
+            this.config = config;
 		}
 		
 		public boolean getOutputState() {
@@ -192,21 +204,26 @@ public class Robot {
 			return new Gate.Input[0];
 		}
 		
-		public String getLabel() {
-			return config.getId();
-		}
-
         public void evaluateInput() {
             // doesn't do anything because this gate's state gets set elsewhere
             // XXX: this could check which colour of square the robot is over, and update the state accordingly
         }
-        public void latchOutput() {
-            // nothing to do
+
+        @Override
+        protected boolean isInputInverted() {
+            return false;
+        }
+
+        @Override
+        protected boolean isOutputInverted() {
+            return false;
         }
         
-        public void reset() {
-            setState(false);
+        @Override
+        public void drawBody(Graphics2D g2, Rectangle r, int inputStickLength, int outputStickLength) {
+            // empty body
         }
+
 	}
 	
 	/**
@@ -286,7 +303,7 @@ public class Robot {
 	 * The RobotInputsGate is basically a place to hold the collection
 	 * of this robot's inputs.  Its output state is meaningless.
 	 */
-	public class RobotInputsGate implements Gate {
+	public class RobotInputsGate extends AbstractGate {
 
 	    private RobotInput[] inputs;
 
@@ -296,14 +313,10 @@ public class Robot {
 	     * @param inputs All the inputs that this robot has.
 	     */
 	    public RobotInputsGate(RobotInput[] inputs) {
-	        super();
+	        super("Robot inputs");
 	        this.inputs = inputs;
 	    }
 	    
-	    public String getLabel() {
-	        return "Robot inputs";
-	    }
-
 	    /**
 	     * Always returns false.
 	     */
@@ -318,14 +331,22 @@ public class Robot {
         public void evaluateInput() {
             // this gate always outputs false
         }
-        
-        public void latchOutput() {
-            // no op
+
+        @Override
+        protected boolean isInputInverted() {
+            return false;
+        }
+
+        @Override
+        protected boolean isOutputInverted() {
+            return false;
         }
         
-        public void reset() {
-            // no op
+        @Override
+        public void drawBody(Graphics2D g2, Rectangle r, int inputStickLength, int outputStickLength) {
+            // empty body
         }
+
 	}
 
 	// ACCESSORS and MUTATORS
@@ -397,14 +418,6 @@ public class Robot {
         return robotInputsGate;
     }
 
-    public void addGateAllowance(GateConfig gate, int count) {
-        gateAllowances.put(gate, count);
-    }
-    
-    public Map<GateConfig, Integer> getGateAllowances() {
-        return gateAllowances; // XXX: not ideal, since this robot can't tell when the map is modified
-    }
-
     public boolean isGoalReached() {
         return goalReached;
     }
@@ -416,5 +429,13 @@ public class Robot {
     public void resetState() {
         setGoalReached(false);
         setPosition(startPosition);
+        circuit.resetState();
+    }
+
+    /**
+     * Returns the circuit that controls this Robot's behaviour.
+     */
+    public Circuit getCircuit() {
+        return circuit;
     }
 }

@@ -37,12 +37,12 @@ public class CircuitStore {
      * Saves a description of all the gates in the given circuit editor to
      * the given output stream.
      */
-    public static void save(OutputStream out, CircuitEditor ce) {
+    public static void save(OutputStream out, Circuit c) {
         PrintWriter pw = new PrintWriter(new BufferedWriter(new OutputStreamWriter(out)));
         int nextId = 0;
         Map<Gate,String> idmap = new HashMap<Gate,String>();
         pw.printf(MAGIC+"\n");
-        for (Map.Entry<Gate, Rectangle> ent : ce.getGatePositions().entrySet()) {
+        for (Map.Entry<Gate, Rectangle> ent : c.getGatePositions().entrySet()) {
             Gate g = ent.getKey();
             Rectangle r = ent.getValue();
             String id;
@@ -61,7 +61,7 @@ public class CircuitStore {
         
         pw.printf("*Connections\n");
         
-        for (Map.Entry<Gate, Rectangle> ent : ce.getGatePositions().entrySet()) {
+        for (Map.Entry<Gate, Rectangle> ent : c.getGatePositions().entrySet()) {
             Gate g = ent.getKey();
             String id = idmap.get(g);
             Gate.Input[] inputs = g.getInputs();
@@ -78,10 +78,13 @@ public class CircuitStore {
     
     /**
      * Reads the description of a set of gates from the given input stream
-     * and creates the corresponding gates in the given circuit editor.
+     * and creates the corresponding gates in the given circuit.
+     * <p>
+     * XXX: should remove Robot argument and just use the inputs and outputs of the circuit.
+     * 
      * @throws IOException If the input stream can't be read
      */
-    public static void load(InputStream in, CircuitEditor ce, Robot robot) throws IOException {
+    public static void load(InputStream in, Circuit c, Robot robot) throws IOException {
         Pattern gateLine = Pattern.compile("(\\w+) \\[([0-9]+),([0-9]+),([0-9]+),([0-9]+)\\] (.*)");
         Pattern connLine = Pattern.compile("(\\w+):([0-9]+) <- (\\w+)");
         LineNumberReader br = new LineNumberReader(new InputStreamReader(in));
@@ -135,7 +138,7 @@ public class CircuitStore {
             } else {
                 try {
                     g = (Gate) Class.forName(gateClassName).newInstance();
-                    ce.addGate(g, p);
+                    c.addGate(g, p);
                 } catch (InstantiationException e) {
                     e.printStackTrace();
                     throw new FileFormatException(

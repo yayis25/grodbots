@@ -5,6 +5,11 @@
  */
 package net.bluecow.robot.gate;
 
+import java.awt.Graphics2D;
+import java.awt.Rectangle;
+
+import net.bluecow.robot.Circuit;
+
 /**
  * The NotGate class represents a single input logical NOT gate.
  *
@@ -27,5 +32,24 @@ public class NotGate extends AbstractGate {
      */
     public void evaluateInput() {
         nextOutputState = ! inputs[0].getState();
-    }   
+    }
+
+    @Override
+    public void drawBody(Graphics2D g2, Rectangle r, int inputStickLength, int outputStickLength) {
+        int backX = inputStickLength;
+        g2.drawLine(backX, 0, backX, r.height);
+        g2.drawLine(backX, 0, r.width - outputStickLength, r.height/2);
+        g2.drawLine(backX, r.height, r.width - outputStickLength, r.height/2);
+    }
+    
+    @Override
+    protected boolean isInputInverted() {
+        return false;
+    }
+
+    @Override
+    protected boolean isOutputInverted() {
+        return true;
+    }
+
 }

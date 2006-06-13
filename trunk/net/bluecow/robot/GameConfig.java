@@ -92,6 +92,10 @@ public class GameConfig {
             this.sensorTypes = Collections.unmodifiableCollection(sensorTypes);
         }
 
+        public String getName() {
+            return name;
+        }
+        
         public char getMapChar() {
             return mapChar;
         }
@@ -148,6 +152,10 @@ public class GameConfig {
 
     public Set<String> getGateTypeNames() {
         return Collections.unmodifiableSet(gateTypes.keySet());
+    }
+    
+    public Collection<GateConfig> getGateTypes() {
+        return Collections.unmodifiableCollection(gateTypes.values());
     }
     
     public GateConfig getGate(String gateTypeName) {
