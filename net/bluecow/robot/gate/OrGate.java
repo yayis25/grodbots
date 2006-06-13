@@ -1,6 +1,6 @@
 package net.bluecow.robot.gate;
 
-public class OrGate extends AbstractGate {
+public class OrGate extends AbstractOrGate {
 	
 	/**
 	 * Creates a 2-input OR gate.
@@ -30,4 +30,15 @@ public class OrGate extends AbstractGate {
 		}
 		nextOutputState = state;
 	}
+
+    @Override
+    protected boolean isInputInverted() {
+        return false;
+    }
+
+    @Override
+    protected boolean isOutputInverted() {
+        return false;
+    }
+
 }

@@ -9,15 +9,13 @@ import java.awt.geom.Point2D;
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
 import java.util.ArrayList;
-import java.util.Iterator;
+import java.util.Collection;
 import java.util.List;
-import java.util.Map;
 
 import javax.swing.JOptionPane;
 
-import bsh.EvalError;
-
 import net.bluecow.robot.LevelConfig.Switch;
+import bsh.EvalError;
 
 /**
  * The GameLoop represents the main loop of the game while it is in operation.
@@ -27,25 +25,7 @@ import net.bluecow.robot.LevelConfig.Switch;
  */
 public class GameLoop implements Runnable {
 
-    private class RoboStuff {
-        private Robot robot;
-        private CircuitEditor circuitEditor;
-        
-        public RoboStuff(Robot robot, CircuitEditor circuitEditor) {
-            this.robot = robot;
-            this.circuitEditor = circuitEditor;
-        }
-
-        public CircuitEditor getCircuitEditor() {
-            return circuitEditor;
-        }
-
-        public Robot getRobot() {
-            return robot;
-        }
-    }
-    
-    private List<RoboStuff> robots = new ArrayList<RoboStuff>();
+    private List<Robot> robots = new ArrayList<Robot>();
     
     private Playfield playfield;
     
@@ -82,27 +62,23 @@ public class GameLoop implements Runnable {
      * @param robot
      * @param playfield
      */
-    public GameLoop(Map<Robot,CircuitEditor> robots, LevelConfig level, Playfield playfield) {
+    public GameLoop(Collection<Robot> robots, LevelConfig level, Playfield playfield) {
         this.level = level;
         this.playfield = playfield;
-        for (Map.Entry<Robot,CircuitEditor> entry : robots.entrySet()) {
-            addRobot(entry.getKey(), entry.getValue());
+        for (Robot r : robots) {
+            addRobot(r);
         }
     }
     
-    public final void addRobot(Robot robot, CircuitEditor circuitEditor) {
-        robots.add(new RoboStuff(robot, circuitEditor));
+    public final void addRobot(Robot robot) {
+        robots.add(robot);
     }
 
     /**
      * Removes the given robot from this game loop.
      */
     public final void removeRobot(Robot robot) {
-        for (Iterator<RoboStuff> it = robots.iterator(); it.hasNext(); ) {
-            if (it.next().getRobot() == robot) {
-                it.remove();
-            }
-        }
+        robots.remove(robot);
     }
 
     public void run() {
@@ -142,12 +118,11 @@ public class GameLoop implements Runnable {
         }
 
         boolean allGoalsReached = true;
-        for (RoboStuff rs : robots) {
-            Robot robot = rs.getRobot();
+        for (Robot robot : robots) {
             boolean thisGoalReached = robot.isGoalReached();
             if (!thisGoalReached) {
                 robot.updateSensors();
-                rs.getCircuitEditor().evaluateOnce();
+                robot.getCircuit().evaluateOnce();
                 Point2D.Float oldPos = robot.getPosition();
                 robot.move();
                 if (!isSameSquare(oldPos, robot.getPosition())) {
@@ -258,9 +233,8 @@ public class GameLoop implements Runnable {
         setGoalReached(false);
         loopCount = 0;
         level.resetState();
-        for (RoboStuff rs : robots) {
-            rs.getRobot().resetState();
-            rs.getCircuitEditor().resetState();
+        for (Robot robot : robots) {
+            robot.resetState();
         }
         playfield.setFrameCount(null);
     }

@@ -1,5 +1,11 @@
 package net.bluecow.robot.gate;
 
+import java.awt.Color;
+import java.awt.Font;
+import java.awt.Graphics2D;
+import java.awt.Point;
+import java.awt.Rectangle;
+
 /**
  * A generic gate implementation that can do everything except evaluate its
  * output state (because it's not declared to be AND, OR, NOT, XOR, NAND, etc).
@@ -37,7 +43,7 @@ public abstract class AbstractGate implements Gate {
 	protected AbstractGate(String label) {
 		this.label = label;
 	}
-	
+
 	/**
 	 * The Input class represents a single input to its enclosing gate instance.
 	 * A gate can have 0 or more of these in its inputs list.
@@ -122,4 +128,131 @@ public abstract class AbstractGate implements Gate {
 	public boolean getOutputState() {
 	    return outputState;
 	}
+    
+    
+    // -------------- UI Crap ----------------
+    private Color hilightColor;
+    
+    private Color normalColor;
+    
+    private Color activeColor;
+
+    /**
+     * The diameter of circles that indicate signal inversion (in pixels).
+     */
+    private int circleSize = 6;
+    
+    private Font labelFont;
+    
+    /**
+     * Draws a crappy placeholder graphic: an oval with the class name in it.  You
+     * should implement your own gate bydy design and not rely on this implementation.
+     */
+    public void drawBody(Graphics2D g2, Rectangle r, int inputStickLength, int outputStickLength) {
+        g2.drawOval(0, 0, r.width, r.height);
+        g2.drawString(getClass().getName(), 5, r.height/2);
+    }
+    
+    public void drawInputs(Graphics2D g2, Rectangle r, int inputStickLength, int outputStickLength, Input hilightInput) {
+        // draw the inputs along the left edge of this gate
+        Gate.Input[] inputs = getInputs();
+        Point inputLoc = new Point(inputStickLength, 0);
+        for (int i = 0; inputs != null && i < inputs.length; i++) {
+            if (inputs[i] == hilightInput) {
+                g2.setColor(getHilightColor());
+            } else if (inputs[i].getState() == true) {
+                g2.setColor(getActiveColor());
+            } else {
+                g2.setColor(getNormalColor());
+            }
+            
+            inputLoc.y = (int) ((0.5 + i) * (double) r.height / (double) inputs.length);
+            drawInput(g2, inputLoc, inputs[i], isInputInverted(), inputStickLength, outputStickLength);
+        }
+
+    }
+    
+    public void drawOutput(Graphics2D g2, Rectangle r, boolean highlight, int outputStickLength) {
+        Point p = new Point(r.width - outputStickLength, r.height/2);
+        int length = outputStickLength;
+        if (highlight) {
+            g2.setColor(getHilightColor());
+        } else if (getOutputState()) {
+            g2.setColor(getActiveColor());
+        } else {
+            g2.setColor(getNormalColor());
+        }
+        
+        if (isOutputInverted()) {
+            g2.drawOval(p.x, p.y - circleSize/2, circleSize, circleSize);
+            g2.drawLine(p.x + circleSize, p.y, p.x + length, p.y);
+        } else {
+            g2.drawLine(p.x, p.y, p.x + length, p.y);
+        }
+        g2.drawLine(p.x + length, p.y, p.x + (int) (length*0.75), p.y - (int) (length*0.25));
+        g2.drawLine(p.x + length, p.y, p.x + (int) (length*0.75), p.y + (int) (length*0.25));
+        if (label != null) {
+            g2.setFont(getLabelFont());
+            g2.drawString(label, p.x, p.y + 15);
+        }
+    }
+
+    private void drawInput(Graphics2D g2, Point p, Gate.Input input, boolean invert, int inputStickLength, int outputStickLength) {
+        int connectorWidth = 6;
+        if (invert) {
+            // the - 1 off circlesize is because the circle outline has thickness and runs into the gate's back without the adjustment
+            g2.drawOval(p.x - circleSize - 1, p.y - circleSize/2, circleSize, circleSize);
+            g2.drawLine(p.x - circleSize - 1, p.y, p.x - inputStickLength + connectorWidth, p.y);
+        } else {
+            g2.drawLine(p.x, p.y, p.x - inputStickLength + connectorWidth, p.y);
+        }
+        g2.drawRect(p.x - inputStickLength, p.y - (connectorWidth / 2), connectorWidth, connectorWidth);
+        if (input.getLabel() != null) {
+            g2.setFont(getLabelFont());
+            int labelLength = g2.getFontMetrics().stringWidth(input.getLabel());
+            int ascent = g2.getFontMetrics().getAscent();
+            g2.drawString(input.getLabel(), p.x - labelLength, p.y + ascent + connectorWidth);
+        }
+    }
+
+    private Font getLabelFont() {
+        if (labelFont == null) {
+            labelFont = new Font("System", Font.PLAIN, 9);
+        }
+        return labelFont;
+    }
+
+    public void setActiveColor(Color activeColor) {
+        this.activeColor = activeColor;
+    }
+    
+    public Color getActiveColor() {
+        return activeColor;
+    }
+    
+    public void setHilightColor(Color hilightColor) {
+        this.hilightColor = hilightColor;
+    }
+    
+    public Color getHilightColor() {
+        return hilightColor;
+    }
+    
+    public void setNormalColor(Color normalColor) {
+        this.normalColor = normalColor;
+    }
+    
+    public Color getNormalColor() {
+        return normalColor;
+    }
+    
+    /**
+     * Tells whether or not the inputs on this gate should be painted with an inversion bubble.
+     */
+    protected abstract boolean isInputInverted();
+
+    /**
+     * Tells whether or not the outputs on this gate should be painted with an inversion bubble.
+     */
+    protected abstract boolean isOutputInverted();
 }

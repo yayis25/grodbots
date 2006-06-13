@@ -229,7 +229,7 @@ public class Main {
                 int choice = fc.showSaveDialog(ce);
                 if (choice == JFileChooser.APPROVE_OPTION) {
                     out = new FileOutputStream(fc.getSelectedFile());
-                    CircuitStore.save(out, ce);
+                    CircuitStore.save(out, ce.getCircuit());
                     RobotUtils.updateRecentFiles(recentFiles, fc.getSelectedFile());
                 }
             } catch (IOException ex) {
@@ -276,8 +276,8 @@ public class Main {
                     f = fc.getSelectedFile();
                 }
                 in = new FileInputStream(f);
-                ce.removeAllGates();
-                CircuitStore.load(in, ce, robot);
+                ce.getCircuit().removeAllGates();
+                CircuitStore.load(in, ce.getCircuit(), robot);
                 RobotUtils.updateRecentFiles(recentFiles, f);
             } catch (IOException ex) {
                 JOptionPane.showMessageDialog(ce, "Load Failed: "+ex.getMessage());
@@ -329,10 +329,11 @@ public class Main {
                 }
                 in = new FileInputStream(f);
                 // FIXME: have to update ghost format to include sprite, start position, and step size
-                Robot ghost = new Robot("Ghost", config.getLevels().get(levelNumber), config.getSensorTypes(), (Sprite) null, null, 0.1f);
-                CircuitEditor ghostCE = new CircuitEditor(ghost, sm);
-                CircuitStore.load(in, ghostCE, ghost);
-                gameLoop.addRobot(ghost, ghostCE);
+                Robot ghost = new Robot("Ghost", config.getLevels().get(levelNumber), config.getSensorTypes(),
+                        config.getGateTypes(), (Sprite) null, null, 0.1f);
+                CircuitEditor ghostCE = new CircuitEditor(ghost.getCircuit(), sm);
+                CircuitStore.load(in, ghost.getCircuit(), ghost);
+                gameLoop.addRobot(ghost);
                 playfield.addRobot(ghost, AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.5f));
                 JFrame ghostFrame = new JFrame("Ghost from "+f.getName());
                 ghostFrame.addWindowListener(new BuffyTheGhostKiller(ghost));
@@ -557,9 +558,9 @@ public class Main {
         Map<Robot,CircuitEditor> robots = new LinkedHashMap<Robot,CircuitEditor>();
         for (Robot robot : level.getRobots()) {
             robots.put(robot,
-                    new CircuitEditor(robot, sm));
+                    new CircuitEditor(robot.getCircuit(), sm));
         }
-        final GameLoop gameLoop = new GameLoop(robots, level, playfield);
+        final GameLoop gameLoop = new GameLoop(robots.keySet(), level, playfield);
 
         // TODO fix these
 //        saveCircuitAction.setCircuitEditor(ce);

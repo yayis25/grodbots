@@ -5,9 +5,8 @@
  */
 package net.bluecow.robot.gate;
 
-import net.bluecow.robot.gate.AbstractGate.DefaultInput;
 
-public class NorGate extends AbstractGate {
+public class NorGate extends AbstractOrGate {
 
     /**
      * Creates a 2-input NOR gate.
@@ -35,6 +34,16 @@ public class NorGate extends AbstractGate {
             orValue |= inp.getState();
         }
         nextOutputState = !orValue;
+    }
+
+    @Override
+    protected boolean isInputInverted() {
+        return true;
+    }
+
+    @Override
+    protected boolean isOutputInverted() {
+        return false;
     }
 
 }

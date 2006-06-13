@@ -243,7 +243,7 @@ public class LevelStore {
                     } catch (NumberFormatException ex) {
                         throw new FileFormatException("Couldn't parse Y coordinate of starting point", in.getLineNumber(), line, m.start(4));
                     }
-                    Robot robot = new Robot(name, level, config.getSensorTypes(), graphicsFile, new Point2D.Float(startx, starty), stepSize);
+                    Robot robot = new Robot(name, level, config.getSensorTypes(), config.getGateTypes(), graphicsFile, new Point2D.Float(startx, starty), stepSize);
                     level.addRobot(robot);
                     String gateAllowances = m.group(6);
                     String[] gateAllowancePairs = gateAllowances.split("\\s+");
@@ -263,7 +263,7 @@ public class LevelStore {
                         } catch (NumberFormatException ex) {
                             throw new FileFormatException("Could not parse gate count '"+am.group(2)+"' as an integer.", in.getLineNumber(), line, m.start(6));
                         }
-                        robot.addGateAllowance(config.getGate(gateType), count);
+                        robot.getCircuit().addGateAllowance(config.getGate(gateType).getGateClass(), count);
                     }
                 }
             }

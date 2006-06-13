@@ -43,5 +43,6 @@ public class LevelStoreV3Test extends TestCase {
             "Switches\n" +
             " 3,3 GOAL\n" +
             "";
+        System.out.println(levelData);
     }
 }

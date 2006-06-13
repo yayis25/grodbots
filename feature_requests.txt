@@ -1,7 +1,7 @@
 Game Features:
--Score keeping (based on switches that modify the score).. reset score when level resets!
--Split Circuit class out of CircuitEditor, and give it to the Robot. (Circuit will include gate allowances)
--Gate allowances
+-make little gate icons in the circuit editors that show remaining allowance, and let you drag a new gate off them to create it
+-reset score when level resets, but accumulate scores across levels!
+-Pull out the gate drawing and input/output locating code to the Gate interface or a DrawableGate interface
 -Split LevelConfig and Level, where LevelConfig doesn't change and Level does. (?)
 -Make load/save circuits and ghosts work with multiple robots per level
 -Animated sprites for anything that can use a static image
@@ -34,6 +34,10 @@ Sounds:
 -little ditties for the beginning of each level (maybe this would be better suited to the MIDI sequencer api)
  
 Completed:
+-Gate allowances
+ -Split Circuit class out of CircuitEditor, and give an instance of it to the Robot. (Circuit will include gate allowances)
+  *create event publisher interface for Circuit class, and use it to know when to repaint CircuitEditor
+-Score keeping (based on switches that modify the score)
 -Fix accelerator key for adding gates (was getting the wrong Keystrokes)
 -Create a snapshot/restore facility for LevelConfig (so the level state can be reset after the switches have had at it)
 -Make an effort not to stack circuit editor windows on top of each other

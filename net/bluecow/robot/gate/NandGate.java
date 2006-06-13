@@ -5,9 +5,8 @@
  */
 package net.bluecow.robot.gate;
 
-import net.bluecow.robot.gate.AbstractGate.DefaultInput;
 
-public class NandGate extends AbstractGate {
+public class NandGate extends AbstractAndGate {
 
     /**
      * Creates a 2-input NAND gate.
@@ -35,5 +34,15 @@ public class NandGate extends AbstractGate {
             andValue &= inp.getState();
         }
         nextOutputState = !andValue;
+    }
+    
+    @Override
+    protected boolean isInputInverted() {
+        return false;
+    }
+
+    @Override
+    protected boolean isOutputInverted() {
+        return true;
     }
 }

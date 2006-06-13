@@ -1,5 +1,8 @@
 package net.bluecow.robot.gate;
 
+import java.awt.Graphics2D;
+import java.awt.Rectangle;
+
 public interface Gate {
     
     /**
@@ -66,4 +69,26 @@ public interface Gate {
          */
         public String getLabel();
     }
+
+    // ----------- UI Crap ------------
+
+    /**
+     * Renders a visual depiction of this gate's body to the given graphics.
+     *
+     * @param g2 The graphics to draw this gate with.
+     * @param r The bounds of the entire gate, including input and output sitcks.
+     * @param inputStickLength The length of the input sticks.
+     * @param outputStickLength The length of the output sticks.
+     */
+    public void drawBody(Graphics2D g2, Rectangle r, int inputStickLength, int outputStickLength);
+
+    public void drawInputs(Graphics2D g2, Rectangle r, int inputStickLength, int outputStickLength, Input hilightInput);
+
+    public void drawOutput(Graphics2D g2, Rectangle r, boolean highlight, int outputStickLength);
+
+    /**
+     * Sets the size for the little inversion bubbles on the input and output sticks.
+     */
+    //public void setCircleSize(int i);
+
 }

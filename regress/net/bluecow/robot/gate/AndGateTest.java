@@ -5,6 +5,10 @@
  */
 package net.bluecow.robot.gate;
 
+import java.awt.Graphics2D;
+import java.awt.Rectangle;
+
+import net.bluecow.robot.gate.Gate.Input;
 import junit.framework.TestCase;
 
 public class AndGateTest extends TestCase {
@@ -30,6 +34,18 @@ public class AndGateTest extends TestCase {
 
         public void reset() {
             // no op
+        }
+
+        public void drawBody(Graphics2D g2, Rectangle r, int inputStickLength, int outputStickLength) {
+            // no gui
+        }
+
+        public void drawInputs(Graphics2D g2, Rectangle r, int inputStickLength, int outputStickLength, Input hilightInput) {
+            // no gui
+        }
+
+        public void drawOutput(Graphics2D g2, Rectangle r, boolean highlight, int outputStickLength) {
+            // no gui
         }
     };
     

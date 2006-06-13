@@ -11,7 +11,7 @@ package net.bluecow.robot.gate;
  * @author fuerth
  * @version $Id$
  */
-public class AndGate extends AbstractGate {
+public class AndGate extends AbstractAndGate {
 
     /**
 	 * Creates a 2-input AND gate.
@@ -41,4 +41,14 @@ public class AndGate extends AbstractGate {
 		}
 		nextOutputState = state;
 	}
+
+    @Override
+    protected boolean isInputInverted() {
+        return false;
+    }
+
+    @Override
+    protected boolean isOutputInverted() {
+        return false;
+    }
 }
