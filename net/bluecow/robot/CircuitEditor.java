@@ -423,9 +423,11 @@ public class CircuitEditor extends JPanel {
             try {
                 // XXX: establish these things up front, not at every paint request
                 Gate miniGate = allowance.getKey().newInstance();
-                Rectangle miniBounds = new Rectangle(x, y, 40, 20);
-                int miniStickLength = 15;
-                //miniGate.setCircleSize(4);
+                Rectangle miniBounds = new Rectangle(x, y, 35, 20);
+                int miniStickLength = 8;
+                miniGate.setCircleSize(4);
+                miniGate.setDrawingTerminations(false);
+                
                 g2.translate(miniBounds.x, miniBounds.y);
                 miniGate.drawBody(g2, miniBounds, miniStickLength, miniStickLength);
                 miniGate.drawInputs(g2, miniBounds, miniStickLength, miniStickLength, null);
