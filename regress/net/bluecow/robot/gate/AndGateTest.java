@@ -6,6 +6,7 @@
 package net.bluecow.robot.gate;
 
 import java.awt.Graphics2D;
+import java.awt.Point;
 import java.awt.Rectangle;
 
 import junit.framework.TestCase;
@@ -35,23 +36,65 @@ public class AndGateTest extends TestCase {
             // no op
         }
 
-        public void drawBody(Graphics2D g2, Rectangle r, int inputStickLength, int outputStickLength) {
-            // no gui
-        }
-
-        public void drawInputs(Graphics2D g2, Rectangle r, int inputStickLength, int outputStickLength, Input hilightInput) {
-            // no gui
-        }
-
-        public void drawOutput(Graphics2D g2, Rectangle r, boolean highlight, int outputStickLength) {
-            // no gui
-        }
-
         public void setCircleSize(int i) {
             // no gui
         }
 
         public void setDrawingTerminations(boolean v) {
+            // no gui
+        }
+
+        public void setBounds(Rectangle rectangle) {
+            // no gui
+        }
+
+        public Rectangle getBounds() {
+            // no gui
+            return null;
+        }
+
+        public Point getOutputPosition() {
+            // no gui
+            return null;
+        }
+
+        public Input getInputAt(int x, int y) {
+            // no gui
+            return null;
+        }
+
+        public boolean isOutput(int x, int y) {
+            // no gui
+            return false;
+        }
+
+        public void drawBody(Graphics2D g2) {
+            // no gui
+        }
+
+        public void drawInputs(Graphics2D g2, Input hilightInput) {
+            // no gui
+        }
+
+        public void drawOutput(Graphics2D g2, boolean highlight) {
+            // no gui
+        }
+
+        public int getInputStickLength() {
+            // no gui
+            return 0;
+        }
+
+        public void setInputStickLength(int v) {
+            // no gui
+        }
+
+        public int getOutputStickLength() {
+            // no gui
+            return 0;
+        }
+
+        public void setOutputStickLength(int v) {
             // no gui
         }
     };

@@ -22,7 +22,6 @@ import javax.swing.event.ChangeListener;
 
 import net.bluecow.robot.GameConfig.GateConfig;
 import net.bluecow.robot.gate.Gate;
-import net.bluecow.robot.gate.Gate.Input;
 
 /**
  * The Circuit class represents a collection of logic gates that can
@@ -38,13 +37,21 @@ public class Circuit {
 
     private static final int DEFAULT_GATE_HEIGHT = 50;
 
-    static final int INPUT_STICK_LENGTH = 22;
-    
-    static final int OUTPUT_STICK_LENGTH = 20;
-
+    /**
+     * The special set of gates that provide input to the circuit (typically,
+     * the robot's sensor outputs).
+     */
     private List<Gate> outputs;
 
+    /**
+     * The special gate that this circuit outputs to (typically, the robot's inputs).
+     */
     private Gate inputsGate;
+    
+    /**
+     * All the gates in this circuit.
+     */
+    private Set<Gate> gates;
     
     /**
      * Maps each type of gate to its GateConfig instance.
@@ -62,11 +69,6 @@ public class Circuit {
     private Map<Class<? extends Gate>, Integer> gateAllowances = new HashMap<Class<? extends Gate>, Integer>();
 
     /**
-     * Maps Gate instances to Rectangles that say where and how big to paint them.
-     */
-    private Map<Gate,Rectangle> gatePositions = new HashMap<Gate,Rectangle>();
-    
-    /**
      * The gates in this set should not be deletable by the user.
      */
     private Set<Gate> permanentGates = new HashSet<Gate>();
@@ -80,14 +82,17 @@ public class Circuit {
     private List<ChangeListener> changeListeners = new ArrayList<ChangeListener>();
 
     public Circuit(Gate inputs, Collection<? extends Gate> outputs, Collection<GateConfig> gateConfigs) {
+        gates = new HashSet<Gate>();
         inputsGate = inputs;
+        gates.add(inputsGate);
         permanentGates.add(inputsGate);
-        gatePositions.put(inputsGate, new Rectangle(0, 0, DEFAULT_GATE_WIDTH, DEFAULT_GATE_HEIGHT));
+        inputsGate.setBounds(new Rectangle(0, 0, DEFAULT_GATE_WIDTH, DEFAULT_GATE_HEIGHT));
         
         this.outputs = new ArrayList<Gate>(outputs);
         for (Gate output : outputs) {
+            gates.add(output);
             permanentGates.add(output);
-            gatePositions.put(output, new Rectangle(0, 0, OUTPUT_STICK_LENGTH, DEFAULT_GATE_HEIGHT));
+            output.setBounds(new Rectangle(0, 0, output.getOutputStickLength(), DEFAULT_GATE_HEIGHT));
         }
         
         this.gateConfigs = new HashMap<Class<Gate>, GateConfig>();
@@ -111,7 +116,7 @@ public class Circuit {
         }
 
         // disconnect all the inputs the hilight gate outputs to
-        for (Gate gg : gatePositions.keySet()) {
+        for (Gate gg : gates) {
             for (int i = 0; i < gg.getInputs().length; i++) {
                 if (gg.getInputs()[i].getConnectedGate() == g) {
                     gg.getInputs()[i].connect(null);
@@ -124,7 +129,7 @@ public class Circuit {
             g.getInputs()[i].connect(null);
         }
         
-        boolean removed = gatePositions.remove(g) != null;
+        boolean removed = gates.remove(g);
         
         if (removed) {
             Integer allowance = gateAllowances.get(g.getClass());
@@ -141,13 +146,13 @@ public class Circuit {
     public void removeAllGates() {
         // disconnect everything (to be fancy, we could have only removed
         // things connected to the permanent gates, but that's more work)
-        for (Gate g : gatePositions.keySet()) {
+        for (Gate g : gates) {
             for (Gate.Input inp : g.getInputs()) {
                 inp.connect(null);
             }
         }
 
-        gatePositions.keySet().retainAll(permanentGates);
+        gates.retainAll(permanentGates);
         
         fireChangeEvent();
     }
@@ -163,14 +168,15 @@ public class Circuit {
             gateAllowances.put(g.getClass(), new Integer(numAllowed-1));
         }
         
-        gatePositions.put(g, new Rectangle(p.x, p.y, DEFAULT_GATE_WIDTH, DEFAULT_GATE_HEIGHT));
+        g.setBounds(new Rectangle(p.x, p.y, DEFAULT_GATE_WIDTH, DEFAULT_GATE_HEIGHT));
+        gates.add(g);
         fireChangeEvent();
     }
 
     public Gate getGateAt(Point p) {
-        for (Map.Entry<Gate,Rectangle> ent : gatePositions.entrySet()) {
-            Rectangle r = ent.getValue();
-            if (r.contains(p)) return (Gate) ent.getKey();
+        for (Gate g : gates) {
+            Rectangle r = g.getBounds();
+            if (r.contains(p)) return g;
         }
         return null;
     }
@@ -183,23 +189,6 @@ public class Circuit {
         return inputsGate;
     }
     
-    public Rectangle getGateBounds(Gate g) {
-        Rectangle bounds = gatePositions.get(g);
-        if (bounds == null) {
-            return null;
-        } else {
-            return new Rectangle(bounds);
-        }
-    }
-    
-    public void setGateBounds(Gate g, Rectangle bounds) {
-        if (!gatePositions.containsKey(g)) {
-            throw new IllegalArgumentException("That gate is not in this circuit!");
-        }
-        gatePositions.put(g, new Rectangle(bounds));
-        fireChangeEvent();
-    }
-
     /**
      * Returns an unmodifiable view of the gate allowances map.
      */
@@ -221,77 +210,13 @@ public class Circuit {
     }
 
     /**
-     * Returns an unmodifiable view of the gate positions map.
-     */
-    public Map<Gate, Rectangle> getGatePositions() {
-        return Collections.unmodifiableMap(gatePositions);
-    }
-
-    /**
-     * Returns the input of the gate which is at or near the given
-     * point (relative to the top left corner of the editor).  Currently,
-     * inputs are equally spaced off of the left-hand side of the gate's
-     * bounding rectangle, so this is just a simple calculation.  It
-     * may become more sophisticated as required.
-     * 
-     * @param g The gate.
-     * @param x The x location of the point of interest in the editor's coordinate system.
-     * @param y The y location of the point of interest in the editor's coordinate system.
-     * @return The nearest input, or null if there is no input nearby.
-     */
-    Input getGateInput(Gate g, int x, int y) {
-        final int ni = g.getInputs().length;  // number of inputs on this gate
-        if (ni == 0) return null;
-        Rectangle bb = gatePositions.get(g); // the bounding box for this gate
-        x -= bb.x;
-        y -= bb.y;
-        if (x < 0 || x > INPUT_STICK_LENGTH) return null;
-        else return g.getInputs()[y / (bb.height / ni)];
-    }
-    
-    Point getInputLocation(Gate.Input inp) {
-        Gate enclosingGate = inp.getGate();
-        if (enclosingGate == null) {
-            // this doesn't happen under normal circumstances
-            System.err.println("Warning: getInputLocation was invoked for an input not attached to a gate");
-            return new Point(0, 0);
-        }
-        Rectangle r = gatePositions.get(enclosingGate);
-        if (r == null) {
-            throw new IllegalStateException("Can't determine location of gate input "+inp
-                    +" because its gate isn't in the gatePositions map.");
-        } else {
-            int inputNum;
-            Gate.Input[] siblings = enclosingGate.getInputs();
-            double spacing = ((double) r.height) / ((double) siblings.length);
-            for (inputNum = 0; inputNum < siblings.length && inp != siblings[inputNum]; inputNum++);
-            return new Point(r.x, r.y + (int) ( ((double) inputNum) * spacing + (spacing / 2.0)));
-        }
-    }
-
-    boolean isGateOutput(Gate g, int x, int y) {
-        Rectangle bb = gatePositions.get(g); // the bounding box for this gate
-        x -= bb.x;
-        y -= bb.y;
-        if (x > bb.width || x < bb.width - OUTPUT_STICK_LENGTH) return false;
-        else return true;
-    }
-
-    Point getOutputLocation(Gate g) {
-        Rectangle bb = gatePositions.get(g); // the bounding box for this gate
-        return new Point(bb.x + bb.width, bb.y + (bb.height / 2));
-    }
-    
-    /**
      * Evaluates each gate in the circuit one time, then schedules a repaint.
      */
     public void evaluateOnce() {
-        for (Map.Entry<Gate,Rectangle> ent : gatePositions.entrySet()) {
-            Gate gate = ent.getKey();
+        for (Gate gate : gates) {
             gate.evaluateInput();
         }
-        for (Map.Entry<Gate,Rectangle> ent : gatePositions.entrySet()) {
-            Gate gate = ent.getKey();
+        for (Gate gate : gates) {
             gate.latchOutput();
         }
         
@@ -299,8 +224,7 @@ public class Circuit {
     }
 
     public void resetState() {
-        for (Map.Entry<Gate,Rectangle> ent : gatePositions.entrySet()) {
-            Gate gate = ent.getKey();
+        for (Gate gate : gates) {
             gate.reset();
         }
         
@@ -316,13 +240,13 @@ public class Circuit {
      */
     public Gate.Input getWireAt(Point p) {
         final int r = 4;  // the radius of matching
-        for (Gate g : getGatePositions().keySet()) {
+        for (Gate g : gates) {
             Gate.Input[] inputs = g.getInputs();
             for (int i = 0; i < inputs.length; i++) {
                 Gate.Input inp = inputs[i];
                 if (inp.getConnectedGate() != null) {
-                    Point start = getInputLocation(inputs[i]);
-                    Point end = getOutputLocation(inp.getConnectedGate());
+                    Point start = inputs[i].getPosition();
+                    Point end = inp.getConnectedGate().getOutputPosition();
                     Line2D wire = new Line2D.Float(start.x, start.y, end.x, end.y);
                     if (wire.intersects(p.x-r, p.y-r, r*2, r*2)) {
                         //((Graphics2D) getGraphics()).draw(wire);
@@ -347,5 +271,12 @@ public class Circuit {
         for (ChangeListener l : changeListeners) {
             l.stateChanged(e);  // XXX: this will not support removing a listener while the event is being fired
         }
+    }
+
+    /**
+     * Returns an unmodifiable view of this circuit's collection of gates.
+     */
+    public Collection<Gate> getGates() {
+        return Collections.unmodifiableCollection(gates);
     }
 }

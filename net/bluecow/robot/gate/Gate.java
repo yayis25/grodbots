@@ -1,6 +1,7 @@
 package net.bluecow.robot.gate;
 
 import java.awt.Graphics2D;
+import java.awt.Point;
 import java.awt.Rectangle;
 
 public interface Gate {
@@ -68,6 +69,12 @@ public interface Gate {
          * @return The label, or null for no label.
          */
         public String getLabel();
+        
+        /**
+         * Returns this input's position (the leftmost point on its stem in the
+         * GUI; where a connecting wire would attach).
+         */
+        public Point getPosition();
     }
 
     // ----------- UI Crap ------------
@@ -80,11 +87,11 @@ public interface Gate {
      * @param inputStickLength The length of the input sticks.
      * @param outputStickLength The length of the output sticks.
      */
-    public void drawBody(Graphics2D g2, Rectangle r, int inputStickLength, int outputStickLength);
+    public void drawBody(Graphics2D g2);
 
-    public void drawInputs(Graphics2D g2, Rectangle r, int inputStickLength, int outputStickLength, Input hilightInput);
+    public void drawInputs(Graphics2D g2, Input hilightInput);
 
-    public void drawOutput(Graphics2D g2, Rectangle r, boolean highlight, int outputStickLength);
+    public void drawOutput(Graphics2D g2, boolean highlight);
 
     /**
      * Sets the size for the little inversion bubbles on the input and output sticks.
@@ -92,4 +99,50 @@ public interface Gate {
     public void setCircleSize(int i);
 
     public void setDrawingTerminations(boolean v);
+
+    /**
+     * Sets the position and size of this gate's visual manifestation.
+     */
+    public void setBounds(Rectangle rectangle);
+    
+    /**
+     * Returns a copy of this gate's bounding box.  To alter a gate's position,
+     * call {@link #setBounds()}.
+     */
+    public Rectangle getBounds();
+
+    /**
+     * Returns the position where this gate's output is (the rightmost point on its
+     * output stem in the GUI; where a connecting wire would attach).
+     */
+    public Point getOutputPosition();
+    
+    /**
+     * Returns the input of this gate which is at or near the given point, in
+     * the same coordinate space as this gate's bounding box (that is, relative
+     * to the top left corner of the editor). In this implementation, inputs are
+     * equally spaced off of the left-hand side of the gate's bounding
+     * rectangle, so this is just a simple calculation. Subclasses may become
+     * provide a more sophisticated implementation as required.
+     * 
+     * @param x
+     *            The x location of the point of interest in the editor's
+     *            coordinate system.
+     * @param y
+     *            The y location of the point of interest in the editor's
+     *            coordinate system.
+     * @return The nearest input, or null if there is no input nearby.
+     */
+    public Input getInputAt(int x, int y);
+
+    /**
+     * Returns true if the given coordinates are reasonably close to this gate's
+     * output stick.
+     */
+    public boolean isOutput(int x, int y);
+
+    public int getInputStickLength();
+    public void setInputStickLength(int v);
+    public int getOutputStickLength();
+    public void setOutputStickLength(int v);
 }

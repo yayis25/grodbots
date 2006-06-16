@@ -1,6 +1,7 @@
 package net.bluecow.robot;
 
 import java.awt.Graphics2D;
+import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.geom.Point2D;
 import java.io.FileNotFoundException;
@@ -182,11 +183,9 @@ public class Robot {
 	 */
 	class RobotSensorOutput extends AbstractGate {
 		private boolean state;
-		private SensorConfig config;
 
 		public RobotSensorOutput(SensorConfig config) {
             super(config.getId());
-            this.config = config;
 		}
 		
 		public boolean getOutputState() {
@@ -220,7 +219,7 @@ public class Robot {
         }
         
         @Override
-        public void drawBody(Graphics2D g2, Rectangle r, int inputStickLength, int outputStickLength) {
+        public void drawBody(Graphics2D g2) {
             // empty body
         }
 
@@ -265,6 +264,11 @@ public class Robot {
         public String getLabel() {
             return label;
         }
+
+        public Point getPosition() {
+            return AbstractGate.calcInputPosition(this);
+        }
+
 	}
 	
 	/**
@@ -343,7 +347,7 @@ public class Robot {
         }
         
         @Override
-        public void drawBody(Graphics2D g2, Rectangle r, int inputStickLength, int outputStickLength) {
+        public void drawBody(Graphics2D g2) {
             // empty body
         }
 
