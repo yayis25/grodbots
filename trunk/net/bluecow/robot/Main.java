@@ -229,7 +229,7 @@ public class Main {
                 int choice = fc.showSaveDialog(ce);
                 if (choice == JFileChooser.APPROVE_OPTION) {
                     out = new FileOutputStream(fc.getSelectedFile());
-                    CircuitStore.save(out, ce.getCircuit());
+                    CircuitStore.save(out, ce.getCircuit()); // list of circuits? need robot names too
                     RobotUtils.updateRecentFiles(recentFiles, fc.getSelectedFile());
                 }
             } catch (IOException ex) {

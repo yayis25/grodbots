@@ -42,9 +42,8 @@ public class CircuitStore {
         int nextId = 0;
         Map<Gate,String> idmap = new HashMap<Gate,String>();
         pw.printf(MAGIC+"\n");
-        for (Map.Entry<Gate, Rectangle> ent : c.getGatePositions().entrySet()) {
-            Gate g = ent.getKey();
-            Rectangle r = ent.getValue();
+        for (Gate g : c.getGates()) {
+            Rectangle r = g.getBounds();
             String id;
             if (g instanceof Robot.RobotSensorOutput) {
                 id = g.getLabel();
@@ -61,8 +60,7 @@ public class CircuitStore {
         
         pw.printf("*Connections\n");
         
-        for (Map.Entry<Gate, Rectangle> ent : c.getGatePositions().entrySet()) {
-            Gate g = ent.getKey();
+        for (Gate g : c.getGates()) {
             String id = idmap.get(g);
             Gate.Input[] inputs = g.getInputs();
             for (int i = 0; i < inputs.length; i++) {

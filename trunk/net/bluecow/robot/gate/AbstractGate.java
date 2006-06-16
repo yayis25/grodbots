@@ -97,8 +97,31 @@ public abstract class AbstractGate implements Gate {
         public void setLabel(String label) {
             this.label = label;
         }
+        
+        // ----------- UI Crap ------------
+        
+        public Point getPosition() {
+            return calcInputPosition(this);
+        }
 	}
 
+    /**
+     * A utility method for calculating the position of a particular input of a gate.
+     * This was factored out from DefaultInput.getPosition so that other Gate.Input
+     * implementations can use it.
+     * 
+     * @param g The gate in question
+     * @param i Which input of <tt>g</tt> to get the position of
+     */
+    public static Point calcInputPosition(Input i) {
+        Gate g = i.getGate();
+        Input[] siblings = g.getInputs();
+        Rectangle r = g.getBounds();
+        int inputNum;
+        double spacing = ((double) r.height) / ((double) siblings.length);
+        for (inputNum = 0; inputNum < siblings.length && i != siblings[inputNum]; inputNum++);
+        return new Point(r.x, r.y + (int) ( ((double) inputNum) * spacing + (spacing / 2.0)));
+    }
 	/**
 	 * Returns the list of inputs.
 	 */
@@ -131,6 +154,9 @@ public abstract class AbstractGate implements Gate {
     
     
     // -------------- UI Crap ----------------
+    
+    private Rectangle bounds;
+    
     private Color hilightColor;
     
     private Color normalColor;
@@ -150,19 +176,23 @@ public abstract class AbstractGate implements Gate {
     
     private Font labelFont;
     
+    private int inputStickLength = 22;
+    
+    private int outputStickLength = 20;
+    
     /**
      * Draws a crappy placeholder graphic: an oval with the class name in it.  You
      * should implement your own gate bydy design and not rely on this implementation.
      */
-    public void drawBody(Graphics2D g2, Rectangle r, int inputStickLength, int outputStickLength) {
+    public void drawBody(Graphics2D g2) {
+        Rectangle r = getBounds();
         g2.drawOval(0, 0, r.width, r.height);
         g2.drawString(getClass().getName(), 5, r.height/2);
     }
     
-    public void drawInputs(Graphics2D g2, Rectangle r, int inputStickLength, int outputStickLength, Input hilightInput) {
+    public void drawInputs(Graphics2D g2, Input hilightInput) {
         // draw the inputs along the left edge of this gate
         Gate.Input[] inputs = getInputs();
-        Point inputLoc = new Point(inputStickLength, 0);
         for (int i = 0; inputs != null && i < inputs.length; i++) {
             if (inputs[i] == hilightInput) {
                 g2.setColor(getHilightColor());
@@ -172,13 +202,13 @@ public abstract class AbstractGate implements Gate {
                 g2.setColor(getNormalColor());
             }
             
-            inputLoc.y = (int) ((0.5 + i) * (double) r.height / (double) inputs.length);
-            drawInput(g2, inputLoc, inputs[i], isInputInverted(), inputStickLength, outputStickLength);
+            drawInput(g2, inputs[i]);
         }
 
     }
     
-    public void drawOutput(Graphics2D g2, Rectangle r, boolean highlight, int outputStickLength) {
+    public void drawOutput(Graphics2D g2, boolean highlight) {
+        Rectangle r = getBounds();
         Point p = new Point(r.width - outputStickLength, r.height/2);
         int length = outputStickLength;
         if (highlight) {
@@ -207,14 +237,21 @@ public abstract class AbstractGate implements Gate {
         }
     }
 
-    private void drawInput(Graphics2D g2, Point p, Gate.Input input, boolean invert, int inputStickLength, int outputStickLength) {
+    private void drawInput(Graphics2D g2, Gate.Input input) {
+        Rectangle r = getBounds();
+        Point p = input.getPosition();
+        
+        // adjust the point because the graphics is already translated to the gate's position
+        p.x = p.x - r.x + getInputStickLength();
+        p.y -= r.y;
+
         int connectorWidth;
         if (drawingTerminations) {
             connectorWidth = 6;
         } else {
             connectorWidth = 0;
         }
-        if (invert) {
+        if (isInputInverted()) {
             // the - 1 off circlesize is because the circle outline has thickness and runs into the gate's back without the adjustment
             g2.drawOval(p.x - circleSize - 1, p.y - circleSize/2, circleSize, circleSize);
             g2.drawLine(p.x - circleSize - 1, p.y, p.x - inputStickLength + connectorWidth, p.y);
@@ -228,6 +265,29 @@ public abstract class AbstractGate implements Gate {
             int ascent = g2.getFontMetrics().getAscent();
             g2.drawString(input.getLabel(), p.x - labelLength, p.y + ascent + connectorWidth);
         }
+    }
+    
+    public Input getInputAt(int x, int y) {
+        final int ni = getInputs().length;  // number of inputs on this gate
+        if (ni == 0) return null;
+        Rectangle bb = getBounds();
+        x -= bb.x;
+        y -= bb.y;
+        if (x < 0 || x > inputStickLength) return null;
+        else return getInputs()[y / (bb.height / ni)];
+    }
+    
+    public boolean isOutput(int x, int y) {
+        Rectangle bb = getBounds();
+        x -= bb.x;
+        y -= bb.y;
+        if (x > bb.width || x < bb.width - outputStickLength) return false;
+        else return true;
+    }
+
+    public Point getOutputPosition() {
+        Rectangle bb = getBounds(); // the bounding box for this gate
+        return new Point(bb.x + bb.width, bb.y + (bb.height / 2));
     }
 
     private Font getLabelFont() {
@@ -279,4 +339,27 @@ public abstract class AbstractGate implements Gate {
      */
     protected abstract boolean isOutputInverted();
     
+    public Rectangle getBounds() {
+        return new Rectangle(bounds);
+    }
+    
+    public void setBounds(Rectangle v) {
+        bounds = new Rectangle(v);
+    }
+    
+    public int getInputStickLength() {
+        return inputStickLength;
+    }
+    
+    public void setInputStickLength(int inputStickLength) {
+        this.inputStickLength = inputStickLength;
+    }
+    
+    public int getOutputStickLength() {
+        return outputStickLength;
+    }
+    
+    public void setOutputStickLength(int outputStickLength) {
+        this.outputStickLength = outputStickLength;
+    }
 }
