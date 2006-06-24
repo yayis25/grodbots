@@ -33,9 +33,9 @@ import net.bluecow.robot.gate.Gate;
  */
 public class Circuit {
 
-    private static final int DEFAULT_GATE_WIDTH = 85;
+    static final int DEFAULT_GATE_WIDTH = 85;
 
-    private static final int DEFAULT_GATE_HEIGHT = 50;
+    static final int DEFAULT_GATE_HEIGHT = 50;
 
     /**
      * The special set of gates that provide input to the circuit (typically,
@@ -197,7 +197,6 @@ public class Circuit {
     }
 
     public void addGateAllowance(Class<Gate> gateClass, int count) {
-        System.out.println("Setting gate allowance: "+gateClass.getName()+" = "+count);
         gateAllowances.put(gateClass, count);
         fireChangeEvent();
     }

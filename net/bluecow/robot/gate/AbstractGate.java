@@ -140,6 +140,9 @@ public abstract class AbstractGate implements Gate {
     public final void reset() {
         outputState = false;
         nextOutputState = false;
+        if (outputState || nextOutputState) {
+            System.out.println("Gate.reset(): warning: output="+getOutputState()+"; next="+nextOutputState+" after reset (both should be false!)");
+        }
     }
     
 	// -------------- ACCESSORS and MUTATORS ------------------
@@ -148,7 +151,7 @@ public abstract class AbstractGate implements Gate {
 		return label;
 	}
 	
-	public boolean getOutputState() {
+	public final boolean getOutputState() {
 	    return outputState;
 	}
     

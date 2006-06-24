@@ -212,7 +212,7 @@ public class Main {
     
     private class SaveCircuitAction extends AbstractAction {
         
-        private CircuitEditor ce;
+        private Collection<Robot> robots;
         
         public SaveCircuitAction() {
             super("Save Circuit...");
@@ -226,14 +226,14 @@ public class Main {
                 JFileChooser fc = new JFileChooser();
                 fc.setDialogTitle("Save Circuit Description File");
                 fc.setCurrentDirectory(new File(recentFiles.get("0", System.getProperty("user.home"))));
-                int choice = fc.showSaveDialog(ce);
+                int choice = fc.showSaveDialog(playfieldFrame);
                 if (choice == JFileChooser.APPROVE_OPTION) {
                     out = new FileOutputStream(fc.getSelectedFile());
-                    CircuitStore.save(out, ce.getCircuit()); // list of circuits? need robot names too
+                    CircuitStore.save(out, robots);
                     RobotUtils.updateRecentFiles(recentFiles, fc.getSelectedFile());
                 }
             } catch (IOException ex) {
-                JOptionPane.showMessageDialog(ce, "Save Failed: "+ex.getMessage());
+                JOptionPane.showMessageDialog(playfieldFrame, "Save Failed: "+ex.getMessage());
             } catch (BackingStoreException ex) {
                 System.out.println("Couldn't update user prefs");
                 ex.printStackTrace();
@@ -247,15 +247,14 @@ public class Main {
             }
         }
 
-        public void setCircuitEditor(CircuitEditor ce) {
-            this.ce = ce;
+        public void setRobots(Collection<Robot> robots) {
+            this.robots = robots;
         }
     }
 
     private class LoadCircuitAction extends AbstractAction {
         
-        private CircuitEditor ce;
-        private Robot robot;
+        private Collection<Robot> robots;
         
         public LoadCircuitAction() {
             super("Open Circuit...");
@@ -271,19 +270,24 @@ public class Main {
                     JFileChooser fc = new JFileChooser();
                     fc.setDialogTitle("Open Circuit Description File");
                     fc.setCurrentDirectory(new File(recentFiles.get("0", System.getProperty("user.home"))));
-                    int choice = fc.showOpenDialog(ce);
+                    int choice = fc.showOpenDialog(null);
                     if (choice != JFileChooser.APPROVE_OPTION) return;
                     f = fc.getSelectedFile();
                 }
                 in = new FileInputStream(f);
-                ce.getCircuit().removeAllGates();
-                CircuitStore.load(in, ce.getCircuit(), robot);
+                for (Robot r : robots) {
+                    r.getCircuit().removeAllGates();
+                }
+                CircuitStore.load(in, robots);
                 RobotUtils.updateRecentFiles(recentFiles, f);
-            } catch (IOException ex) {
-                JOptionPane.showMessageDialog(ce, "Load Failed: "+ex.getMessage());
             } catch (BackingStoreException ex) {
                 System.out.println("Couldn't update user prefs");
                 ex.printStackTrace();
+            } catch (FileFormatException ex) {
+                showFileFormatException(ex);
+            } catch (Exception ex) {
+                ex.printStackTrace();
+                JOptionPane.showMessageDialog(null, "Load Failed: "+ex.getMessage());
             } finally {
                 try {
                     if (in != null) in.close();
@@ -294,12 +298,8 @@ public class Main {
             }
         }
 
-        public void setCircuitEditor(CircuitEditor ce) {
-            this.ce = ce;
-        }
-
-        public void setRobot(Robot robot) {
-            this.robot = robot;
+        public void setRobots(Collection<Robot> robots) {
+            this.robots = robots;
         }
     }
 
@@ -308,6 +308,8 @@ public class Main {
         private GameLoop gameLoop;
 
         private Playfield playfield;
+        
+        private Collection<Robot> robots;
         
         public LoadGhostAction() {
             super("Open Circuit Into New Ghost...");
@@ -328,26 +330,31 @@ public class Main {
                     f = fc.getSelectedFile();
                 }
                 in = new FileInputStream(f);
-                // FIXME: have to update ghost format to include sprite, start position, and step size
-                Robot ghost = new Robot("Ghost", config.getLevels().get(levelNumber), config.getSensorTypes(),
-                        config.getGateTypes(), (Sprite) null, null, 0.1f);
-                CircuitEditor ghostCE = new CircuitEditor(ghost.getCircuit(), sm);
-                CircuitStore.load(in, ghost.getCircuit(), ghost);
-                gameLoop.addRobot(ghost);
-                playfield.addRobot(ghost, AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.5f));
-                JFrame ghostFrame = new JFrame("Ghost from "+f.getName());
-                ghostFrame.addWindowListener(new BuffyTheGhostKiller(ghost));
-                ghostFrame.setContentPane(ghostCE);
-                ghostFrame.pack();
-                ghostFrame.setLocationRelativeTo(playfieldFrame);
-                ghostFrame.setVisible(true);
-                windowsToClose.add(ghostFrame);
+                List<Robot> ghosts = new ArrayList<Robot>();
+                for (Robot robot : robots) {
+                    ghosts.add(new Robot(robot));
+                }
+                CircuitStore.load(in, ghosts);
+                for (Robot ghost : ghosts) {
+                    CircuitEditor ghostCE = new CircuitEditor(ghost.getCircuit(), sm);
+                    gameLoop.addRobot(ghost);
+                    playfield.addRobot(ghost, AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.5f));
+                    JFrame ghostFrame = new JFrame("Ghost from "+f.getName());
+                    ghostFrame.addWindowListener(new BuffyTheGhostKiller(ghost));
+                    ghostFrame.setContentPane(ghostCE);
+                    ghostFrame.pack();
+                    ghostFrame.setLocationRelativeTo(playfieldFrame);
+                    ghostFrame.setVisible(true);
+                    windowsToClose.add(ghostFrame);
+                }
                 RobotUtils.updateRecentFiles(recentFiles, f);
-            } catch (IOException ex) {
-                JOptionPane.showMessageDialog(playfieldFrame, "Load Failed: "+ex.getMessage());
+            } catch (FileFormatException ex) {
+                showFileFormatException(ex);
             } catch (BackingStoreException ex) {
                 System.out.println("Couldn't update user prefs");
                 ex.printStackTrace();
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(playfieldFrame, "Load Failed: "+ex.getMessage());
             } finally {
                 try {
                     if (in != null) in.close();
@@ -366,6 +373,10 @@ public class Main {
             this.playfield = playfield;
         }
 
+        public void setRobots(Collection<Robot> robots) {
+            this.robots = robots;
+        }
+        
         private class BuffyTheGhostKiller extends WindowAdapter {
             
             private Robot ghostToKill;
@@ -562,12 +573,11 @@ public class Main {
         }
         final GameLoop gameLoop = new GameLoop(robots.keySet(), level, playfield);
 
-        // TODO fix these
-//        saveCircuitAction.setCircuitEditor(ce);
-//        loadCircuitAction.setCircuitEditor(ce);
-//        loadCircuitAction.setRobot(robot);
+        saveCircuitAction.setRobots(robots.keySet());
+        loadCircuitAction.setRobots(robots.keySet());
         loadGhostAction.setGameLoop(gameLoop);
         loadGhostAction.setPlayfield(playfield);
+        loadGhostAction.setRobots(robots.keySet());
         
         System.out.println("Starting level "+level.getName());
         
