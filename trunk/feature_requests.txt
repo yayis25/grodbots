@@ -1,12 +1,10 @@
 Game Features:
--Make load/save circuits and ghosts work with multiple robots per level
--fix the problem that circuits don't reset properly (some inputs/outputs stay active)
--drag a new gate off the "toolbox" icon to create it
 -reset score when level resets, but accumulate scores across levels!
 -Animated sprites for anything that can use a static image
 -Split LevelConfig and Level, where LevelConfig doesn't change and Level does. (?)
 -init sound manager sound set from config file
 -Make sound manager available to onEnter/onExit scripts
+-Make ghosts work in levels with switches that do fancy stuff (need a separate beanshell context per set of ghosts, and even separate playfields)
 -Make all exceptions (even on the game loop thread) become user-visible dialogs
 -Batteries
 -Radio Communication between robots
@@ -36,6 +34,9 @@ Sounds:
 -little ditties for the beginning of each level (maybe this would be better suited to the MIDI sequencer api)
 
 Completed:
+-drag a new gate off its toolbox icon to create it
+-fix the problem that circuits don't reset properly (some inputs/outputs stay active)
+-Make load/save circuits and ghosts work with multiple robots per level
 -make input and output stick lengths part of the gate interface
 -Pull out the gate input/output locating code to the Gate interface
 -make little gate icons in the circuit editors that show remaining allowance

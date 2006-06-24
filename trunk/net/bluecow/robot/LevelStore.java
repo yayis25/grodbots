@@ -372,6 +372,7 @@ public class LevelStore {
      * @return A list of the PlayfieldModel objects described in the file (one per level).
      * @throws IOException
      */
+    // TODO: update this to the new API
 //    private static List<PlayfieldModel> loadVersion2LevelFile(LineNumberReader in) throws IOException {
 //        
 //        List<PlayfieldModel> levels = new ArrayList<PlayfieldModel>();

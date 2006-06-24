@@ -2,7 +2,6 @@ package net.bluecow.robot;
 
 import java.awt.Graphics2D;
 import java.awt.Point;
-import java.awt.Rectangle;
 import java.awt.geom.Point2D;
 import java.io.FileNotFoundException;
 import java.util.ArrayList;
@@ -65,17 +64,22 @@ public class Robot {
     /** The circuit that controls this robot's behaviour. */
     private Circuit circuit;
 	
-    public Robot(String name, LevelConfig level, List<SensorConfig> sensorList,
-            Collection<GateConfig> gateConfigs, String spritePath,
-            Point2D.Float startPosition, float stepSize) throws FileNotFoundException {
+    public Robot(String name,
+            LevelConfig level,
+            List<SensorConfig> sensorList,
+            Collection<GateConfig> gateConfigs,
+            String spritePath,
+            Point2D.Float startPosition,
+            float stepSize) throws FileNotFoundException {
         this(name, level, sensorList,
                 gateConfigs, SpriteManager.load(spritePath),
-                startPosition, stepSize);
+                startPosition, stepSize, null);
     }
 
     public Robot(String name, LevelConfig level, List<SensorConfig> sensorList,
             Collection<GateConfig> gateConfigs,
-            Sprite sprite, Point2D.Float startPosition, float stepSize) {
+            Sprite sprite, Point2D.Float startPosition, float stepSize,
+            Circuit circuit) {
         this.name = name;
         this.level = level;
         this.sprite = sprite;
@@ -89,6 +93,11 @@ public class Robot {
         }
         
         this.circuit = new Circuit(robotInputsGate, outputs.values(), gateConfigs);
+        if (circuit != null) {
+            for (Map.Entry<Class<? extends Gate>, Integer> allowance: circuit.getGateAllowances().entrySet()) {
+                this.circuit.addGateAllowance((Class<Gate>) allowance.getKey(), allowance.getValue());
+            }
+        }
 	}
     
     /**
@@ -101,9 +110,14 @@ public class Robot {
      * @param src The robot to copy.
      */
     public Robot(Robot src) {
-        this(src.name, src.level, new ArrayList<SensorConfig>(src.outputs.keySet()),
+        this(src.name,
+                src.level,
+                new ArrayList<SensorConfig>(src.outputs.keySet()),
                 new ArrayList<GateConfig>(src.circuit.getGateConfigs().values()),
-                src.sprite, src.startPosition, src.stepSize);
+                src.sprite,
+                src.startPosition,
+                src.stepSize,
+                src.getCircuit());
     }
 	
     public void move() {
@@ -182,23 +196,18 @@ public class Robot {
 	 * change to false and the green output will change to true.
 	 */
 	class RobotSensorOutput extends AbstractGate {
-		private boolean state;
 
 		public RobotSensorOutput(SensorConfig config) {
             super(config.getId());
 		}
-		
-		public boolean getOutputState() {
-			return state;
-		}
-		
+
 		/** Sets the state of this output.  Only methods in Robot should call this. */
 		public void setState(boolean v) {
-			if (v != state) {
-				state = v;
-			}
+            nextOutputState = v;
+            latchOutput();
 		}
-				
+		
+        @Override
 		public Gate.Input[] getInputs() {
 			return new Gate.Input[0];
 		}
@@ -319,13 +328,6 @@ public class Robot {
 	    public RobotInputsGate(RobotInput[] inputs) {
 	        super("Robot inputs");
 	        this.inputs = inputs;
-	    }
-	    
-	    /**
-	     * Always returns false.
-	     */
-	    public boolean getOutputState() {
-	        return false;
 	    }
 
 	    public Input[] getInputs() {
