@@ -145,7 +145,6 @@ public class Fireworks {
                         // TODO Auto-generated catch block
                         System.out.println("Woops, interrupted");
                     }
-                    //System.out.println("Frame");
                 } while (keepGoing);
                 System.exit(0);
             }
