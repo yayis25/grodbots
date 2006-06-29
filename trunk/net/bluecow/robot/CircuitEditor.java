@@ -17,6 +17,7 @@ import java.awt.Rectangle;
 import java.awt.RenderingHints;
 import java.awt.Stroke;
 import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 import java.util.ArrayList;
@@ -29,6 +30,7 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
 import javax.swing.KeyStroke;
+import javax.swing.Timer;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import javax.swing.event.MouseInputAdapter;
@@ -38,6 +40,77 @@ import net.bluecow.robot.gate.Gate;
 
 public class CircuitEditor extends JPanel {
 
+    private class ZoomEffect implements ActionListener {
+        
+        /**
+         * The timer that periodically triggers rendering of the next frame.
+         */
+        private Timer timer;
+        
+        /**
+         * Goes from 0.0 to 1.0 in increments of frameStep.
+         */
+        private double progress = 0.0;
+        
+        /**
+         * The increments in which this effect progresses from 0.0 (the starting
+         * point) to 1.0 (the ending point).
+         */
+        private Double frameStep;
+        
+        private Rectangle start;
+        
+        private Rectangle end;
+        
+        /**
+         * The gate that's zooming.
+         */
+        private Gate gate;
+        
+        ZoomEffect(int nframes, Gate gate, Rectangle end) {
+            frameStep = 1.0/nframes;
+            this.gate = gate;
+            this.start = gate.getBounds();
+            this.end = new Rectangle(end);
+            timer = new Timer(20, this);
+            timer.start();
+        }
+
+        public void actionPerformed(ActionEvent e) {
+            if (progress >= 1.0) {
+                progress = 1.0;
+            }
+            
+            //  8        e  e = (9,8)
+            //  7       /
+            //  6      /
+            //  5     /
+            //  4    r      r = (5,4)
+            //  3   /                   2 + 3/7 * (9 - 2)  =  2 + 3/7 * 7  =  2 + 3  =  5
+            //  2  /
+            //  1 s         s = (2,1)
+            //  0123456789
+            Rectangle r = new Rectangle(
+                    (int) (start.x + progress * (end.x - start.x)),
+                    (int) (start.y + progress * (end.y - start.y)),
+                    (int) (start.width + progress * (end.width - start.width)),
+                    (int) (start.height + progress * (end.height - start.height))
+                    );
+            gate.setBounds(r);
+            
+            Graphics2D g2 = (Graphics2D) getGraphics();
+            g2.translate(r.x, r.y);
+            gate.drawBody(g2);
+            g2.translate(-r.x, -r.y);
+            
+            if (progress == 1.0) {
+                timer.stop();
+                repaint();
+            } else {
+                progress += frameStep;
+            }
+        }
+    }
     private class Toolbox {
         
         private List<Gate> gates;
@@ -126,9 +199,25 @@ public class CircuitEditor extends JPanel {
             }
         }
         
+        /**
+         * Returns the class of the minigate in this toolbox whose bounding
+         * box contains the point <tt>p</tt>.
+         */
         public Class<? extends Gate> getGateAt(Point p) {
             for (Gate g : gates) {
                 if (g.getBounds().contains(p)) return g.getClass();
+            }
+            return null;
+        }
+
+        /**
+         * Returns the bounding rectangle for the minigate in the toolbox
+         * of the given class.  If there is no gate of the given class in this
+         * toolbox, returns null.
+         */
+        public Rectangle getGateBounds(Class<? extends Gate> gateClass) {
+            for (Gate g : gates) {
+                if (g.getClass() == gateClass) return g.getBounds();
             }
             return null;
         }
@@ -157,6 +246,9 @@ public class CircuitEditor extends JPanel {
                 repaint();
                 if (baleted) {
                     playSound("delete_gate");
+                    Rectangle zoomTo = toolbox.getGateBounds(hilightGate.getClass());
+                    new ZoomEffect(10, hilightGate, zoomTo);
+                    hilightGate = null;
                 } else {
                     // TODO: get a "you suck" type sound
                 }
@@ -302,6 +394,11 @@ public class CircuitEditor extends JPanel {
                 Point p = new Point(newGatePosition);
                 circuit.addGate(newGate, p);
                 playSound("create-"+gc.getName());
+                
+                Rectangle zoomFrom = toolbox.getGateBounds(gc.getGateClass());
+                Rectangle zoomTo = newGate.getBounds();
+                newGate.setBounds(zoomFrom);
+                new ZoomEffect(10, newGate, zoomTo);
             } catch (InstantiationException e1) {
                 e1.printStackTrace();
                 JOptionPane.showMessageDialog(CircuitEditor.this, "Couldn't create new Gate instance:\n"+e1.getMessage());

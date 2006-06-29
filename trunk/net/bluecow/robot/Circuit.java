@@ -196,7 +196,7 @@ public class Circuit {
         return Collections.unmodifiableMap(gateAllowances);
     }
 
-    public void addGateAllowance(Class<Gate> gateClass, int count) {
+    public void addGateAllowance(Class<? extends Gate> gateClass, int count) {
         gateAllowances.put(gateClass, count);
         fireChangeEvent();
     }

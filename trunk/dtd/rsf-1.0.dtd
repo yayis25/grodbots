@@ -1,0 +1,3 @@
+<!ELEMENT rsf (frame*,sequence)>
+<!ELEMENT frame EMPTY>
+<!ELEMENT sequence (step*)>

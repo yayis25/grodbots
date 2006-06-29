@@ -3,12 +3,17 @@
  *
  * This code belongs to Jonathan Fuerth
  */
-package net.bluecow.robot;
+package net.bluecow.robot.sprite;
 
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
+
+import javax.xml.parsers.ParserConfigurationException;
+
+import org.xml.sax.SAXException;
 
 public class SpriteManager {
     
@@ -28,7 +33,7 @@ public class SpriteManager {
      * @throws FileNotFoundException If the system resource at the given path does not exist.
      * @throws IllegalArgumentException If any attributes are not in the name=value form.
      */
-    public static Sprite load(String spriteDesc) throws FileNotFoundException {
+    public static Sprite load(String spriteDesc) throws SpriteLoadException {
         Map<String, String> attribs = new HashMap<String, String>();
         String[] args = spriteDesc.split(",");
         String resourcePath = args[0];
@@ -41,18 +46,34 @@ public class SpriteManager {
             String[] nameVal = args[i].split("=");
             attribs.put(nameVal[0], nameVal[1]);
         }
-        URL resourceURL = ClassLoader.getSystemResource(resourcePath);
-        if (resourceURL == null) {
-            throw new FileNotFoundException("Image '"+resourcePath+"' not found.");
-        }
         
-        Sprite sprite = new IconSprite(resourceURL);
-        
-        if (attribs.get("scale") != null) {
-            double scale = Double.parseDouble(attribs.get("scale"));
-            sprite.setScale(scale);
+        try {
+            URL resourceURL = ClassLoader.getSystemResource(resourcePath);
+            if (resourceURL == null) {
+                throw new FileNotFoundException("Sprite resource '"+resourcePath+"' not found.");
+            }
+            
+            Sprite sprite;
+            if (resourcePath.endsWith(".rsf")) {
+                sprite = new AnimatedSprite(resourceURL);
+            } else {
+                sprite = new IconSprite(resourceURL);
+            }
+            
+            if (attribs.get("scale") != null) {
+                double scale = Double.parseDouble(attribs.get("scale"));
+                sprite.setScale(scale);
+            }
+            return sprite;
+        } catch (FileNotFoundException e) {
+            throw new SpriteLoadException(e);
+        } catch (ParserConfigurationException e) {
+            throw new SpriteLoadException(e);
+        } catch (SAXException e) {
+            throw new SpriteLoadException(e);
+        } catch (IOException e) {
+            throw new SpriteLoadException(e);
         }
-        return sprite;
     }
     
 }

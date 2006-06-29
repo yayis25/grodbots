@@ -3,7 +3,7 @@
  *
  * This code belongs to SQL Power Group Inc.
  */
-package net.bluecow.robot;
+package net.bluecow.robot.sprite;
 
 import java.awt.Graphics2D;
 
@@ -46,4 +46,10 @@ public interface Sprite {
      * Sets the sprite's scale factor.
      */
     void setScale(double scale);
+    
+    /**
+     * Tells this sprite that a frame of the overall gamee has passed, and it
+     * should paint the next frame in its sequence next time it is asked to paint.
+     */
+    void nextFrame();
 }

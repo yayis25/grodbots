@@ -8,13 +8,16 @@ package net.bluecow.robot;
 import java.awt.Dimension;
 import java.awt.Point;
 import java.awt.geom.Point2D;
-import java.io.FileNotFoundException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import net.bluecow.robot.sprite.Sprite;
+import net.bluecow.robot.sprite.SpriteLoadException;
+import net.bluecow.robot.sprite.SpriteManager;
 
 import bsh.EvalError;
 import bsh.Interpreter;
@@ -189,7 +192,11 @@ public class LevelConfig {
     }
 
     /** Adds a new switch to this level. */
-    public void addSwitch(int x, int y, String switchName, String imagePath, String switchCode) throws FileNotFoundException {
+    public void addSwitch(
+            int x, int y,
+            String switchName,
+            String imagePath,
+            String switchCode) throws SpriteLoadException {
         Point p = new Point(x, y);
         switches.put(p, new Switch(p, switchName, SpriteManager.load(imagePath), switchCode));
     }
