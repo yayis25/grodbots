@@ -3,6 +3,7 @@ package net.bluecow.robot;
 import java.util.Collection;
 
 import net.bluecow.robot.GameConfig.SensorConfig;
+import net.bluecow.robot.sprite.Sprite;
 
 /**
  * Represents a square in the playfield.

@@ -35,6 +35,8 @@ public class LevelStore {
     public static final String V3_LEVEL_SIZE_HEADER = "Size";
     public static final String V3_LEVEL_SWITCH_HEADER = "Switches";
     public static final String WALL_FLAG = "WALL";
+
+    private static boolean debugging = false;
     
     /**
      * Reads in a list of 0 or more levels from the given input stream.  The file
@@ -362,7 +364,9 @@ public class LevelStore {
     }
 
     private static void debug(String fmt, Object ... args) {
-        System.out.printf(fmt, args);
+        if (debugging ) {
+            System.out.printf(fmt, args);
+        }
     }
 
     /**

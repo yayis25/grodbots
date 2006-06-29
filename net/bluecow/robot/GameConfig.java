@@ -5,7 +5,6 @@
  */
 package net.bluecow.robot;
 
-import java.io.FileNotFoundException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -19,35 +18,11 @@ import java.util.Set;
 import javax.swing.KeyStroke;
 
 import net.bluecow.robot.gate.Gate;
+import net.bluecow.robot.sprite.Sprite;
+import net.bluecow.robot.sprite.SpriteLoadException;
+import net.bluecow.robot.sprite.SpriteManager;
 
 public class GameConfig {
-
-    public class GoodyConfig {
-        private String name;
-        private Sprite sprite;
-        private int value;
-
-        public GoodyConfig(String name, Sprite sprite, int value) {
-            super();
-            this.name = name;
-            this.sprite = sprite;
-            this.value = value;
-        }
-
-        public String getName() {
-            return name;
-        }
-
-        public Sprite getSprite() {
-            return sprite;
-        }
-
-        public int getValue() {
-            return value;
-        }
-        
-        
-    }
 
     public static class GateConfig {
         private String name;
@@ -139,8 +114,25 @@ public class GameConfig {
     private Map<String, GateConfig> gateTypes = new HashMap<String, GateConfig>();
     private Map<Character, SquareConfig> squareTypes = new HashMap<Character, SquareConfig>();
     private Map<String, SensorConfig> sensorTypes = new LinkedHashMap<String, SensorConfig>();
-    private Map<String, GoodyConfig> goodyTypes = new HashMap<String, GoodyConfig>();
     private List<LevelConfig> levels = new ArrayList<LevelConfig>();
+    
+    /**
+     * Calculates the total score for this game by adding up the current scores
+     * from each level.
+     * 
+     * <p>This could be improved to cache the results (or partial cumulative
+     * results) if performance becomes a problem (due to having too many levels
+     * in the same game).
+     * 
+     * @return The current total score.
+     */
+    public int getScore() {
+        int score = 0;
+        for (LevelConfig lc : levels) {
+            score += lc.getScore();
+        }
+        return score;
+    }
     
     @SuppressWarnings("unchecked")
     public void addGate(String gateName, char accelKey, String gateClass) throws ClassNotFoundException {
@@ -162,23 +154,25 @@ public class GameConfig {
         return gateTypes.get(gateTypeName);
     }
 
-    public void addSquare(String squareName, char squareChar, boolean occupiable, String graphicsFileName, Collection<String> sensorTypeIdList) throws FileNotFoundException {
+    public void addSquare(String squareName, char squareChar,
+            boolean occupiable, String graphicsFileName,
+            Collection<String> sensorTypeIdList) throws SpriteLoadException {
+        
         Set<SensorConfig> squareSensorTypes = new HashSet<SensorConfig>();
         for (String st : sensorTypeIdList) {
             squareSensorTypes.add(sensorTypes.get(st));
         }
-        squareTypes.put(squareChar, new SquareConfig(
-                squareName, squareChar, occupiable, SpriteManager.load(graphicsFileName),
+        squareTypes.put(squareChar, new SquareConfig(squareName, squareChar,
+                occupiable, SpriteManager.load(graphicsFileName),
                 squareSensorTypes));
     }
 
     public SquareConfig getSquare(char squareChar) {
         return squareTypes.get(squareChar);
     }
-
-    public void addGoody(String goodyName, String graphicsFileName, int value) throws FileNotFoundException {
-        goodyTypes.put(goodyName, new GoodyConfig(
-                goodyName, SpriteManager.load(graphicsFileName), value));
+    
+    public Collection<SquareConfig> getSquareTypes() {
+        return squareTypes.values();
     }
 
     public void addLevel(LevelConfig level) {

@@ -12,7 +12,7 @@ Gate Types
  NOT n net.bluecow.robot.gate.NotGate
 Square Types
  WALL WALL X ROBO-INF/images/wall.png
- BLACK . _ ROBO-INF/images/blacktile.png
+ BLACK . _ ROBO-INF/images/blacktile_glint.rsf
  RED . R ROBO-INF/images/redtile.png Red
  GREEN . G ROBO-INF/images/greentile.png Green
  BLUE . B ROBO-INF/images/bluetile.png Blue
@@ -23,7 +23,7 @@ Square Types
  REDSTRIPE . / ROBO-INF/images/redstripetile.png Red,Stripe
 Map Easy Map
 Grods
- Grod ROBO-INF/images/robot_00.png,scale=0.4 0.1 2.5,2.5 AND:10 OR:10 NOT:10 NAND:10 NOR:10
+ Grod ROBO-INF/images/grod/grod.rsf,scale=0.4 0.1 2.5,2.5 AND:10 OR:10 NOT:10 NAND:10 NOR:10
  Gregory ROBO-INF/images/robot.png 0.1 8,8 NOT:10 NAND:3
 Size 15x10
 Switches
@@ -42,7 +42,7 @@ XXXXXXXXXXXXXXX
 *
 Map Cow Map
 Grods
- Grod ROBO-INF/images/robot_00.png,scale=0.4 0.1 2.5,2.5 AND:10 OR:10 NOT:10 NAND:10 NOR:10
+ Grod ROBO-INF/images/grod/robot_00.png,scale=0.4 0.1 2.5,2.5 AND:10 OR:10 NOT:10 NAND:10 NOR:10
 Size 15x10
 Switches
  7,1 Cake ROBO-INF/images/cake.png robot.setGoalReached(true); level.increaseScore(200);

@@ -18,7 +18,9 @@ import java.util.List;
 
 import javax.swing.JPanel;
 
+import net.bluecow.robot.GameConfig.SquareConfig;
 import net.bluecow.robot.LevelConfig.Switch;
+import net.bluecow.robot.sprite.Sprite;
 
 /**
  * Playfield
@@ -43,6 +45,12 @@ public class Playfield extends JPanel {
         }
     }
     
+    /**
+     * The config for the whole game (currently used only to find out
+     * the total score).
+     */
+    private GameConfig game;
+    
     private LevelConfig level;
     
     private int squareWidth = 25;
@@ -58,7 +66,7 @@ public class Playfield extends JPanel {
     /**
      * The colour that drawLabel() will use to paint the box underneath labels.
      */
-    private Color boxColor = new Color(.2f, .2f, .2f, .7f);
+    private Color boxColor = new Color(.5f, .5f, .5f, .5f);
 
     /**
      * The colour that drawLabel() will use to paint the text of labels.
@@ -70,9 +78,14 @@ public class Playfield extends JPanel {
      * 
      * @param map The map.
      */
-    public Playfield(LevelConfig level) {
+    public Playfield(GameConfig game, LevelConfig level) {
+        setGame(game);
         setLevel(level);
         setupKeyboardActions();
+    }
+
+    final void setGame(GameConfig game) {
+        this.game = game;
     }
     
     /**
@@ -173,7 +186,7 @@ public class Playfield extends JPanel {
         }
 
         {
-            String score = String.format("Score: %4d", level.getScore());
+            String score = String.format("Overall Score: %4d", game.getScore());
             int width = fm.stringWidth(score);
             int height = fm.getHeight();
             int x = getWidth() - width - 3;
@@ -183,7 +196,19 @@ public class Playfield extends JPanel {
             g2.setColor(Color.WHITE);
             g2.drawString(score, x, y + height - fm.getDescent());
         }        
-        
+
+        {
+            String levelScore = String.format("%s Score: %4d", level.getName(), level.getScore());
+            int width = fm.stringWidth(levelScore);
+            int height = fm.getHeight();
+            int x = getWidth() - width - 3;
+            int y = 3 + height*2;
+            g2.setColor(Color.BLACK);
+            g2.fillRect(x, y, width, height);
+            g2.setColor(Color.WHITE);
+            g2.drawString(levelScore, x, y + height - fm.getDescent());
+        }        
+
         if (labellingOn) {
             for (RoboStuff rs : robots) {
                 Robot robot = rs.getRobot();
@@ -201,6 +226,23 @@ public class Playfield extends JPanel {
             g2.drawString(winMessage, 20, getHeight()/2);
             g2.setColor(Color.RED);
             g2.drawString(winMessage, 15, getHeight()/2-5);
+        }
+    }
+
+    /**
+     * Tells all the sprites to get ready for the next frame.
+     */
+    private void nextFrame() {
+        for (SquareConfig sc : game.getSquareTypes()) {
+            sc.getSprite().nextFrame();
+        }
+        
+        for (LevelConfig.Switch s : level.getSwitches()) {
+            s.getSprite().nextFrame();
+        }
+
+        for (RoboStuff rs : robots) {
+            rs.getRobot().getSprite().nextFrame();
         }
     }
 
@@ -272,8 +314,9 @@ public class Playfield extends JPanel {
     
     public void setFrameCount(Integer c) {
         frameCount = c;
+        nextFrame();
     }
-
+    
     /**
      * Returns the LevelConfig that determines this playfield's configuration.
      */

@@ -39,7 +39,6 @@ import java.util.prefs.BackingStoreException;
 import java.util.prefs.Preferences;
 
 import javax.swing.AbstractAction;
-import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JComponent;
 import javax.swing.JFileChooser;
@@ -58,8 +57,6 @@ import javax.swing.event.ChangeListener;
 public class Main {
     
     private static final String DEFAULT_MAP_RESOURCE_PATH = "ROBO-INF/default.map";
-
-    private static final int ROBOT_ICON_COUNT = 8;
 
     private static enum GameState { NOT_STARTED, RESET, STEP, RUNNING, PAUSED, WON };
     
@@ -174,6 +171,7 @@ public class Main {
                     start.setText("Pause");
                     step.setText("Step");
                     reset.setText("Reset");
+                    playfield.setLabellingOn(false);
                 }
             } else if (newState == GameState.STEP) {
                 if (state == GameState.WON) {
@@ -199,6 +197,7 @@ public class Main {
                 start.setText("Restart");
                 step.setText("Restep");
                 reset.setText("Reset");
+                playfield.setLabellingOn(false);
             }
         }
         
@@ -446,8 +445,6 @@ public class Main {
     
     private GameConfig config;
     
-    private ImageIcon[] robotIcons;
-
     private SaveCircuitAction saveCircuitAction = new SaveCircuitAction();
     private LoadCircuitAction loadCircuitAction = new LoadCircuitAction();
     private LoadLevelsAction loadLevelsAction = new LoadLevelsAction();
@@ -517,14 +514,6 @@ public class Main {
             URLConnection levelMapURLConnection = levelMapURL.openConnection();
             config = LevelStore.loadLevels(levelMapURLConnection.getInputStream());
             
-            robotIcons = new ImageIcon[ROBOT_ICON_COUNT];
-            for (int i = 0; i < ROBOT_ICON_COUNT; i++) {
-                String resname = String.format("ROBO-INF/images/robot_%02d.png", i);
-                URL imgurl = ClassLoader.getSystemResource(resname);
-                if (imgurl == null) throw new RuntimeException("Couldn't load resource "+resname);
-                robotIcons[i] = new ImageIcon(imgurl);
-            }
-            
             sm = new SoundManager();
             sm.addClip("create-AND", ClassLoader.getSystemResource("ROBO-INF/sounds/create-AND.wav"));
             sm.addClip("create-OR",  ClassLoader.getSystemResource("ROBO-INF/sounds/create-OR.wav"));
@@ -564,7 +553,7 @@ public class Main {
         levelNumber = newLevelNum;
         final LevelConfig level = config.getLevels().get(newLevelNum);
         level.resetState();
-        playfield = new Playfield(level);
+        playfield = new Playfield(config, level);
         playfield.setLabellingOn(true);
         Map<Robot,CircuitEditor> robots = new LinkedHashMap<Robot,CircuitEditor>();
         for (Robot robot : level.getRobots()) {

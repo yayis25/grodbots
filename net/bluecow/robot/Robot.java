@@ -3,7 +3,6 @@ package net.bluecow.robot;
 import java.awt.Graphics2D;
 import java.awt.Point;
 import java.awt.geom.Point2D;
-import java.io.FileNotFoundException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedHashMap;
@@ -14,6 +13,9 @@ import net.bluecow.robot.GameConfig.GateConfig;
 import net.bluecow.robot.GameConfig.SensorConfig;
 import net.bluecow.robot.gate.AbstractGate;
 import net.bluecow.robot.gate.Gate;
+import net.bluecow.robot.sprite.Sprite;
+import net.bluecow.robot.sprite.SpriteLoadException;
+import net.bluecow.robot.sprite.SpriteManager;
 
 /**
  * The robot.
@@ -70,7 +72,7 @@ public class Robot {
             Collection<GateConfig> gateConfigs,
             String spritePath,
             Point2D.Float startPosition,
-            float stepSize) throws FileNotFoundException {
+            float stepSize) throws SpriteLoadException {
         this(name, level, sensorList,
                 gateConfigs, SpriteManager.load(spritePath),
                 startPosition, stepSize, null);
@@ -95,7 +97,7 @@ public class Robot {
         this.circuit = new Circuit(robotInputsGate, outputs.values(), gateConfigs);
         if (circuit != null) {
             for (Map.Entry<Class<? extends Gate>, Integer> allowance: circuit.getGateAllowances().entrySet()) {
-                this.circuit.addGateAllowance((Class<Gate>) allowance.getKey(), allowance.getValue());
+                this.circuit.addGateAllowance(allowance.getKey(), allowance.getValue());
             }
         }
 	}
