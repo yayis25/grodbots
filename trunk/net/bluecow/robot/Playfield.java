@@ -62,7 +62,7 @@ public class Playfield extends JPanel {
     private List<RoboStuff> robots;
     
     private boolean labellingOn;
-
+    
     /**
      * The colour that drawLabel() will use to paint the box underneath labels.
      */

@@ -1,5 +1,6 @@
 package net.bluecow.robot;
 
+import java.awt.Dimension;
 import java.awt.Graphics2D;
 import java.awt.Point;
 import java.awt.geom.Point2D;
@@ -94,7 +95,7 @@ public class Robot {
             outputs.put(sensor, new RobotSensorOutput(sensor));
         }
         
-        this.circuit = new Circuit(robotInputsGate, outputs.values(), gateConfigs);
+        this.circuit = new Circuit(robotInputsGate, outputs.values(), gateConfigs, new Dimension(22,20));
         if (circuit != null) {
             for (Map.Entry<Class<? extends Gate>, Integer> allowance: circuit.getGateAllowances().entrySet()) {
                 this.circuit.addGateAllowance(allowance.getKey(), allowance.getValue());
