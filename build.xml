@@ -12,7 +12,13 @@
 	</target>
 
 	<target name="compile" depends="init">
-		<javac srcdir="${src}" destdir="${build}" debug="true" encoding="UTF-8"/>
+		<javac srcdir="${src}" destdir="${build}" debug="true" encoding="UTF-8">
+			<classpath>
+				<fileset dir="lib">
+				    <include name="*.jar"/>
+				</fileset>
+			</classpath>
+		</javac>
 	</target>
 
 	<target name="copyresources" depends="init">
@@ -22,6 +28,7 @@
 	</target>
 
 	<target name="jar" depends="compile,copyresources">
+		<unjar src="lib/bsh.jar" dest="build"/>
 		<jar destfile="robot.jar" basedir="build" manifest="robot_jar_manifest" />
 	</target>
 
