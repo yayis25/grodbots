@@ -21,8 +21,10 @@ import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import javax.swing.AbstractAction;
 import javax.swing.Action;
@@ -66,12 +68,25 @@ public class CircuitEditor extends JPanel {
          * The gate that's zooming.
          */
         private Gate gate;
+
+        private int startInputStickLength;
+
+        private int startOutputStickLength;
+
+        private int endInputStickLength;
+
+        private int endOutputStickLength;
         
-        ZoomEffect(int nframes, Gate gate, Rectangle end) {
+        ZoomEffect(int nframes, Gate gate, Rectangle end,
+                int endInputStickLength, int endOutputStickLength) {
             frameStep = 1.0/nframes;
             this.gate = gate;
             this.start = gate.getBounds();
             this.end = new Rectangle(end);
+            this.startInputStickLength = gate.getInputStickLength();
+            this.startOutputStickLength = gate.getOutputStickLength();
+            this.endInputStickLength = endInputStickLength;
+            this.endOutputStickLength = endOutputStickLength;
             timer = new Timer(20, this);
             timer.start();
         }
@@ -97,6 +112,8 @@ public class CircuitEditor extends JPanel {
                     (int) (start.height + progress * (end.height - start.height))
                     );
             gate.setBounds(r);
+            gate.setInputStickLength((int) (startInputStickLength + progress * (endInputStickLength - startInputStickLength)));
+            gate.setOutputStickLength((int) (startOutputStickLength + progress * (endOutputStickLength - startOutputStickLength)));
             
             Graphics2D g2 = (Graphics2D) getGraphics();
             g2.translate(r.x, r.y);
@@ -215,9 +232,9 @@ public class CircuitEditor extends JPanel {
          * of the given class.  If there is no gate of the given class in this
          * toolbox, returns null.
          */
-        public Rectangle getGateBounds(Class<? extends Gate> gateClass) {
+        public Gate getGateForClass(Class<? extends Gate> gateClass) {
             for (Gate g : gates) {
-                if (g.getClass() == gateClass) return g.getBounds();
+                if (g.getClass() == gateClass) return g;
             }
             return null;
         }
@@ -246,8 +263,8 @@ public class CircuitEditor extends JPanel {
                 repaint();
                 if (baleted) {
                     playSound("delete_gate");
-                    Rectangle zoomTo = toolbox.getGateBounds(hilightGate.getClass());
-                    new ZoomEffect(10, hilightGate, zoomTo);
+                    Gate zoomTo = toolbox.getGateForClass(hilightGate.getClass());
+                    new ZoomEffect(ZOOM_STEPS, hilightGate, zoomTo.getBounds(), zoomTo.getInputStickLength(), zoomTo.getOutputStickLength());
                     hilightGate = null;
                 } else {
                     // TODO: get a "you suck" type sound
@@ -391,14 +408,22 @@ public class CircuitEditor extends JPanel {
             }
             try {
                 Gate newGate = gc.getGateClass().newInstance();
-                Point p = new Point(newGatePosition);
-                circuit.addGate(newGate, p);
+                circuit.addGate(newGate, 
+                        new Rectangle(
+                                newGatePosition.x,
+                                newGatePosition.y,
+                                (int) (defaultGateSize.width * gateSizeCoefficient),
+                                (int) (defaultGateSize.height * gateSizeCoefficient)));
                 playSound("create-"+gc.getName());
                 
-                Rectangle zoomFrom = toolbox.getGateBounds(gc.getGateClass());
+                Gate zoomFrom = toolbox.getGateForClass(gc.getGateClass());
+                int nisl = (int) (newGate.getInputStickLength() * gateSizeCoefficient);
+                int nosl = (int) (newGate.getOutputStickLength() * gateSizeCoefficient);
                 Rectangle zoomTo = newGate.getBounds();
-                newGate.setBounds(zoomFrom);
-                new ZoomEffect(10, newGate, zoomTo);
+                newGate.setBounds(zoomFrom.getBounds());
+                newGate.setInputStickLength(zoomFrom.getInputStickLength());
+                newGate.setOutputStickLength(zoomFrom.getOutputStickLength());
+                new ZoomEffect(ZOOM_STEPS, newGate, zoomTo, nisl, nosl);
             } catch (InstantiationException e1) {
                 e1.printStackTrace();
                 JOptionPane.showMessageDialog(CircuitEditor.this, "Couldn't create new Gate instance:\n"+e1.getMessage());
@@ -409,6 +434,49 @@ public class CircuitEditor extends JPanel {
         }
 	}
     
+    private class SetGateSizeAction extends AbstractAction {
+        
+        private static final double MIN_SCALE = 0.2;
+        private double scaleFactor;
+        
+        SetGateSizeAction(String name, double scaleFactor) {
+            super(name);
+            this.scaleFactor = scaleFactor;
+        }
+        
+        public void actionPerformed(ActionEvent e) {
+            gateSizeCoefficient += scaleFactor;
+            if (gateSizeCoefficient < MIN_SCALE) gateSizeCoefficient = MIN_SCALE;
+            Set<Gate> nonScaledGates = new HashSet<Gate>();
+            nonScaledGates.add(circuit.getInputsGate());
+            nonScaledGates.addAll(circuit.getOutputs());
+            for (Gate g : circuit.getGates()) {
+                if (nonScaledGates.contains(g)) continue;
+                Rectangle oldbounds = g.getBounds();
+                g.setBounds(new Rectangle(
+                        oldbounds.x, oldbounds.y,
+                        (int) (defaultGateSize.width * gateSizeCoefficient),
+                        (int) (defaultGateSize.height * gateSizeCoefficient)));
+                g.setOutputStickLength((int) (defaultOutputStickLength * gateSizeCoefficient));
+                g.setInputStickLength((int) (defaultInputStickLength * gateSizeCoefficient));
+            }
+            repaint();
+        }
+    }
+
+    /**
+     * The number of steps in a normal zoom effect.
+     */
+    private static final int ZOOM_STEPS = 10;
+    
+    private static final Dimension defaultGateSize = new Dimension(85, 50);
+    
+    private static final int defaultInputStickLength = 22;
+    
+    private static final int defaultOutputStickLength = 20;
+    
+    private double gateSizeCoefficient = 1.0;
+
 	/**
 	 * The gate that should be highlighted.  This is the gate that currently 
 	 * has keyboard and mouse focus.
@@ -501,6 +569,10 @@ public class CircuitEditor extends JPanel {
      * The circuit we're editing.
      */
     private Circuit circuit;
+
+    private SetGateSizeAction shrinkAction;
+
+    private SetGateSizeAction growAction;
     
     /**
      * Creates a new circuit editor for the given circuit.
@@ -549,6 +621,15 @@ public class CircuitEditor extends JPanel {
         getInputMap().put(KeyStroke.getKeyStroke('!'), "removeAll");
         removeAllAction = new RemoveAllAction();
         getActionMap().put("removeAll", removeAllAction);
+        
+        getInputMap().put(KeyStroke.getKeyStroke('-'), "shrinkGates");
+        shrinkAction = new SetGateSizeAction("Ensmallen Gates", -0.1);
+        getActionMap().put("shrinkGates", shrinkAction);
+        
+        getInputMap().put(KeyStroke.getKeyStroke('+'), "growGates");
+        getInputMap().put(KeyStroke.getKeyStroke('='), "growGates");
+        growAction = new SetGateSizeAction("Embiggen Gates", 0.1);
+        getActionMap().put("growGates", growAction);
     }
 
     /**
@@ -756,9 +837,14 @@ public class CircuitEditor extends JPanel {
                     if (allowance != null && allowance != 0) {
                         try {
                             g = gclass.newInstance();
-                            Point pp = new Point(p.x - Circuit.DEFAULT_GATE_WIDTH/2,
-                                                 p.y - Circuit.DEFAULT_GATE_HEIGHT/2);
-                            circuit.addGate(g, pp);
+                            Rectangle bounds = 
+                                new Rectangle(
+                                        
+                                        p.x - defaultGateSize.width/2,
+                                        p.y - defaultGateSize.height/2,
+                                        (int) (defaultGateSize.width + gateSizeCoefficient),
+                                        (int) (defaultGateSize.height + gateSizeCoefficient));
+                            circuit.addGate(g, bounds);
                             playSound("create-"+getSoundName(g));
                         } catch (Exception ex) {
                             g = null;
@@ -860,8 +946,12 @@ public class CircuitEditor extends JPanel {
                     menu.add(getActionMap().get("addGate("+gc.getName()+")"));
                 }
             }
+            menu.addSeparator();
             menu.add(removeAction);
             menu.add(removeAllAction);
+            menu.addSeparator();
+            menu.add(shrinkAction);
+            menu.add(growAction);
             menu.show(CircuitEditor.this, p.x, p.y);
         }
 	}
@@ -924,7 +1014,8 @@ public class CircuitEditor extends JPanel {
      * that gate's GateConfig.
      */
     private String getSoundName(Gate g) {
-        return circuit.getGateConfigs().get(g.getClass()).getName();
+        GateConfig gateConfig = circuit.getGateConfigs().get(g.getClass());
+        return gateConfig == null ? null : gateConfig.getName();
     }
     
     private void playSound(String name) {

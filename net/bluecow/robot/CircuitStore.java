@@ -5,7 +5,6 @@
  */
 package net.bluecow.robot;
 
-import java.awt.Point;
 import java.awt.Rectangle;
 import java.io.BufferedWriter;
 import java.io.IOException;
@@ -144,6 +143,8 @@ public class CircuitStore {
                 String id = m.group(1);
                 int x = 0;
                 int y = 0;
+                int width = 0;
+                int height = 0;
                 try {
                     x = Integer.parseInt(m.group(2));
                 } catch (NumberFormatException ex) {
@@ -154,8 +155,18 @@ public class CircuitStore {
                 } catch (NumberFormatException ex) {
                     throw new FileFormatException("Could not parse Y coordinate", br.getLineNumber(), line, m.start(3));
                 }
+                try {
+                    width = Integer.parseInt(m.group(4));
+                } catch (NumberFormatException ex) {
+                    throw new FileFormatException("Could not parse width", br.getLineNumber(), line, m.start(4));
+                }
+                try {
+                    width = Integer.parseInt(m.group(5));
+                } catch (NumberFormatException ex) {
+                    throw new FileFormatException("Could not parse height", br.getLineNumber(), line, m.start(5));
+                }
                 String gateClassName = m.group(6);
-                Point p = new Point(x, y);
+                Rectangle bounds = new Rectangle(x, y, width, height);
                 Gate g;
                 if ("net.bluecow.robot.Robot$RobotSensorOutput".equals(gateClassName)) {
                     Gate[] robotGates = robot.getOutputs();
@@ -171,7 +182,7 @@ public class CircuitStore {
                 } else {
                     try {
                         g = (Gate) Class.forName(gateClassName).newInstance();
-                        robot.getCircuit().addGate(g, p);
+                        robot.getCircuit().addGate(g, bounds);
                     } catch (InstantiationException e) {
                         e.printStackTrace();
                         throw new FileFormatException(

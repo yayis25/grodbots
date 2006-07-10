@@ -5,6 +5,7 @@
  */
 package net.bluecow.robot;
 
+import java.awt.Dimension;
 import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.geom.Line2D;
@@ -32,10 +33,6 @@ import net.bluecow.robot.gate.Gate;
  * @version $Id$
  */
 public class Circuit {
-
-    static final int DEFAULT_GATE_WIDTH = 85;
-
-    static final int DEFAULT_GATE_HEIGHT = 50;
 
     /**
      * The special set of gates that provide input to the circuit (typically,
@@ -81,18 +78,18 @@ public class Circuit {
      */
     private List<ChangeListener> changeListeners = new ArrayList<ChangeListener>();
 
-    public Circuit(Gate inputs, Collection<? extends Gate> outputs, Collection<GateConfig> gateConfigs) {
+    public Circuit(Gate inputs, Collection<? extends Gate> outputs, Collection<GateConfig> gateConfigs, Dimension defaultGateSize) {
         gates = new HashSet<Gate>();
         inputsGate = inputs;
         gates.add(inputsGate);
         permanentGates.add(inputsGate);
-        inputsGate.setBounds(new Rectangle(0, 0, DEFAULT_GATE_WIDTH, DEFAULT_GATE_HEIGHT));
+        inputsGate.setBounds(new Rectangle(0, 0, defaultGateSize.width, defaultGateSize.height));
         
         this.outputs = new ArrayList<Gate>(outputs);
         for (Gate output : outputs) {
             gates.add(output);
             permanentGates.add(output);
-            output.setBounds(new Rectangle(0, 0, output.getOutputStickLength(), DEFAULT_GATE_HEIGHT));
+            output.setBounds(new Rectangle(0, 0, output.getOutputStickLength(), defaultGateSize.height));
         }
         
         this.gateConfigs = new HashMap<Class<Gate>, GateConfig>();
@@ -115,7 +112,7 @@ public class Circuit {
             return false;
         }
 
-        // disconnect all the inputs the hilight gate outputs to
+        // disconnect all the inputs the given gate outputs to
         for (Gate gg : gates) {
             for (int i = 0; i < gg.getInputs().length; i++) {
                 if (gg.getInputs()[i].getConnectedGate() == g) {
@@ -144,20 +141,15 @@ public class Circuit {
     }
     
     public void removeAllGates() {
-        // disconnect everything (to be fancy, we could have only removed
-        // things connected to the permanent gates, but that's more work)
-        for (Gate g : gates) {
-            for (Gate.Input inp : g.getInputs()) {
-                inp.connect(null);
-            }
-        }
-
-        gates.retainAll(permanentGates);
+        // remove gates one at a time, so we can give back allowances
+        for (Gate g : new ArrayList<Gate>(gates)) {
+            remove(g);
+        }        
         
         fireChangeEvent();
     }
 
-    public void addGate(Gate g, Point p) {
+    public void addGate(Gate g, Rectangle bounds) {
         Integer numAllowed = gateAllowances.get(g.getClass()); 
         if (numAllowed == null || numAllowed == 0) {
             throw new IllegalArgumentException("No more gates of type "+g.getClass()+" are allowed");
@@ -168,7 +160,7 @@ public class Circuit {
             gateAllowances.put(g.getClass(), new Integer(numAllowed-1));
         }
         
-        g.setBounds(new Rectangle(p.x, p.y, DEFAULT_GATE_WIDTH, DEFAULT_GATE_HEIGHT));
+        g.setBounds(bounds);
         gates.add(g);
         fireChangeEvent();
     }

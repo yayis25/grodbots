@@ -1,17 +1,19 @@
 Game Features:
--Make zoom effect also apply to input stick length and output stick length
--Let the user choose how big a gate looks on screen
--Split LevelConfig and Level, where LevelConfig doesn't change and Level does. (?)
+-Fade the labels in and out instead of abrupt appearance/disappearance
+-allow map manipulation from switches
+-allow switches to enable/disable other switches
+-make it possible to start a switch in the disabled state
+-Batteries
+-Radio Communication between robots
 -init sound manager sound set from config file
 -Make sound manager available to onEnter/onExit scripts
 -Make ghosts work in levels with switches that do fancy stuff (need a separate beanshell context per set of ghosts, and even separate playfields)
 -Make all exceptions (even on the game loop thread) become user-visible dialogs
 -XML format for level config (ok, I'll cry uncle)
--Batteries
--Radio Communication between robots
 -Be able to specify how many circuit evaluations per step in a level
 -Be able to group and label sets of gates
 -Be able to shrink groups of gates into small ICs
+-Split LevelConfig and Level, where LevelConfig doesn't change and Level does. (?)
 -Consider splitting the Gate interface into Gate (model) and GateComponent (view/controller)
 
 Images:
@@ -35,6 +37,9 @@ Sounds:
 -little ditties for the beginning of each level (maybe this would be better suited to the MIDI sequencer api)
 
 Completed:
+-Let the user choose how big a gate looks on screen
+-Fix "clear" feature in circuit editor to give back gate allowances!
+-Make zoom effect also apply to input stick length and output stick length
 -Make gates zoom back to their toolbox spot when deleted
 -Animated sprites for anything that can use a static image
 -Make labels disappear when the game starts (and reappear when it stops)
