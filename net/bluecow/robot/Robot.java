@@ -66,6 +66,12 @@ public class Robot {
     
     /** The circuit that controls this robot's behaviour. */
     private Circuit circuit;
+    
+    /**
+     * The previous direction the robot was heading in. This is the most recent
+     * value returned by {@link #getIconHeading()}.
+     */
+    private double prevHeading;
 	
     public Robot(String name,
             LevelConfig level,
@@ -366,7 +372,9 @@ public class Robot {
      */
     public double getIconHeading() {
         double theta;
-        if (movingDirection == MOVING_UP) {
+        if (movingDirection == 0) {
+            theta = prevHeading;
+        } else if (movingDirection == MOVING_UP) {
             theta = 0.0;
         } else if (movingDirection == (MOVING_UP | MOVING_RIGHT)) {
             theta = 0.25 * Math.PI;
@@ -386,6 +394,7 @@ public class Robot {
             // Robot is working against itself! Just spin around wildly
             theta = Math.random() * Math.PI * 2.0;
         }
+        prevHeading = theta;
         return theta;
     }
     

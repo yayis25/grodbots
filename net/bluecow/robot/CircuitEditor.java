@@ -251,7 +251,7 @@ public class CircuitEditor extends JPanel {
         }
 
         public void actionPerformed(ActionEvent e) {
-            if (locked) return;
+            if (circuit.isLocked()) return;
             if (hilightWireInput != null) {
                 hilightWireInput.connect(null);
                 hilightWireInput = null;
@@ -280,7 +280,7 @@ public class CircuitEditor extends JPanel {
         }
         
         public void actionPerformed(ActionEvent e) {
-            if (locked) return;
+            if (circuit.isLocked()) return;
             circuit.removeAllGates();
             // TODO: play a sound
         }
@@ -400,7 +400,7 @@ public class CircuitEditor extends JPanel {
         }
 
         public void actionPerformed(ActionEvent e) {
-            if (locked) return;
+            if (circuit.isLocked()) return;
             if (circuit.getGateAllowances().get(gc.getGateClass()) == 0) {
                 System.out.println("Not adding "+gc.getGateClass()+" because no more are allowed");
                 // TODO: play buzzer sound
@@ -553,14 +553,6 @@ public class CircuitEditor extends JPanel {
     private SoundManager sm;
     
     /**
-     * When locked is true, this component should not allow the circuit to be
-     * modified.
-     * <p>
-     * XXX: move to circuit class? it could make sense both ways.
-     */
-    private boolean locked;
-    
-    /**
      * Handles all the mouse activity on this component.
      */
     private MouseInput mouseListener;
@@ -589,7 +581,6 @@ public class CircuitEditor extends JPanel {
         toolbox = new Toolbox();
         addMouseListener(mouseListener);
         addMouseMotionListener(mouseListener);
-        setLocked(false);
         setLayout(new CircuitEditorLayout());
         
         circuit.addChangeListener(new ChangeListener() {
@@ -714,7 +705,7 @@ public class CircuitEditor extends JPanel {
         
         toolbox.paint(g2);
         
-        if (locked) {
+        if (circuit.isLocked()) {
             final String message = "Locked";
             Font f = getFont().deriveFont(20f);
             FontMetrics fm2 = getFontMetrics(f);
@@ -769,7 +760,7 @@ public class CircuitEditor extends JPanel {
 	    
 	    @Override
 		public void mouseDragged(MouseEvent e) {
-            if (locked) return;
+            if (circuit.isLocked()) return;
 		    Point p = e.getPoint();
 		    if (mode == MODE_CONNECTING_FROM_INPUT) {
 		        pendingConnectionLine = pendingConnectionLine.moveCursor(p, circuit.getGateAt(p) != null);
@@ -790,7 +781,7 @@ public class CircuitEditor extends JPanel {
 
         @Override
 		public void mouseMoved(MouseEvent e) {
-            if (locked) return;
+            if (circuit.isLocked()) return;
 		    Point p = e.getPoint();
 		    if (mode == MODE_IDLE) {
 		        Gate g = circuit.getGateAt(p);
@@ -825,7 +816,7 @@ public class CircuitEditor extends JPanel {
 
         @Override
         public void mousePressed(MouseEvent e) {
-            if (locked) return;
+            if (circuit.isLocked()) return;
             if (mode == MODE_IDLE) {
                 Point p = e.getPoint();
                 
@@ -888,7 +879,7 @@ public class CircuitEditor extends JPanel {
 
         @Override
         public void mouseReleased(MouseEvent e) {
-            if (locked) return;
+            if (circuit.isLocked()) return;
             Point p = e.getPoint();
             if (e.isPopupTrigger()) {
                 showPopup(e.getPoint());
@@ -995,11 +986,6 @@ public class CircuitEditor extends JPanel {
             this.hilightOutput = hilightOutput;
             repaint();
         }
-    }
-
-    public void setLocked(boolean v) {
-        locked = v;
-        repaint();
     }
     
     /**

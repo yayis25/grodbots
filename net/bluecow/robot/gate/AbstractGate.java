@@ -160,11 +160,23 @@ public abstract class AbstractGate implements Gate {
     
     private Rectangle bounds;
     
-    private Color hilightColor;
+    /**
+     * The colour of a highlighted gate.
+     * FIXME: this is also defined in CircuitEditor!
+     */
+    private Color hilightColor = Color.BLUE;
     
-    private Color normalColor;
+    /**
+     * The colour of a normal (not highlighted and inactive) gate.
+     * FIXME: this is also defined in CircuitEditor!
+     */
+    private Color normalColor = Color.BLACK;
     
-    private Color activeColor;
+    /**
+     * The colour of a highlighted gate.
+     * FIXME: this is also defined in CircuitEditor!
+     */
+    private Color activeColor = Color.ORANGE;
 
     /**
      * The diameter of circles that indicate signal inversion (in pixels).

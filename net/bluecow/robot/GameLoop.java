@@ -41,6 +41,19 @@ public class GameLoop implements Runnable {
      * run() method is invoked.
      */
     private boolean running;
+    
+    /**
+     * Tells whether or not outside code has intentionally started
+     * the game loop.
+     * 
+     * <p>Justification for this extra state flag: The playfield sometimes
+     * requires extra repaints in order to finish effects that are synchronized
+     * with frame repaints (to reduce aliasing of the effect's framerate with
+     * the repaint rate). If all the playfield effects were asynchronous, this
+     * flag could be eliminated because you'd only need to keep repainting the
+     * playfield when the game is running.
+     */
+    //private boolean started;
 
     /**
      * Counts how many loops the game has gone through since it was started
@@ -90,12 +103,16 @@ public class GameLoop implements Runnable {
             }
         }
         
+        playfield.setAsyncRepaint(false);
+        
         pcs.firePropertyChange("running", false, true);
         
         try {
             while (running) {
                 
-                singleStep();
+                if (running) {
+                    singleStep();
+                }
                 
                 try {
                     Thread.sleep(frameDelay);
@@ -155,6 +172,7 @@ public class GameLoop implements Runnable {
             running = false;
             stopRequested = false;
         }
+        playfield.setAsyncRepaint(true);
         if (wasRunning) {
             pcs.firePropertyChange("running", true, false);
         }
@@ -237,6 +255,7 @@ public class GameLoop implements Runnable {
             robot.resetState();
         }
         playfield.setFrameCount(null);
+        playfield.setAsyncRepaint(true);
     }
 
     

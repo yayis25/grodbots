@@ -161,7 +161,7 @@ public class CircuitStore {
                     throw new FileFormatException("Could not parse width", br.getLineNumber(), line, m.start(4));
                 }
                 try {
-                    width = Integer.parseInt(m.group(5));
+                    height = Integer.parseInt(m.group(5));
                 } catch (NumberFormatException ex) {
                     throw new FileFormatException("Could not parse height", br.getLineNumber(), line, m.start(5));
                 }
