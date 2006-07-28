@@ -334,30 +334,40 @@ public class LevelStore {
             }
             
             // The squares of the map
-            int y = 0;
-            for (;;) {
-                if (line == null) break;
-                if (line.equals("*")) break;
-                for (int x = 0; x < xSize; x++) {
-                    if (x < line.length()) {
-                        level.setSquare(x, y, config.getSquare(line.charAt(x)));
-                    } else {
-                        level.setSquare(x, y, config.getSquare(' '));
+            try {
+                int y = 0;
+                for (;;) {
+                    if (line == null) break;
+                    if (line.equals("*")) break;
+                    for (int x = 0; x < xSize; x++) {
+                        if (x < line.length()) {
+                            level.setSquare(x, y, config.getSquare(line.charAt(x)));
+                        } else {
+                            level.setSquare(x, y, config.getSquare(' '));
+                        }
+                    }
+                    y += 1;
+                    line = in.readLine();
+                }
+                
+                // pad out unspecified lines with spaces
+                for (; y < ySize; y++) {
+                    for (int i = 0; i < xSize; i++) {
+                        level.setSquare(i, y, config.getSquare(' '));
                     }
                 }
-                y += 1;
+                level.snapshotState();
+                config.addLevel(level);
                 line = in.readLine();
+            } catch (ArrayIndexOutOfBoundsException ex) {
+                throw new FileFormatException(
+                        "Error in level \""+level.getName()+"\": index out of bounds at "
+                        +ex.getMessage(), in.getLineNumber(), line, -1);
+            } catch (Exception ex) {
+                throw new FileFormatException(
+                        "General error reading map for level \""+level.getName()+"\": "
+                        +ex.getMessage(), in.getLineNumber(), line, -1);
             }
-            
-            // pad out unspecified lines with spaces
-            for (; y < ySize; y++) {
-                for (int i = 0; i < xSize; i++) {
-                    level.setSquare(i, y, config.getSquare(' '));
-                }
-            }
-            level.snapshotState();
-            config.addLevel(level);
-            line = in.readLine();
         }
         
         return config;

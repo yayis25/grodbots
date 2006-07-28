@@ -95,7 +95,7 @@ public class Main {
             gl.resetState();
             playfield.setWinMessage(null);
             for (CircuitEditor ce : editors) {
-                ce.setLocked(false);
+                ce.getCircuit().setLocked(false);
             }
             stateHandler.setState(nextState);
         }
@@ -204,7 +204,7 @@ public class Main {
         /** Locks or unlocks all editors in the robots map. */
         private void lockEditors(boolean locked) {
             for (CircuitEditor ce : robots.values()) {
-                ce.setLocked(locked);
+                ce.getCircuit().setLocked(locked);
             }
         }
     }

@@ -35,6 +35,19 @@ import net.bluecow.robot.gate.Gate;
 public class Circuit {
 
     /**
+     * Determines whether or not this circuit does not allow structural
+     * modifications. Structural modifications include adding and removing
+     * gates, changing gate allowances, and connecting or disconnecting gates.
+     * Circuit evaluation and resetting states do not count as structural
+     * modifications, and those operations will still work when this circuit is
+     * locked.
+     * <p>
+     * This property defaults to false.
+     */
+    private boolean locked = false;
+    
+
+    /**
      * The special set of gates that provide input to the circuit (typically,
      * the robot's sensor outputs).
      */
@@ -108,6 +121,7 @@ public class Circuit {
      * is not part of this circuit.
      */
     public boolean remove(Gate g) {
+        if (locked) throw new LockedCircuitException();
         if (permanentGates.contains(g)) {
             return false;
         }
@@ -141,6 +155,7 @@ public class Circuit {
     }
     
     public void removeAllGates() {
+        if (locked) throw new LockedCircuitException();
         // remove gates one at a time, so we can give back allowances
         for (Gate g : new ArrayList<Gate>(gates)) {
             remove(g);
@@ -150,6 +165,7 @@ public class Circuit {
     }
 
     public void addGate(Gate g, Rectangle bounds) {
+        if (locked) throw new LockedCircuitException();
         Integer numAllowed = gateAllowances.get(g.getClass()); 
         if (numAllowed == null || numAllowed == 0) {
             throw new IllegalArgumentException("No more gates of type "+g.getClass()+" are allowed");
@@ -189,6 +205,7 @@ public class Circuit {
     }
 
     public void addGateAllowance(Class<? extends Gate> gateClass, int count) {
+        if (locked) throw new LockedCircuitException();
         gateAllowances.put(gateClass, count);
         fireChangeEvent();
     }
@@ -270,4 +287,23 @@ public class Circuit {
     public Collection<Gate> getGates() {
         return Collections.unmodifiableCollection(gates);
     }
+    
+    /**
+     * Sets the locked state of this circut, and generates a change event if the
+     * new state is different from the existing state.
+     * 
+     * @param v The new state for this circut's lockedness (true means locked).
+     */
+    public void setLocked(boolean v) {
+        if (locked != v) {
+            System.out.println("Changing locked to "+v);
+            locked = v;
+            fireChangeEvent();
+        }
+    }
+    
+    public boolean isLocked() {
+        return locked;
+    }
+
 }

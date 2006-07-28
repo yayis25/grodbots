@@ -9,6 +9,8 @@ import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Point;
 import java.awt.Rectangle;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.GeneralPath;
 import java.awt.geom.Point2D;
@@ -17,6 +19,7 @@ import java.util.Iterator;
 import java.util.List;
 
 import javax.swing.JPanel;
+import javax.swing.Timer;
 
 import net.bluecow.robot.GameConfig.SquareConfig;
 import net.bluecow.robot.LevelConfig.Switch;
@@ -60,9 +63,24 @@ public class Playfield extends JPanel {
     private Integer frameCount;
     
     private List<RoboStuff> robots;
+
+    /**
+     * Controls whether or not labels will be displayed by fading the opacity
+     * toward zero when false and toward one when true.
+     */
+    private boolean labellingOn = true;
     
-    private boolean labellingOn;
+    /**
+     * The opacity of a label.  Fades up and down in paint() according to whether
+     * or not labellingOn is set.
+     */
+    private float labelOpacity = 1.0f;
     
+    /**
+     * The amount that the label opacity fades up or down per frame.
+     */
+    private float labelFadeStep = 0.1f;
+
     /**
      * The colour that drawLabel() will use to paint the box underneath labels.
      */
@@ -73,6 +91,12 @@ public class Playfield extends JPanel {
      */
     private Color labelColor = Color.WHITE;
 
+    /**
+     * The number of milliseconds to delay between frames when the async repaint
+     * manager is repainting this playfield.
+     */
+    private int frameDelay = 50;
+    
     /**
      * Creates a new playfield with the specified map.
      * 
@@ -207,9 +231,9 @@ public class Playfield extends JPanel {
             g2.fillRect(x, y, width, height);
             g2.setColor(Color.WHITE);
             g2.drawString(levelScore, x, y + height - fm.getDescent());
-        }        
+        }
 
-        if (labellingOn) {
+        if (labelOpacity > 0.0) {
             for (RoboStuff rs : robots) {
                 Robot robot = rs.getRobot();
                 drawLabel(g2, fm, robot.getName(), robot.getPosition());
@@ -230,7 +254,7 @@ public class Playfield extends JPanel {
     }
 
     /**
-     * Tells all the sprites to get ready for the next frame.
+     * Tells all the sprites and effects to get ready for the next frame.
      */
     private void nextFrame() {
         for (SquareConfig sc : game.getSquareTypes()) {
@@ -243,6 +267,12 @@ public class Playfield extends JPanel {
 
         for (RoboStuff rs : robots) {
             rs.getRobot().getSprite().nextFrame();
+        }
+
+        if (labellingOn) {
+            labelOpacity = (float) Math.min(1.0, labelOpacity + labelFadeStep);
+        } else {
+            labelOpacity = (float) Math.max(0.0, labelOpacity - labelFadeStep);
         }
     }
 
@@ -265,6 +295,8 @@ public class Playfield extends JPanel {
     private void drawLabel(Graphics2D g2, FontMetrics fm, String label, Point2D.Float position) {
         float x = position.x * squareWidth;
         float y = position.y * squareWidth;
+        Composite backupComposite = g2.getComposite();
+        g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, labelOpacity));
         g2.setColor(boxColor);
         GeneralPath arrow = new GeneralPath();
         arrow.moveTo(x, y);
@@ -282,6 +314,7 @@ public class Playfield extends JPanel {
         g2.fillRoundRect(box.x, box.y, box.width, box.height, 4, 4);
         g2.setColor(labelColor);
         g2.drawString(label, box.x + fm.getHeight(), box.y + fm.getHeight()/2 + fm.getAscent());
+        g2.setComposite(backupComposite);
     }
     
     public Dimension getPreferredSize() {
@@ -330,5 +363,44 @@ public class Playfield extends JPanel {
     
     public void setLabellingOn(boolean labellingOn) {
         this.labellingOn = labellingOn;
+    }
+    
+    /**
+     * This flag controls the asynchronous versus synchronous repaint mode of
+     * the playfield.  When it is in synchronous mode, outside code has to trigger
+     * each repaint when it wants a new frame.  When in asynchronous mode, the
+     * playfield will repaint itself periodically if necessary (for example, because
+     * the labels are still in the process of fading in or out).
+     * 
+     * <p>As a rule of thumb, this flag should be set <tt>true</tt> when the game
+     * is under the control of the Swing UI, and <tt>false</tt> when the game loop
+     * is controlling all the repaints.
+     */
+    public void setAsyncRepaint(boolean asyncRepaint) {
+        repaintManager.setEnabled(asyncRepaint);
+    }
+
+    private AsyncRepaintManager repaintManager = new AsyncRepaintManager(frameDelay);
+    
+    private class AsyncRepaintManager implements ActionListener {
+        private boolean enabled = true;
+        private Timer timer;
+        
+        AsyncRepaintManager(int delay) {
+            timer = new Timer(delay, this);
+            timer.start();
+        }
+
+        public synchronized void setEnabled(boolean enabled) {
+            this.enabled = enabled;
+            System.out.println("Async repaint: "+enabled);
+        }
+        
+        public synchronized void actionPerformed(ActionEvent e) {
+            if (enabled) {
+                nextFrame();
+                repaint();
+            }
+        }
     }
 }
