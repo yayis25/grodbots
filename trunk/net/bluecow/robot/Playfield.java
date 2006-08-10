@@ -240,7 +240,7 @@ public class Playfield extends JPanel {
             }
             
             for (Switch s : level.getSwitches()) {
-                drawLabel(g2, fm, s.getName(), s.getLocation());
+                drawLabel(g2, fm, s.getLabel(), s.getLocation());
             }
         }
         

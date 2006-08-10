@@ -15,8 +15,6 @@ import net.bluecow.robot.GameConfig.SensorConfig;
 import net.bluecow.robot.gate.AbstractGate;
 import net.bluecow.robot.gate.Gate;
 import net.bluecow.robot.sprite.Sprite;
-import net.bluecow.robot.sprite.SpriteLoadException;
-import net.bluecow.robot.sprite.SpriteManager;
 
 /**
  * The robot.
@@ -61,8 +59,11 @@ public class Robot {
     /** The position that this robot starts out on. */
     private Point2D.Float startPosition;
     
-    /** This robot's name */
+    /** This robot's user-visible name */
     private String name;
+
+    /** This robot's scripting identifier */
+    private String id;
     
     /** The circuit that controls this robot's behaviour. */
     private Circuit circuit;
@@ -73,22 +74,11 @@ public class Robot {
      */
     private double prevHeading;
 	
-    public Robot(String name,
-            LevelConfig level,
-            List<SensorConfig> sensorList,
-            Collection<GateConfig> gateConfigs,
-            String spritePath,
-            Point2D.Float startPosition,
-            float stepSize) throws SpriteLoadException {
-        this(name, level, sensorList,
-                gateConfigs, SpriteManager.load(spritePath),
-                startPosition, stepSize, null);
-    }
-
-    public Robot(String name, LevelConfig level, List<SensorConfig> sensorList,
+    public Robot(String id, String name, LevelConfig level, List<SensorConfig> sensorList,
             Collection<GateConfig> gateConfigs,
             Sprite sprite, Point2D.Float startPosition, float stepSize,
             Circuit circuit) {
+        this.id = id;
         this.name = name;
         this.level = level;
         this.sprite = sprite;
@@ -119,7 +109,8 @@ public class Robot {
      * @param src The robot to copy.
      */
     public Robot(Robot src) {
-        this(src.name,
+        this(src.id, 
+                src.name,
                 src.level,
                 new ArrayList<SensorConfig>(src.outputs.keySet()),
                 new ArrayList<GateConfig>(src.circuit.getGateConfigs().values()),
@@ -401,12 +392,20 @@ public class Robot {
     public String getName() {
         return name;
     }
+
+    public String getId() {
+        return id;
+    }
     
 	public Sprite getSprite() {
 		return sprite;
 	}
 
-	public Point2D.Float getPosition() {
+    public void setSprite(Sprite sprite) {
+        this.sprite = sprite;
+    }
+
+    public Point2D.Float getPosition() {
 		return new Point2D.Float(position.x, position.y);
 	}
 	

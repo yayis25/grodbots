@@ -16,9 +16,6 @@ import java.util.List;
 import java.util.Map;
 
 import net.bluecow.robot.sprite.Sprite;
-import net.bluecow.robot.sprite.SpriteLoadException;
-import net.bluecow.robot.sprite.SpriteManager;
-
 import bsh.EvalError;
 import bsh.Interpreter;
 
@@ -42,14 +39,16 @@ public class LevelConfig {
      */
     public class Switch {
         private Point location;
-        private String name;
+        private String id;
+        private String label;
         private Sprite sprite;
         private String onEnter;
         private String onExit;
         
-        public Switch(Point location, String name, Sprite sprite, String onEnter) {
+        public Switch(Point location, String id, String label, Sprite sprite, String onEnter) {
             this.location = new Point(location);
-            this.name = name;
+            this.id = id;
+            this.label = label;
             this.sprite = sprite;
             this.onEnter = onEnter;
         }
@@ -60,7 +59,8 @@ public class LevelConfig {
          */
         public Switch(Switch copyMe) {
             this.location = new Point(copyMe.location);
-            this.name = copyMe.name;
+            this.id = copyMe.id;
+            this.label = copyMe.label;
             this.sprite = copyMe.sprite;
             this.onEnter = copyMe.onEnter;
             this.onExit = copyMe.onExit;
@@ -84,8 +84,12 @@ public class LevelConfig {
             return new Point(location);
         }
         
-        public String getName() {
-            return name;
+        public String getLabel() {
+            return label;
+        }
+        
+        public String getId() {
+            return id;
         }
         
         public Sprite getSprite() {
@@ -98,7 +102,7 @@ public class LevelConfig {
         
         @Override
         public String toString() {
-            return "Switch@("+location.x+","+location.y+") \""+name+"\": onEnter \""+onEnter+"\" onExit\""+onExit+"\"";
+            return "Switch@("+location.x+","+location.y+") \""+id+"\": onEnter \""+onEnter+"\" onExit\""+onExit+"\"";
         }
     }
 
@@ -135,12 +139,23 @@ public class LevelConfig {
         this.name = name;
     }
     
+    /**
+     * Adds the given robot to this level config.
+     * 
+     * @param r The robot to add, which must have a non-null id which is unique
+     * among all robots and switches within this level.
+     * @throws NullPointerException If r or r.getId() is null
+     * @throws IllegalArgumentException if the robot's id is the same as an existing switch or robot id in this level
+     */
     public void addRobot(Robot r) {
         if (r == null) throw new NullPointerException("Null robots are not allowed");
-        if (r.getName() == null) throw new NullPointerException("Null robot name not allowed");
+        if (r.getId() == null) throw new NullPointerException("Null robot id not allowed");
         robots.add(r);
         try {
-            bsh.set(r.getName(), r);
+            if (bsh.get(r.getId()) != null) {
+                throw new IllegalArgumentException("This level already has a scripting object with id \""+r.getId()+"\"");
+            }
+            bsh.set(r.getId(), r);
         } catch (EvalError e) {
             throw new RuntimeException(e);
         }
@@ -191,21 +206,14 @@ public class LevelConfig {
         return getSquare((int) location.x, (int) location.y);
     }
 
-    /** Adds a new switch to this level. */
-    public void addSwitch(
-            int x, int y,
-            String switchName,
-            String imagePath,
-            String switchCode) throws SpriteLoadException {
-        Point p = new Point(x, y);
-        switches.put(p, new Switch(p, switchName, SpriteManager.load(imagePath), switchCode));
-    }
-
     public void addSwitch(Switch s) {
         Point p = new Point(s.getLocation());
         switches.put(p, s);
         try {
-            bsh.set(s.getName(), s);
+            if (bsh.get(s.getId()) != null) {
+                throw new IllegalArgumentException("This level already has a scripting object with id \""+s.getId()+"\"");
+            }
+            bsh.set(s.getId(), s);
         } catch (EvalError e) {
             throw new RuntimeException(e);
         }

@@ -43,7 +43,7 @@ public class CircuitStore {
         Map<Gate,String> idmap = new HashMap<Gate,String>();
         pw.printf(MAGIC+"\n");
         for (Robot robot : robots) {
-            pw.printf("*Robot %s\n", robot.getName());
+            pw.printf("*Robot %s\n", robot.getId());
             Circuit c = robot.getCircuit();
             for (Gate g : c.getGates()) {
                 Rectangle r = g.getBounds();
@@ -100,7 +100,7 @@ public class CircuitStore {
 
         Map<String, Robot> roboMap = new HashMap<String, Robot>();
         for (Robot r : robots) {
-            roboMap.put(r.getName(), r);
+            roboMap.put(r.getId(), r);
         }
         
         String line = br.readLine();
