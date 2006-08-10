@@ -691,7 +691,7 @@ public class Main {
         JOptionPane.showMessageDialog(null, 
                 "Syntax error in project file:\n\n" +
                 ex.getMessage() + "\n\n" +
-                "at line "+ex.getLineNum()+": "+ex.getBadLine());
+                "at line "+ex.getLineNum()+" column "+ex.getBadCharPos()+": "+ex.getBadLine());
     }
 
 }

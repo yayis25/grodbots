@@ -25,27 +25,22 @@ public class SpriteManager {
     }
     
     /**
-     * Loads the sprite described by the spriteDesc argument.
+     * Loads the sprite described by the attribs map.
      * 
-     * @param spriteDesc The resource path to the sprite, optionally followed by
-     * one or more name=value attributes, each name=value pair separated by a comma.
-     * For example, "/ROBO-INF/images/robot.png,scale=0.4,cow=moo".
+     * @param attribs A dictionary of attributes that define the sprite.
+     *                Currently-supported values are:
+     * <ul>
+     *  <li><b>href</b>: the <tt>ClassLoader.getSystemResource()</tt> path to the
+     *                   file defining the sprite.  Currently, gif, png, and rsf formats
+     *                   are supported.
+     *  <li><b>scale</b>: The amount to scale the raw image by before painting it.  For example,
+     *                   "1.0" means natural size; "0.5" means half size; "2.0" means double. 
+     * </ul>
      * @throws FileNotFoundException If the system resource at the given path does not exist.
      * @throws IllegalArgumentException If any attributes are not in the name=value form.
      */
-    public static Sprite load(String spriteDesc) throws SpriteLoadException {
-        Map<String, String> attribs = new HashMap<String, String>();
-        String[] args = spriteDesc.split(",");
-        String resourcePath = args[0];
-        for (int i = 1; i < args.length; i++) {
-            if (args[i].indexOf('=') == -1) {
-                throw new IllegalArgumentException(
-                        "Attributes after the pathname must be in name=value pairs. " +
-                        "The attribute '"+args[i]+"' does not meet this criterion.");
-            }
-            String[] nameVal = args[i].split("=");
-            attribs.put(nameVal[0], nameVal[1]);
-        }
+    public static Sprite load(Map<String, String> attribs) throws SpriteLoadException {
+        String resourcePath = attribs.get("href");
         
         try {
             URL resourceURL = ClassLoader.getSystemResource(resourcePath);
@@ -74,6 +69,21 @@ public class SpriteManager {
         } catch (IOException e) {
             throw new SpriteLoadException(e);
         }
+    }
+
+    /**
+     * Equivalent to calling {@link #load(Map)} with the <tt>attribs</tt> map
+     * containing one entry mapping "href" to the value of the <tt>href</tt>
+     * argument.
+     * 
+     * @param href the location of the sprite's graphic file
+     * @return The newly-loaded Sprite instance
+     * @throws SpriteLoadException if there is a problem creating the sprite
+     */
+    public static Sprite load(String href) throws SpriteLoadException {
+        Map<String, String> attribs = new HashMap<String, String>();
+        attribs.put("href", href);
+        return load(attribs);
     }
     
 }

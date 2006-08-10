@@ -5,17 +5,29 @@
  */
 package net.bluecow.robot;
 
+import java.awt.Point;
 import java.awt.geom.Point2D;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.LineNumberReader;
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
-import java.util.ListIterator;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.parsers.SAXParser;
+import javax.xml.parsers.SAXParserFactory;
+
+import net.bluecow.robot.sprite.Sprite;
+import net.bluecow.robot.sprite.SpriteLoadException;
+import net.bluecow.robot.sprite.SpriteManager;
+
+import org.xml.sax.Attributes;
+import org.xml.sax.Locator;
+import org.xml.sax.SAXException;
+import org.xml.sax.helpers.DefaultHandler;
 
 /**
  * The LevelStore is responsible for loading in level descriptions.  If I
@@ -27,13 +39,6 @@ import java.util.regex.Pattern;
  */
 public class LevelStore {
     
-    public static final String V3_SENSORS_HEADER = "Sensors";
-    public static final String V3_GATE_HEADER = "Gate Types";
-    public static final String V3_SQUARE_HEADER = "Square Types";
-    public static final String V3_GOODIES_HEADER = "Goodies";
-    public static final String V3_LEVEL_GROD_HEADER = "Grods";
-    public static final String V3_LEVEL_SIZE_HEADER = "Size";
-    public static final String V3_LEVEL_SWITCH_HEADER = "Switches";
     public static final String WALL_FLAG = "WALL";
 
     private static boolean debugging = false;
@@ -53,394 +58,592 @@ public class LevelStore {
      * @throws IOException If there is a general I/O problem reading the file.
      */
     public static GameConfig loadLevels(InputStream inStream) throws IOException {
-        LineNumberReader in = new LineNumberReader(new InputStreamReader(inStream));
-        
-        Pattern magicPattern = Pattern.compile("^ROCKY ([0-9]+)\\.([0-9]+)$");
-        String magic = in.readLine();
-        Matcher magicMatcher = magicPattern.matcher(magic);
-        if (!magicMatcher.matches()) {
-            throw new FileFormatException(
-                    "Bad magic! Level descriptions must begin with the line " +
-                    "\"ROCKY M.m\" where M is the major version and m is the " +
-                    "minor version. M and m must both be integers.",
-                    in.getLineNumber(), magic, 0);
-        }
-        int major = Integer.parseInt(magicMatcher.group(1));
-        int minor = Integer.parseInt(magicMatcher.group(2));
-        System.out.println("Found map file version "+major+"."+minor);
-        if (major == 2) {
-            //return loadVersion2LevelFile(in);
-            //FIXME: implement this
-            throw new FileFormatException("Backward compatibility with version 2 level file not yet implemented.", 1, magic, 0);
-        } else if (major == 3) {
-            return loadVersion3LevelFile(in);
-        } else {
-            throw new FileFormatException(
-                    "Map file major version "+major+
-                    " is not supported (only versions 2.x and 3.x are supported)",
-                    in.getLineNumber(), magic, magicMatcher.start(1));
-
-        }
-    }
-
-    private static GameConfig loadVersion3LevelFile(LineNumberReader in) throws IOException {
-        GameConfig config = new GameConfig();
-        String line = null;
-        Pattern pat;
-        
-        // subroutine: load an animated sprite with multiple images and a certain delay between frames
-        
-        // sensor types (square attributes)
-        line = in.readLine();
-        if (line == null) {
-            throw new FileFormatException("Expected Sensors header; got EOF", in.getLineNumber(), null, -1);
-        } else if (!line.equals(V3_SENSORS_HEADER)) {
-            throw new FileFormatException("Expected Sensors header", in.getLineNumber(), null, -1);
-        } else {
-            while ((line = in.readLine()) != null) {
-                if (!line.matches("\\s+.*")) break;
-                config.addSensorType(line.trim());
-            }
-        }
-
-        debug("Found sensors: %s", config.getSensorTypes());
-        
-        // gate types
-        if (line == null) {
-            throw new FileFormatException("Expected Gate Types header line; got EOF", in.getLineNumber(), null, -1);
-        } else if (!line.equals(V3_GATE_HEADER)) {
-            throw new FileFormatException("Expected Gate Types header line 'Gate Types'", in.getLineNumber(), line, 0);
-        } else {
-            pat = Pattern.compile("(\\w+)\\s+(.+)\\s+(.+)");
-            while ((line = in.readLine()) != null) {
-                if (!line.matches("\\s+.*")) break;
-                Matcher m = pat.matcher(line.trim());
-                if (!m.matches()) {
-                    throw new FileFormatException("Invalid gate description line.  Format is 'name key class'.", in.getLineNumber(), line, 0);
-                }
-                String gateName = m.group(1);
-                char accelKey = m.group(2).charAt(0);
-                String gateClass = m.group(3);
-                
-                try {
-                    config.addGate(gateName, accelKey, gateClass);
-                } catch (ClassNotFoundException e) {
-                    throw new FileFormatException("Could not find gate class '"+gateClass+"'", in.getLineNumber(), line, m.start(3));
+        LevelSaxHandler handler = new LevelSaxHandler();
+        try {
+            SAXParser parser = SAXParserFactory.newInstance().newSAXParser();
+            // turn off validation parser.setProperty()
+            parser.parse(inStream, handler);
+            if (!handler.getWarnings().isEmpty()) {
+                System.out.println("Warnings encountered during load:");
+                for (FileFormatException ffe : handler.getWarnings()) {
+                    System.out.println(ffe.getMessage()+" (line "+ffe.getLineNum()+" col "+ffe.getBadCharPos()+")");
                 }
             }
-        }
-        
-        // square types
-        if (line == null) {
-            throw new FileFormatException("Expected Square Types header line; got EOF", in.getLineNumber(), null, -1);
-        } else if (!line.equals(V3_SQUARE_HEADER)) {
-            throw new FileFormatException("Expected Square Types header line 'Square Types'", in.getLineNumber(), line, 0);
-        } else {
-            pat = Pattern.compile("(.+)\\s+(.+)\\s+(.)\\s+([^ \\t]+)\\s*(.*)");
-            while ((line = in.readLine()) != null) {
-                if (!line.matches("\\s+.*")) break;
-                Matcher m = pat.matcher(line.trim());
-                if (!m.matches()) {
-                    throw new FileFormatException("Invalid square description line.  " +
-                       "Format is 'name flag[,flag[,flag[, ...]]] char graphics_file " +
-                       "[sensor[,sensor[,sensor[, ...]]]]'.",
-                       in.getLineNumber(), line, 0);
-                }
-                String squareName = m.group(1);
-                String flagsDesc = m.group(2);
-                List<String> flagsList = Arrays.asList(flagsDesc.split(","));
-                char squareChar = m.group(3).charAt(0);
-                if (squareChar == '_') squareChar = ' ';
-                String graphicsFileName = m.group(4);
-                String sensorTypesDesc = m.group(5);
-                List<String> sensorTypesList =
-                    new ArrayList<String>(Arrays.asList(sensorTypesDesc.split(",")));
-                ListIterator<String> it = sensorTypesList.listIterator();
-                while (it.hasNext()) {
-                    String type = it.next();
-                    if (type.equals("")) {
-                        it.remove(); // this accommodates empty sensor type lists (i.e. for walls)
-                    } else if (config.getSensor(type) == null) {
-                        throw new FileFormatException(
-                                "Undeclared sensor type '"+type+"'",
-                                in.getLineNumber(), line, m.start(4));
-                    }
-                }
-                config.addSquare(squareName, squareChar, !flagsList.contains(WALL_FLAG), graphicsFileName, sensorTypesList);
-            }
-        }
-        
-        // goodies
-//        if (line == null) {
-//            throw new FileFormatException("Expected Goodies header line; got EOF", in.getLineNumber(), null, -1);
-//        } else if (!line.equals(V3_GOODIES_HEADER)) {
-//            throw new FileFormatException("Expected Goodies header line", in.getLineNumber(), line, 0);
-//        } else {
-//            pat = Pattern.compile("(\\w+)\\s+(.+)\\s+([0-9]+)");
-//            while ((line = in.readLine()) != null) {
-//                if (!line.matches("\\s+.*")) break;
-//                Matcher m = pat.matcher(line.trim());
-//                if (!m.matches()) {
-//                    throw new FileFormatException("Invalid goody description line.  Format is 'name graphics_file pointval'.", in.getLineNumber(), line, 0);
-//                }
-//                String goodyName = m.group(1);
-//                String graphicsFileName = m.group(2);
-//                int value;
-//                try {
-//                    value = Integer.parseInt(m.group(3));
-//                } catch (NumberFormatException ex) {
-//                    throw new FileFormatException("Couldn't parse numeric point value '"+m.group(3)+"'", in.getLineNumber(), line, m.start(3));
-//                }
-//                config.addGoody(goodyName, graphicsFileName, value);
-//            }
-//        }
-        
-        // maps
-        while (line != null) {
-            LevelConfig level = new LevelConfig();
-            pat = Pattern.compile("Map (.*)");
-            {
-                Matcher m = pat.matcher(line); 
-                if (!m.matches()) {
-                    throw new FileFormatException("Expected map declaration", in.getLineNumber(), line, 0);
-                } else {
-                    level.setName(m.group(1));
-                }
-            }
-            // grods
-            line = in.readLine();
-            if (line == null) {
-                throw new FileFormatException("Expected Grods header line; got EOF", in.getLineNumber(), null, -1);
-            } else if (!line.equals(V3_LEVEL_GROD_HEADER)) {
-                throw new FileFormatException("Expected Grods header line", in.getLineNumber(), line, 0);
+        } catch (SAXException ex) {
+            if (ex.getException() instanceof IOException) {
+                throw (IOException) ex.getException();
+            } else if (ex.getException() == null) {
+                throw new FileFormatException(ex.getMessage(), handler.loc.getLineNumber(), "Line not available", handler.loc.getColumnNumber());
             } else {
-                //  Grod ROBO-INF/images/robot_00.png 0.1 3.5,2.5 AND:10 OR:10 NOT:10 NAND:10 NOR:10
-                pat = Pattern.compile("(\\w+)\\s+([^ \\t]+)\\s+([0-9.]+)\\s+([0-9.]+),([0-9.]+)\\s+(.*)");
-                while ((line = in.readLine()) != null) {
-                    if (!line.matches("\\s+.*")) break;
-                    Matcher m = pat.matcher(line.trim());
-                    if (!m.matches()) {
-                        throw new FileFormatException(
-                                "Invalid Grod description line.  Format is" +
-                                " 'name graphics_file stepsize startx,starty gate_allowances'.",
-                                in.getLineNumber(), line, 0);
-                    }
-                    String name = m.group(1);
-                    String graphicsFile = m.group(2);
-                    float stepSize;
-                    try {
-                        stepSize = Float.parseFloat(m.group(3));
-                    } catch (NumberFormatException ex) {
-                        throw new FileFormatException("Couldn't parse numeric step size '"+m.group(3)+"'", in.getLineNumber(), line, m.start(3));
+                IOException ioe = new IOException("Unexpected exception while parsing levels");
+                ioe.initCause(ex);
+                throw ioe;
+            }
+        } catch (ParserConfigurationException ex) {
+            IOException ioe = new IOException("Couldn't create XML level parser");
+            ioe.initCause(ex);
+            throw ioe;
+        }
+        return handler.getGameConfig();
+    }
+    
+    private static class LevelSaxHandler extends DefaultHandler {
+
+        /**
+         * The GameConfig object that this SAX handler is populating based
+         * on the SAX events it recieves.
+         */
+        private GameConfig config;
+        
+        /**
+         * The locator that tells us where the current element is in the input
+         * file.  Useful for error reporting.
+         */
+        private Locator loc;
+
+        /**
+         * A list of warnings encountered during processing.
+         */
+        private List<FileFormatException> warnings;
+        
+        /**
+         * Caches flags of square types while processing a &lt;square&gt; element.
+         * Should be null at all other times.
+         */
+        List<String> squareAttributes;
+
+        /**
+         * Caches sensor types for square types while processing a &lt;square&gt; element.
+         * Should be null at all other times.
+         */
+        List<String> squareSensors;
+
+        /**
+         * The type of the current square we're configuring.
+         */
+        private String squareName;
+
+        /**
+         * The map character of the current square we're configuring.
+         */
+        private Character squareChar;
+
+        /**
+         * The graphics filename of the current square we're configuring.
+         */
+        private String squareGraphicsFileName;
+
+        /**
+         * The level config we're currently configuring via SAX events.
+         */
+        private LevelConfig level;
+
+        /**
+         * The robot we're currently configuring via SAX events.
+         */
+        private Robot robot;
+
+        /**
+         * A sprite that has been loaded.  It's up to the endElement code to pick this
+         * up and add it to the appropriate object (robot, tile, switch) as necessary.
+         * If there was no nested sprite element, endElement should see this value as null.
+         */
+        private Sprite sprite;
+        
+        private String switchId;
+        private String switchLabel;
+        private Point switchLocation;
+        private String switchOnEnter;
+        
+        /**
+         * Character data within an element accumulates in this buffer.  It gets
+         * reinitialised at every startElement, so if there are sub elemements
+         * intermixed with character data, the endElement handlers will see all the
+         * character data since the last start tag.  If this approach becomes problematic,
+         * it will get changed.
+         */
+        private StringBuffer charData;
+        
+        public LevelSaxHandler() {
+            this.config = new GameConfig();
+            this.warnings = new ArrayList<FileFormatException>();
+        }
+
+        public List<FileFormatException> getWarnings() {
+            return warnings;
+        }
+
+        public GameConfig getGameConfig() {
+            return config;
+        }
+        
+        @Override
+        public void setDocumentLocator(Locator locator) {
+            this.loc = locator;
+        }
+        
+        @Override
+        public void startElement(String uri, String localName, String qName,
+                Attributes attributes) throws SAXException {
+            
+            // FIXME: need a way to get the text of a particular line from the input stream
+            final String line = "(Original line from file is not available)";
+            
+            charData = new StringBuffer();
+
+            try {
+                if (qName.equals("rocky")) {
+                    
+                    for (int i = 0; i < attributes.getLength(); i++) {
+                        String aname = attributes.getQName(i);
+                        String aval = attributes.getValue(i);
+                        
+                        if (aname.equals("version")) {
+                            Pattern versionPattern = Pattern.compile("^([0-9]+)\\.([0-9]+)$");
+                            Matcher magicMatcher = versionPattern.matcher(aval);
+                            if (aval == null || !magicMatcher.matches()) {
+                                throw new FileFormatException(
+                                        "Version number is missing in the rocky start tag",
+                                        loc.getLineNumber(), line, 0);
+                            }
+                            int major = Integer.parseInt(magicMatcher.group(1));
+                            int minor = Integer.parseInt(magicMatcher.group(2));
+                            System.out.println("Found map file version "+major+"."+minor);
+                        } else {
+                            warnings.add(new FileFormatException(
+                                    "Unknown attribute "+aname+"=\""+aval+"\" in element <"+qName+">",
+                                    loc.getLineNumber(), line, loc.getColumnNumber()));
+                        }
                     }
                     
-                    float startx, starty;
-                    try {
-                        startx = Float.parseFloat(m.group(4));
-                    } catch (NumberFormatException ex) {
-                        throw new FileFormatException("Couldn't parse X coordinate of starting point", in.getLineNumber(), line, m.start(4));
-                    }
-                    try {
-                        starty = Float.parseFloat(m.group(5));
-                    } catch (NumberFormatException ex) {
-                        throw new FileFormatException("Couldn't parse Y coordinate of starting point", in.getLineNumber(), line, m.start(4));
-                    }
-                    Robot robot = new Robot(name, level, config.getSensorTypes(), config.getGateTypes(), graphicsFile, new Point2D.Float(startx, starty), stepSize);
-                    level.addRobot(robot);
-                    String gateAllowances = m.group(6);
-                    String[] gateAllowancePairs = gateAllowances.split("\\s+");
-                    Pattern allowancePat = Pattern.compile("(\\w+):(-?[0-9]+)");
-                    for (String allowance : gateAllowancePairs) {
-                        Matcher am = allowancePat.matcher(allowance);
-                        if (!am.matches()) {
-                            throw new FileFormatException("Could not parse gate allowance '"+allowance+"'. Expected format is 'GATENAME:count'", in.getLineNumber(), line, m.start(6));
-                        }
-                        String gateType = am.group(1);
-                        if (!config.getGateTypeNames().contains(gateType)) {
-                            throw new FileFormatException("Found an allowance for gate type '"+gateType+"', which is not defined!", in.getLineNumber(), line, m.start(6));
-                        }
-                        int count;
-                        try {
-                            count = Integer.parseInt(am.group(2));
-                        } catch (NumberFormatException ex) {
-                            throw new FileFormatException("Could not parse gate count '"+am.group(2)+"' as an integer.", in.getLineNumber(), line, m.start(6));
-                        }
-                        robot.getCircuit().addGateAllowance(config.getGate(gateType).getGateClass(), count);
-                    }
-                }
-            }
-            
-            // layout
-            pat = Pattern.compile(V3_LEVEL_SIZE_HEADER+" ([0-9]+)x([0-9]+)");
-            int xSize, ySize;
-            if (line == null) {
-                throw new FileFormatException("Expected level size line; got EOF", in.getLineNumber(), null, -1);
-            } else {
-                Matcher m = pat.matcher(line);
-                if (!m.matches()) {
-                    throw new FileFormatException("Expected level size line", in.getLineNumber(), line, 0);
-                }
-                try {
-                    xSize = Integer.parseInt(m.group(1));
-                } catch (NumberFormatException ex) {
-                    throw new FileFormatException("Couldn't parse X size of level '"+level.getName()+"'", in.getLineNumber(), line, m.start(1));
-                }
-                try {
-                    ySize = Integer.parseInt(m.group(2));
-                } catch (NumberFormatException ex) {
-                    throw new FileFormatException("Couldn't parse Y size of level '"+level.getName()+"'", in.getLineNumber(), line, m.start(2));
-                }
-                level.setSize(xSize, ySize);
-            }
-            
-            // switches and side effects
-            line = in.readLine();
-            if (line == null) {
-                throw new FileFormatException("Expected Switches header, got EOF", in.getLineNumber(), line, -1);
-            } else if (!line.trim().equals(V3_LEVEL_SWITCH_HEADER)) {
-                throw new FileFormatException("Expected Switches header", in.getLineNumber(), line, 0);
-            } else {
-                pat = Pattern.compile("([0-9]+),([0-9]+)\\s+([A-Za-z_][A-Za-z0-9_]*)\\s+([^ \\t]+)\\s*(.*)");
-                while ((line = in.readLine()) != null) {
-                    if (!line.startsWith(" ")) break;
-                    Matcher m = pat.matcher(line.trim());
-                    if (!m.matches()) {
-                        throw new FileFormatException(
-                                "Incorrect format for switch line. Format is " +
-                                "'x,y name image_path code'.\n" +
-                                "Name must be a valid JavaScript identifier" +
-                                " (letters, numbers and underscore)", in.getLineNumber(), line, 0);
-                    }
-                    int x, y;
-                    try {
-                        x = Integer.parseInt(m.group(1));
-                    } catch (NumberFormatException ex) {
-                        throw new FileFormatException(
-                                "Couldn't parse X coord of switch",
-                                in.getLineNumber(), line, m.start(1));
-                    }
-                    try {
-                        y = Integer.parseInt(m.group(2));
-                    } catch (NumberFormatException ex) {
-                        throw new FileFormatException(
-                                "Couldn't parse Y coord of switch",
-                                in.getLineNumber(), line, m.start(2));
-                    }
-                    String switchName = m.group(3);
-                    String imagePath = m.group(4);
-                    String switchCode = m.group(5);
-                    level.addSwitch(x, y, switchName, imagePath, switchCode);
-                }
-            }
-            
-            // The squares of the map
-            try {
-                int y = 0;
-                for (;;) {
-                    if (line == null) break;
-                    if (line.equals("*")) break;
-                    for (int x = 0; x < xSize; x++) {
-                        if (x < line.length()) {
-                            level.setSquare(x, y, config.getSquare(line.charAt(x)));
+                } else if (qName.equals("sensor")) {
+                    // sensor types (square attributes)
+                    
+                    for (int i = 0; i < attributes.getLength(); i++) {
+                        String aname = attributes.getQName(i);
+                        String aval = attributes.getValue(i);
+                        
+                        if (aname.equals("type")) {
+                            config.addSensorType(aval);
                         } else {
-                            level.setSquare(x, y, config.getSquare(' '));
+                            warnings.add(new FileFormatException(
+                                    "Unknown attribute "+aname+"=\""+aval+"\" in element <"+qName+">",
+                                    loc.getLineNumber(), line, loc.getColumnNumber()));
                         }
                     }
-                    y += 1;
-                    line = in.readLine();
-                }
-                
-                // pad out unspecified lines with spaces
-                for (; y < ySize; y++) {
-                    for (int i = 0; i < xSize; i++) {
-                        level.setSquare(i, y, config.getSquare(' '));
+                    
+                    
+                } else if (qName.equals("gate")) {
+                    // gate types
+                    
+                    String type = null;
+                    Character mnemonic = null;
+                    String gateClass = null;
+                    
+                    for (int i = 0; i < attributes.getLength(); i++) {
+                        String aname = attributes.getQName(i);
+                        String aval = attributes.getValue(i);
+                        
+                        if (aname.equals("type")) {
+                            type = aval;
+                        } else if (aname.equals("mnemonic")) {
+                            if (aval.length() == 1) {
+                                mnemonic = aval.charAt(0);
+                            } else {
+                                throw new FileFormatException("The mnemonic for a gate type has to be a single character.",
+                                        loc.getLineNumber(), line, loc.getColumnNumber());
+                            }
+                        } else if (aname.equals("class")) {
+                            gateClass = aval;
+                        } else {
+                            warnings.add(new FileFormatException(
+                                    "Unknown attribute "+aname+"=\""+aval+"\" in element <"+qName+">",
+                                    loc.getLineNumber(), line, loc.getColumnNumber()));
+                        }
                     }
+                    
+                    checkMandatory(qName, "type", type);
+                    checkMandatory(qName, "mnemonic", mnemonic);
+                    checkMandatory(qName, "class", gateClass);
+                    
+                    try {
+                        config.addGate(type, mnemonic, gateClass);
+                    } catch (ClassNotFoundException e) {
+                        throw new FileFormatException("Could not find gate class '"+gateClass+"'", loc.getLineNumber(), line, loc.getColumnNumber());
+                    }
+                    
+                } else if (qName.equals("square")) {
+                    // square types
+                    
+                    squareName = null;
+                    squareAttributes = new ArrayList<String>();
+                    squareChar = null;
+                    squareGraphicsFileName = null;
+                    squareSensors = new ArrayList<String>();
+                    
+                    for (int i = 0; i < attributes.getLength(); i++) {
+                        String aname = attributes.getQName(i);
+                        String aval = attributes.getValue(i);
+                        
+                        if (aname.equals("type")) {
+                            squareName = aval;
+                        } else if (aname.equals("mapchar")) {
+                            if (aval.length() != 1) {
+                                throw new FileFormatException("mapchar attribute must be exactly one character in element <square>",
+                                        loc.getLineNumber(), line, loc.getColumnNumber());
+                            }
+                            squareChar = aval.charAt(0);
+                        } else if (aname.equals("graphic")) {
+                            squareGraphicsFileName = aval;
+                        } else {
+                            warnings.add(new FileFormatException(
+                                    "Unknown attribute "+aname+"=\""+aval+"\" in element <"+qName+">",
+                                    loc.getLineNumber(), line, loc.getColumnNumber()));
+                        }
+                    }
+                    
+                    checkMandatory(qName, "type", squareName);
+                    checkMandatory(qName, "mapchar", squareChar);
+                    checkMandatory(qName, "graphic", squareGraphicsFileName);
+                    
+                    // square gets added to config in endElement handler
+                    
+                } else if (qName.equals("attribute")) {  // XXX: check if nested in square elem
+                    
+                    String type = null;
+                    
+                    for (int i = 0; i < attributes.getLength(); i++) {
+                        String aname = attributes.getQName(i);
+                        String aval = attributes.getValue(i);
+                        
+                        if (aname.equals("type")) {
+                            type = aval;
+                        } else {
+                            warnings.add(new FileFormatException(
+                                    "Unknown attribute "+aname+"=\""+aval+"\" in element <"+qName+">",
+                                    loc.getLineNumber(), line, loc.getColumnNumber()));
+                        }
+                    }
+                    
+                    checkMandatory(qName, "type", type);
+                    
+                    squareAttributes.add(type);
+                    
+                } else if (qName.equals("activate-sensor")) {  // XXX: check if nested in square elem
+                    
+                    String type = null;
+                    
+                    for (int i = 0; i < attributes.getLength(); i++) {
+                        String aname = attributes.getQName(i);
+                        String aval = attributes.getValue(i);
+                        
+                        if (aname.equals("type")) {
+                            type = aval;
+                        } else {
+                            warnings.add(new FileFormatException(
+                                    "Unknown attribute "+aname+"=\""+aval+"\" in element <"+qName+">",
+                                    loc.getLineNumber(), line, loc.getColumnNumber()));
+                        }
+                    }
+                    
+                    checkMandatory(qName, "type", type);
+                    
+                    if (config.getSensor(type) == null) {
+                        throw new FileFormatException(
+                                "Found reference to undeclared sensor type '"+type+"'",
+                                loc.getLineNumber(), line, loc.getColumnNumber());
+                    }
+                    
+                    squareSensors.add(type);
+                    
+                } else if (qName.equals("level")) {
+                    level = new LevelConfig();
+                    String name = null;
+                    Integer xSize = null;
+                    Integer ySize = null;
+                    
+                    for (int i = 0; i < attributes.getLength(); i++) {
+                        String aname = attributes.getQName(i);
+                        String aval = attributes.getValue(i);
+                        
+                        if (aname.equals("name")) {
+                            name = aval;
+                        } else if (aname.equals("size-x")) {
+                            try {
+                                xSize = Integer.parseInt(aval);
+                            } catch (NumberFormatException ex) {
+                                throw new FileFormatException("Couldn't parse X size of level '"+level.getName()+"'", loc.getLineNumber(), line, loc.getColumnNumber());
+                            }
+                        } else if (aname.equals("size-y")) {
+                            try {
+                                ySize = Integer.parseInt(aval);
+                            } catch (NumberFormatException ex) {
+                                throw new FileFormatException("Couldn't parse Y size of level '"+level.getName()+"'", loc.getLineNumber(), line, loc.getColumnNumber());
+                            }
+                        } else {
+                            warnings.add(new FileFormatException(
+                                    "Unknown attribute "+aname+"=\""+aval+"\" in element <"+qName+">",
+                                    loc.getLineNumber(), line, loc.getColumnNumber()));
+                        }
+                    }
+                    
+                    checkMandatory(qName, "name", name);
+                    checkMandatory(qName, "size-x", xSize);
+                    checkMandatory(qName, "size-y", ySize);
+                    
+                    level.setName(name);
+                    level.setSize(xSize, ySize);
+                    
+                } else if (qName.equals("grod")) { // XXX: ensure this is inside a level element
+                    //   <grod id="grod" name="Grod" step-size="0.1" start-x="2.5" start-y="2.5">
+                    
+                    String id = null;
+                    String name = null;
+                    Float stepSize = null;
+                    Float startx = null;
+                    Float starty = null;
+                    
+                    for (int i = 0; i < attributes.getLength(); i++) {
+                        String aname = attributes.getQName(i);
+                        String aval = attributes.getValue(i);
+                        
+                        if (aname.equals("id")) {
+                            id = aval;
+                        } else if (aname.equals("name")) {
+                            name = aval;
+                        } else if (aname.equals("step-size")) {
+                            try {
+                                stepSize = Float.parseFloat(aval);
+                            } catch (NumberFormatException ex) {
+                                throw new FileFormatException("Couldn't parse numeric step size '"+aval+"'", loc.getLineNumber(), line, loc.getColumnNumber());
+                            }
+                        } else if (aname.equals("start-x")) {
+                            try {
+                                startx = Float.parseFloat(aval);
+                            } catch (NumberFormatException ex) {
+                                throw new FileFormatException("Couldn't parse X coordinate of starting point", loc.getLineNumber(), line, loc.getColumnNumber());
+                            }
+                        } else if (aname.equals("start-y")) {
+                            try {
+                                starty = Float.parseFloat(aval);
+                            } catch (NumberFormatException ex) {
+                                throw new FileFormatException("Couldn't parse Y coordinate of starting point", loc.getLineNumber(), line, loc.getColumnNumber());
+                            }
+                        } else {
+                            warnings.add(new FileFormatException(
+                                    "Unknown attribute "+aname+"=\""+aval+"\" in element <"+qName+">",
+                                    loc.getLineNumber(), line, loc.getColumnNumber()));
+                        }
+                    }
+                    
+                    checkMandatory(qName, "id", id);
+                    checkMandatory(qName, "name", name);
+                    checkMandatory(qName, "step-size", stepSize);
+                    checkMandatory(qName, "start-x", startx);
+                    checkMandatory(qName, "start-y", starty);
+                    
+                    robot = new Robot(id, name, level, config.getSensorTypes(), config.getGateTypes(), null, new Point2D.Float(startx, starty), stepSize, null);
+                    
+                } else if (qName.equals("gate-allowance")) { // XXX: ensure we're inside a grod element
+                    String gateType = null;
+                    Integer count = null;
+                    for (int i = 0; i < attributes.getLength(); i++) {
+                        String aname = attributes.getQName(i);
+                        String aval = attributes.getValue(i);
+                        
+                        if (aname.equals("type")) {
+                            if (!config.getGateTypeNames().contains(aval)) {
+                                throw new FileFormatException("Found an allowance for gate type '"+aval+"', which is not defined!", loc.getLineNumber(), line, loc.getColumnNumber());
+                            }
+                            gateType = aval;
+                        } else if (aname.equals("value")) {
+                            try {
+                                count = Integer.parseInt(aval);
+                            } catch (NumberFormatException ex) {
+                                throw new FileFormatException("Could not parse gate count '"+aval+"' as an integer.", loc.getLineNumber(), line, loc.getColumnNumber());
+                            }
+                        } else {
+                            warnings.add(new FileFormatException(
+                                    "Unknown attribute "+aname+"=\""+aval+"\" in element <"+qName+">",
+                                    loc.getLineNumber(), line, loc.getColumnNumber()));
+                        }
+                        
+                    }
+                    
+                    checkMandatory(qName, "type", gateType);
+                    checkMandatory(qName, "value", count);
+                    
+                    robot.getCircuit().addGateAllowance(config.getGate(gateType).getGateClass(), count);
+                    
+                } else if (qName.equals("graphic")) { // could apply to anything that has a sprite
+                    // <graphic href="ROBO-INF/images/grod/grod.rsf" scale="0.4">
+                    Map<String,String> spriteAttribs = new HashMap<String,String>();
+                    for (int i = 0; i < attributes.getLength(); i++) {
+                        String aname = attributes.getQName(i);
+                        String aval = attributes.getValue(i);
+                        
+                        spriteAttribs.put(aname, aval);
+                    }
+                    sprite = SpriteManager.load(spriteAttribs);
+                    
+                } else if (qName.equals("switch")) {
+                    // switches and side effects
+                    switchId = null;
+                    switchLabel = null;
+                    switchLocation = null;
+                    switchOnEnter = null;
+                    Integer x = null;
+                    Integer y = null;
+                    
+                    for (int i = 0; i < attributes.getLength(); i++) {
+                        String aname = attributes.getQName(i);
+                        String aval = attributes.getValue(i);
+                        
+                        if (aname.equals("id")) {
+                            switchId = aval;
+                        } else if (aname.equals("label")) {
+                            switchLabel = aval;
+                        } else if (aname.equals("loc-x")) {
+                            try {
+                                x = Integer.parseInt(aval);
+                            } catch (NumberFormatException ex) {
+                                throw new FileFormatException("Couldn't parse X coordinate of switch", loc.getLineNumber(), line, loc.getColumnNumber());
+                            }
+                        } else if (aname.equals("loc-y")) {
+                            try {
+                                y = Integer.parseInt(aval);
+                            } catch (NumberFormatException ex) {
+                                throw new FileFormatException("Couldn't parse Y coordinate of switch", loc.getLineNumber(), line, loc.getColumnNumber());
+                            }
+                        } else if (aname.equals("on-enter")) {
+                            switchOnEnter = aval;
+                        } else {
+                            warnings.add(new FileFormatException(
+                                    "Unknown attribute "+aname+"=\""+aval+"\" in element <"+qName+">",
+                                    loc.getLineNumber(), line, loc.getColumnNumber()));
+                        }
+                    }
+                    
+                    checkMandatory(qName, "id", switchId);
+                    checkMandatory(qName, "label", switchLabel);
+                    checkMandatory(qName, "loc-x", x);
+                    checkMandatory(qName, "loc-y", y);
+                    
+                    switchLocation = new Point(x, y);
+                    // gets added in endElement
+                    
+                } else if (qName.equals("map")) {
+                    // The squares of the map
+                    // requires the charData inside this element, so it's handled in the endElement
+                } else {
+                    throw new FileFormatException("Unrecognised XML element <"+qName+">", loc.getLineNumber(), line, loc.getColumnNumber());
                 }
-                level.snapshotState();
-                config.addLevel(level);
-                line = in.readLine();
-            } catch (ArrayIndexOutOfBoundsException ex) {
-                throw new FileFormatException(
-                        "Error in level \""+level.getName()+"\": index out of bounds at "
-                        +ex.getMessage(), in.getLineNumber(), line, -1);
-            } catch (Exception ex) {
-                throw new FileFormatException(
-                        "General error reading map for level \""+level.getName()+"\": "
-                        +ex.getMessage(), in.getLineNumber(), line, -1);
+            } catch (FileFormatException ex) {
+                throw new SAXException(ex);
+            } catch (SpriteLoadException ex) {
+                throw new SAXException(ex);
+            }
+        }
+
+        @Override
+        public void characters(char[] ch, int start, int length) throws SAXException {
+            charData.append(ch, start, length);
+        }
+        
+        @Override
+        public void endElement(String uri, String localName, String qName) throws SAXException {
+
+            final String line = "Original line not available";
+            
+            try {
+                if (qName.equals("square")) {
+                    try {
+                        config.addSquare(squareName, squareChar, !squareAttributes.contains(WALL_FLAG), squareGraphicsFileName, squareSensors);
+                    } catch (SpriteLoadException ex) {
+                        throw new SAXException("Failed to load a sprite", ex);
+                    }
+                } else if (qName.equals("grod")) {
+                    if (sprite ==  null) throw new FileFormatException("The <grod> element must contain a nested <graphic> element!", loc.getLineNumber(), line, loc.getColumnNumber());
+                    robot.setSprite(sprite);
+                    level.addRobot(robot);
+                    robot = null;
+                } else if (qName.equals("switch")) {
+                    if (sprite ==  null) throw new FileFormatException("The <switch> element must contain a nested <graphic> element!", loc.getLineNumber(), line, loc.getColumnNumber());
+                    level.addSwitch(level.new Switch(switchLocation, switchId, switchLabel, sprite, switchOnEnter));
+                } else if (qName.equals("map")) {
+                    try {
+                        
+                        // split on \r\n or \n line ends (doesn't handle old mac style \r)
+                        String[] allRows = charData.toString().split("\r?\n");
+
+                        // skip first and last rows because the first one is the empty space after the <map> tag and the last is the empty space before for </map> tag.
+                        String[] rows = new String[allRows.length-2];
+                        for (int i = 0; i < allRows.length-2; i++) {
+                            rows[i] = allRows[i+1];
+                        }
+                        
+                        int y;
+                        for (y = 0; y < rows.length && y < level.getHeight(); y++) {
+                            for (int x = 0; x < level.getWidth(); x++) {
+                                if (x < rows[y].length()) {
+                                    level.setSquare(x, y, config.getSquare(rows[y].charAt(x)));
+                                } else {
+                                    level.setSquare(x, y, config.getSquare(' '));
+                                }
+                            }
+                        }
+                        
+                        // pad out unspecified lines with spaces
+                        for (; y < level.getHeight(); y++) {
+                            for (int i = 0; i < level.getWidth(); i++) {
+                                level.setSquare(i, y, config.getSquare(' '));
+                            }
+                        }
+                    } catch (ArrayIndexOutOfBoundsException ex) {
+                        throw new FileFormatException(
+                                "Error in level \""+level.getName()+"\": index out of bounds at "
+                                +ex.getMessage(), loc.getLineNumber(), line, -1);
+                    } catch (Exception ex) {
+                        ex.printStackTrace();
+                        throw new FileFormatException(
+                                "General error reading map for level \""+level.getName()+"\": "
+                                +ex.getMessage()+"\n\nA stack trace is available on the system console.",
+                                loc.getLineNumber(), line, -1);
+                    }
+
+                } else if (qName.equals("level")) {
+                    level.snapshotState();
+                    config.addLevel(level);
+                    level = null;
+                }
+            } catch (FileFormatException ex) {
+                throw new SAXException(ex);
             }
         }
         
-        return config;
+        /**
+         * Helper routine that throws a FileFormatException when a mandatory attribute
+         * is null.
+         * 
+         * @param elemName The qName of the element that the mandatory attribute should
+         * be found in.
+         * @param attName The name of the mandatory attribute
+         * @param attVal The value of the mandatory attribute
+         * @throws FileFormatException if attVal is null.  The message will say the name of
+         * the element and the attribute, and say it should have been there.
+         */
+        private void checkMandatory(String elemName, String attName, Object attVal) throws FileFormatException {
+            if (attVal == null) {
+                throw new FileFormatException("Missing mandatory attribute \""+attName+"\" of element <"+elemName+">",
+                        loc.getLineNumber(), "(original line from file not available)", loc.getColumnNumber());
+            }
+        }
     }
 
     private static void debug(String fmt, Object ... args) {
-        if (debugging ) {
+        if (debugging) {
             System.out.printf(fmt, args);
         }
     }
 
-    /**
-     * Reads everything after the magic line in a version 2.0 level file.
-     * 
-     * @param in
-     * @return A list of the PlayfieldModel objects described in the file (one per level).
-     * @throws IOException
-     */
-    // TODO: update this to the new API
-//    private static List<PlayfieldModel> loadVersion2LevelFile(LineNumberReader in) throws IOException {
-//        
-//        List<PlayfieldModel> levels = new ArrayList<PlayfieldModel>();
-//        String line = null;
-//        try {
-//            while ((line = in.readLine()) != null) {
-//                String levelName = line;
-//                System.out.print("Found level \""+levelName+"\"");
-//                
-//                int xSize = Integer.parseInt(in.readLine());
-//                int ySize = Integer.parseInt(in.readLine());
-//                System.out.println(" ("+xSize+"x"+ySize+")");
-//                
-//                float initialX = Float.parseFloat(in.readLine());
-//                float initialY = Float.parseFloat(in.readLine());
-//                Point2D.Float initialPosition = new Point2D.Float(initialX, initialY);
-//                
-//                float roboStepSize = Float.parseFloat(in.readLine());
-//                
-//                Square[][] map = new Square[xSize][ySize];
-//                
-//                // read the level map (short lines are padded with spaces)
-//                int lineNum = 0;
-//                for (;;) {
-//                    line = in.readLine();
-//                    if (line == null) break;
-//                    if (line.equals("*")) break;
-//                    System.out.println(line);
-//                    for (int i = 0; i < xSize; i++) {
-//                        if (i < line.length()) {
-//                            map[i][lineNum] = new Square(line.charAt(i));
-//                        } else {
-//                            map[i][lineNum] = new Square(Square.EMPTY);
-//                        }
-//                    }
-//                    lineNum += 1;
-//                }
-//                
-//                // pad out unspecified lines with spaces
-//                for (; lineNum < ySize; lineNum++) {
-//                    for (int i = 0; i < xSize; i++) {
-//                        map[i][lineNum] = new Square(Square.EMPTY);
-//                    }
-//                }
-//                
-//                PlayfieldModel pf = new PlayfieldModel(
-//                        map, levelName, initialPosition, roboStepSize);
-//                levels.add(pf);
-//            }
-//        } catch (NumberFormatException e) {
-//            throw new FileFormatException(
-//                    "Could not parse the number: "+e.getMessage(),
-//                    in.getLineNumber(), line, -1);
-//        }
-//        return levels;
-//    }
 }
