@@ -44,6 +44,7 @@ public class LevelConfig {
         private Sprite sprite;
         private String onEnter;
         private String onExit;
+        private boolean enabled;
         
         public Switch(Point location, String id, String label, Sprite sprite, String onEnter) {
             this.location = new Point(location);
@@ -64,6 +65,7 @@ public class LevelConfig {
             this.sprite = copyMe.sprite;
             this.onEnter = copyMe.onEnter;
             this.onExit = copyMe.onExit;
+            this.enabled = copyMe.enabled;
         }
 
         public void onEnter(Robot robot) throws EvalError {
@@ -99,10 +101,18 @@ public class LevelConfig {
         public String getOnEnter() {
             return onEnter;
         }
+
+        public boolean isEnabled() {
+            return enabled;
+        }
+        
+        public void setEnabled(boolean enabled) {
+            this.enabled = enabled;
+        }
         
         @Override
         public String toString() {
-            return "Switch@("+location.x+","+location.y+") \""+id+"\": onEnter \""+onEnter+"\" onExit\""+onExit+"\"";
+            return "Switch@("+location.x+","+location.y+") \""+id+"\": "+(enabled?"en":"dis")+"abled; onEnter \""+onEnter+"\"; onExit\""+onExit+"\"";
         }
     }
 

@@ -50,7 +50,7 @@
 
  <level name="Easy Map" size-x="15" size-y="10">
 
-  <grod id="grod" name="Grod" step-size="0.1" start-x="2.5" start-y="2.5">
+  <grod id="grod" name="Grod" step-size="0.1" start-x="2.5" start-y="2.5" evals-per-step="5">
    <graphic href="ROBO-INF/images/grod/grod.rsf" scale="0.4"/>
    <gate-allowance type="AND" value="10"/>
    <gate-allowance type="OR" value="10"/>

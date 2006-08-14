@@ -41,6 +41,7 @@ public class Robot {
 	private Point2D.Float position;
 	private Sprite sprite;
 	private float stepSize;
+    private int evalsPerStep; 
     
 	// Inputs that make the robot do stuff
 	private RobotInput upInput = new RobotInput("Up");
@@ -77,7 +78,7 @@ public class Robot {
     public Robot(String id, String name, LevelConfig level, List<SensorConfig> sensorList,
             Collection<GateConfig> gateConfigs,
             Sprite sprite, Point2D.Float startPosition, float stepSize,
-            Circuit circuit) {
+            Circuit circuit, int evalsPerStep) {
         this.id = id;
         this.name = name;
         this.level = level;
@@ -85,6 +86,7 @@ public class Robot {
         this.startPosition = startPosition;
         setPosition(startPosition);
         this.stepSize = stepSize;
+        this.evalsPerStep = evalsPerStep;
         
         outputs = new LinkedHashMap<SensorConfig, RobotSensorOutput>();
         for (SensorConfig sensor : sensorList) {
@@ -117,7 +119,8 @@ public class Robot {
                 src.sprite,
                 src.startPosition,
                 src.stepSize,
-                src.getCircuit());
+                src.getCircuit(),
+                src.evalsPerStep);
     }
 	
     public void move() {
@@ -280,6 +283,14 @@ public class Robot {
 
 	}
 	
+    /**
+     * Returns the number of circuit evaluations that should be made
+     * on this robot before the move() routine is called.
+     */
+    public int getEvalsPerStep() {
+        return evalsPerStep;
+    }
+    
 	/**
 	 * Returns the input that will cause the robot to move UP when the
 	 * input state is TRUE.

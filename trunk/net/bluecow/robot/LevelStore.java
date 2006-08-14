@@ -395,13 +395,13 @@ public class LevelStore {
                     level.setSize(xSize, ySize);
                     
                 } else if (qName.equals("grod")) { // XXX: ensure this is inside a level element
-                    //   <grod id="grod" name="Grod" step-size="0.1" start-x="2.5" start-y="2.5">
                     
                     String id = null;
                     String name = null;
                     Float stepSize = null;
                     Float startx = null;
                     Float starty = null;
+                    int evalsPerStep = 1;
                     
                     for (int i = 0; i < attributes.getLength(); i++) {
                         String aname = attributes.getQName(i);
@@ -429,6 +429,12 @@ public class LevelStore {
                             } catch (NumberFormatException ex) {
                                 throw new FileFormatException("Couldn't parse Y coordinate of starting point", loc.getLineNumber(), line, loc.getColumnNumber());
                             }
+                        } else if (aname.equals("evals-per-step")) {
+                            try {
+                                evalsPerStep = Integer.parseInt(aval);
+                            } catch (NumberFormatException ex) {
+                                throw new FileFormatException("Couldn't parse evals per step as integer", loc.getLineNumber(), line, loc.getColumnNumber());
+                            }
                         } else {
                             warnings.add(new FileFormatException(
                                     "Unknown attribute "+aname+"=\""+aval+"\" in element <"+qName+">",
@@ -442,8 +448,8 @@ public class LevelStore {
                     checkMandatory(qName, "start-x", startx);
                     checkMandatory(qName, "start-y", starty);
                     
-                    robot = new Robot(id, name, level, config.getSensorTypes(), config.getGateTypes(), null, new Point2D.Float(startx, starty), stepSize, null);
-                    
+                    robot = new Robot(id, name, level, config.getSensorTypes(), config.getGateTypes(), null, new Point2D.Float(startx, starty), stepSize, null, evalsPerStep);
+
                 } else if (qName.equals("gate-allowance")) { // XXX: ensure we're inside a grod element
                     String gateType = null;
                     Integer count = null;

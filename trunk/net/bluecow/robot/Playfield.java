@@ -20,6 +20,8 @@ import java.util.List;
 
 import javax.swing.JPanel;
 import javax.swing.Timer;
+import javax.swing.event.AncestorEvent;
+import javax.swing.event.AncestorListener;
 
 import net.bluecow.robot.GameConfig.SquareConfig;
 import net.bluecow.robot.LevelConfig.Switch;
@@ -382,18 +384,18 @@ public class Playfield extends JPanel {
 
     private AsyncRepaintManager repaintManager = new AsyncRepaintManager(frameDelay);
     
-    private class AsyncRepaintManager implements ActionListener {
+    private class AsyncRepaintManager implements ActionListener, AncestorListener {
         private boolean enabled = true;
         private Timer timer;
         
         AsyncRepaintManager(int delay) {
+            Playfield.this.addAncestorListener(this);
             timer = new Timer(delay, this);
             timer.start();
         }
 
         public synchronized void setEnabled(boolean enabled) {
             this.enabled = enabled;
-            System.out.println("Async repaint: "+enabled);
         }
         
         public synchronized void actionPerformed(ActionEvent e) {
@@ -401,6 +403,21 @@ public class Playfield extends JPanel {
                 nextFrame();
                 repaint();
             }
+        }
+
+        
+        // AncestorListener implementation: kills the timer when this component goes away
+
+        public void ancestorAdded(AncestorEvent event) {
+            if (!timer.isRunning()) timer.start();
+        }
+
+        public void ancestorRemoved(AncestorEvent event) {
+            timer.stop();
+        }
+
+        public void ancestorMoved(AncestorEvent event) {
+            // don't care
         }
     }
 }

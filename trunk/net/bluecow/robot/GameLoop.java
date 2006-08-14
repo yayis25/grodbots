@@ -139,7 +139,10 @@ public class GameLoop implements Runnable {
             boolean thisGoalReached = robot.isGoalReached();
             if (!thisGoalReached) {
                 robot.updateSensors();
-                robot.getCircuit().evaluateOnce();
+                for (int i = 0; i < robot.getEvalsPerStep(); i++) {
+                    // should this loop be in the robot's circuit instead?
+                    robot.getCircuit().evaluateOnce();
+                }
                 Point2D.Float oldPos = robot.getPosition();
                 robot.move();
                 if (!isSameSquare(oldPos, robot.getPosition())) {

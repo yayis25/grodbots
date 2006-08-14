@@ -553,6 +553,10 @@ public class Main {
         levelNumber = newLevelNum;
         final LevelConfig level = config.getLevels().get(newLevelNum);
         level.resetState();
+//        if (playfield != null) {
+//            // this is necessary because the playfield cleans up after itself when removed
+//            playfield.getParent().remove(playfield);
+//        }
         playfield = new Playfield(config, level);
         playfield.setLabellingOn(true);
         Map<Robot,CircuitEditor> robots = new LinkedHashMap<Robot,CircuitEditor>();
