@@ -175,6 +175,13 @@ public class Playfield extends JPanel {
         for (LevelConfig.Switch s : level.getSwitches()) {
             Point p = s.getLocation();
             s.getSprite().paint(g2, p.x*squareWidth, p.y*squareWidth);
+            if (!s.isEnabled()) {
+                g2.setColor(Color.RED);
+                int x = p.x*squareWidth;
+                int y = p.y*squareWidth;
+                g2.drawLine(x, y, x+squareWidth, y+squareWidth);
+                g2.drawLine(x, y+squareWidth, x+squareWidth, y);
+            }
         }
         
         Composite backupComposite = g2.getComposite();
@@ -295,6 +302,7 @@ public class Playfield extends JPanel {
      * position (3.5*squareWidth, 2.5*squareWidth).
      */
     private void drawLabel(Graphics2D g2, FontMetrics fm, String label, Point2D.Float position) {
+        if (label == null) return;
         float x = position.x * squareWidth;
         float y = position.y * squareWidth;
         Composite backupComposite = g2.getComposite();

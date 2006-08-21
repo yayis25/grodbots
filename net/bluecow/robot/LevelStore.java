@@ -154,6 +154,7 @@ public class LevelStore {
         private String switchLabel;
         private Point switchLocation;
         private String switchOnEnter;
+        private Boolean switchEnabled;
         
         /**
          * Character data within an element accumulates in this buffer.  It gets
@@ -208,7 +209,7 @@ public class LevelStore {
                             }
                             int major = Integer.parseInt(magicMatcher.group(1));
                             int minor = Integer.parseInt(magicMatcher.group(2));
-                            System.out.println("Found map file version "+major+"."+minor);
+                            debug("Found map file version "+major+"."+minor);
                         } else {
                             warnings.add(new FileFormatException(
                                     "Unknown attribute "+aname+"=\""+aval+"\" in element <"+qName+">",
@@ -498,6 +499,7 @@ public class LevelStore {
                     switchLabel = null;
                     switchLocation = null;
                     switchOnEnter = null;
+                    switchEnabled = null;
                     Integer x = null;
                     Integer y = null;
                     
@@ -523,6 +525,8 @@ public class LevelStore {
                             }
                         } else if (aname.equals("on-enter")) {
                             switchOnEnter = aval;
+                        } else if (aname.equals("enabled")) {
+                            switchEnabled = Boolean.parseBoolean(aval);
                         } else {
                             warnings.add(new FileFormatException(
                                     "Unknown attribute "+aname+"=\""+aval+"\" in element <"+qName+">",
@@ -531,7 +535,6 @@ public class LevelStore {
                     }
                     
                     checkMandatory(qName, "id", switchId);
-                    checkMandatory(qName, "label", switchLabel);
                     checkMandatory(qName, "loc-x", x);
                     checkMandatory(qName, "loc-y", y);
                     
@@ -575,7 +578,9 @@ public class LevelStore {
                     robot = null;
                 } else if (qName.equals("switch")) {
                     if (sprite ==  null) throw new FileFormatException("The <switch> element must contain a nested <graphic> element!", loc.getLineNumber(), line, loc.getColumnNumber());
-                    level.addSwitch(level.new Switch(switchLocation, switchId, switchLabel, sprite, switchOnEnter));
+                    LevelConfig.Switch newSwitch = level.new Switch(switchLocation, switchId, switchLabel, sprite, switchOnEnter);
+                    if (switchEnabled != null) newSwitch.setEnabled(switchEnabled); 
+                    level.addSwitch(newSwitch);
                 } else if (qName.equals("map")) {
                     try {
                         
