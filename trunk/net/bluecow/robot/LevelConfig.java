@@ -11,9 +11,7 @@ import java.awt.geom.Point2D;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import net.bluecow.robot.sprite.Sprite;
 import bsh.EvalError;
@@ -44,7 +42,7 @@ public class LevelConfig {
         private Sprite sprite;
         private String onEnter;
         private String onExit;
-        private boolean enabled;
+        private boolean enabled = true;
         
         public Switch(Point location, String id, String label, Sprite sprite, String onEnter) {
             this.location = new Point(location);
@@ -68,24 +66,66 @@ public class LevelConfig {
             this.enabled = copyMe.enabled;
         }
 
+        /**
+         * Invokes this switch's onEnter script.  You should call this every
+         * time a robot enters the square occupied by this switch.
+         * 
+         * @param robot The robot that just entered this switch
+         * @throws EvalError if there is a scripting error
+         */
         public void onEnter(Robot robot) throws EvalError {
             if (onEnter == null) return;
+            if (!enabled) return;
             bsh.set("robot", robot);
+            for (String name : bsh.getNameSpace().getVariableNames()) {
+                System.out.println("  "+name+": "+bsh.get(name));;
+            }
             bsh.eval(onEnter);
             bsh.set("robot", null);
         }
 
+        /**
+         * Invokes this switch's onExit script.  You should call this every
+         * time a robot exits the square occupied by this switch.
+         * 
+         * @param robot The robot that just left this switch
+         * @throws EvalError if there is a scripting error
+         */
         public void onExit(Robot robot) throws EvalError {
             if (onExit == null) return;
+            if (!enabled) return;
             bsh.set("robot", robot);
             bsh.eval(onExit);
             bsh.set("robot", null);
         }
 
+        /**
+         * Returns a copy of the point that determines this switch's location.
+         */
         public Point getLocation() {
             return new Point(location);
         }
-        
+
+        /**
+         * Moves this switch to the given (x,y) location.
+         * 
+         * @param x the X coordinate
+         * @param y the Y coordinate
+         */
+        public void setLocation(int x, int y) {
+            this.location = new Point(x, y);
+        }
+
+        /**
+         * Moves this switch to the given (x,y) location.
+         * 
+         * @param p The new location.  A copy of p will be made; you are free to
+         * modify p after calling this method without side effects.
+         */
+        public void setLocation(Point p) {
+            setLocation(p.x, p.y);
+        }
+
         public String getLabel() {
             return label;
         }
@@ -118,7 +158,16 @@ public class LevelConfig {
 
     private String name;
     private List<Robot> robots = new ArrayList<Robot>();
-    private Map<Point, Switch> switches = new HashMap<Point, Switch>();
+    
+    /**
+     * All the switches in this level.
+     * <p>
+     * Implementation note: This can't be a map of points to switches 
+     * because the bsh scripts are allowed to modify the switch locations
+     * (and the key in the map wouldn't update accordingly).
+     */
+    private Collection<Switch> switches = new ArrayList<Switch>();
+
     private Square[][] map = new Square[0][0];
     private Interpreter bsh;
     private int score;
@@ -166,6 +215,7 @@ public class LevelConfig {
                 throw new IllegalArgumentException("This level already has a scripting object with id \""+r.getId()+"\"");
             }
             bsh.set(r.getId(), r);
+            System.out.println("Added robot '"+r.getId()+"'");
         } catch (EvalError e) {
             throw new RuntimeException(e);
         }
@@ -217,13 +267,13 @@ public class LevelConfig {
     }
 
     public void addSwitch(Switch s) {
-        Point p = new Point(s.getLocation());
-        switches.put(p, s);
         try {
             if (bsh.get(s.getId()) != null) {
-                throw new IllegalArgumentException("This level already has a scripting object with id \""+s.getId()+"\"");
+                throw new IllegalArgumentException("Level \""+name+"\" already has a scripting object with id \""+s.getId()+"\"");
             }
             bsh.set(s.getId(), s);
+            System.out.println("added switch '"+s.getId()+"'");
+            switches.add(s);
         } catch (EvalError e) {
             throw new RuntimeException(e);
         }
@@ -231,7 +281,7 @@ public class LevelConfig {
 
     /** Returns an unmodifiable list of this level's switches. */
     public Collection<Switch> getSwitches() {
-        return Collections.unmodifiableCollection(switches.values());
+        return Collections.unmodifiableCollection(switches);
     }
 
     /**
@@ -242,7 +292,13 @@ public class LevelConfig {
      * switches there.
      */
     public Switch getSwitch(Point2D.Float location) {
-        return switches.get(new Point((int) location.x, (int) location.y));
+        Point point = new Point((int) location.x, (int) location.y);
+        for (Switch s : switches) {
+            if (s.getLocation().equals(point)) {
+                return s;
+            }
+        }
+        return null;
     }
     
     /** Returns an unmodifiable list of this level's robots. */
@@ -291,16 +347,20 @@ public class LevelConfig {
             dst.initInterpreter();
             dst.setMap(src.map.clone()); // Square objects are immutable, so they can be shared
             dst.setName(src.name);
+            
+            // need to use addRobot() for each robot to get them into the bsh interpreter
             dst.robots = new ArrayList<Robot>();
             for (Robot r : src.robots) {
                 dst.addRobot(r); // was dst.addRobot(new Robot(r));
             }
             dst.score = src.score;
-            // don't modify snapshot, so that resetState() will work multiple times
-            dst.switches = new HashMap<Point, Switch>();
-            for (Map.Entry<Point, Switch> ent : src.switches.entrySet()) {
-                dst.addSwitch(dst.new Switch(ent.getValue()));
+
+            // addSwitch() adds the switch to the BSH interpreter
+            dst.switches = new ArrayList<Switch>();
+            for (Switch s : src.switches) {
+                dst.addSwitch(dst.new Switch(s));
             }
+            // don't modify snapshot, so that resetState() will work multiple times
         } catch (EvalError e) {
             throw new RuntimeException(e);
         }

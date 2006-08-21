@@ -1,7 +1,6 @@
 Game Features:
--allow switches to enable/disable other switches
--make it possible to start a switch in the disabled state (config file)
--allow map manipulation from switches
+-make location vs. position consistent throughout (standardise on position)
+-user-controllable label positioning for switches and grods (left, right, top, bottom)
 -Level editor
 -Batteries
 -Radio Communication between robots
@@ -35,6 +34,9 @@ Sounds:
 -little ditties for the beginning of each level (maybe this would be better suited to the MIDI sequencer api)
 
 Completed:
+-allow map manipulation from switches
+-allow switches to enable/disable other switches
+-make it possible to start a switch in the disabled state (config file)
 -Be able to specify how many circuit evaluations per step in a level
 -Fix bug where there are multiple async repaint threads running after switching levels
 -disallow multiple switches and/or robots to share the same name

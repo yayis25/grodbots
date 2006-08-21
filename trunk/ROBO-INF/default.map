@@ -50,7 +50,7 @@
 
  <level name="Easy Map" size-x="15" size-y="10">
 
-  <grod id="grod" name="Grod" step-size="0.1" start-x="2.5" start-y="2.5" evals-per-step="5">
+  <grod id="grod" name="Gröd" step-size="0.1" start-x="2.5" start-y="2.5" evals-per-step="5">
    <graphic href="ROBO-INF/images/grod/grod.rsf" scale="0.4"/>
    <gate-allowance type="AND" value="10"/>
    <gate-allowance type="OR" value="10"/>
@@ -91,7 +91,7 @@ XXXXXXXXXXXXXXX
  <level name="Cow Map" size-x="15" size-y="10">
 
   <grod id="grod" name="Grod" step-size="0.1" start-x="2.5" start-y="2.5">
-   <graphic href="ROBO-INF/images/grod/robot_00.png" scale="0.4"/>
+   <graphic href="ROBO-INF/images/grod/grod.rsf" scale="0.4"/>
    <gate-allowance type="AND" value="10"/>
    <gate-allowance type="OR" value="10"/>
    <gate-allowance type="NOT" value="10"/>
@@ -111,6 +111,64 @@ XRRYYGGCCBBMMX
 XRRYYGGCCBBMMX
 XRRYYGGCCBBMMX
 XWWWW    WWWWX
+XXXXXXXXXXXXXX
+  </map>
+ </level>
+
+ <level name="Switchcraft" size-x="15" size-y="10">
+
+  <grod id="grod" name="Grod" step-size="0.1" start-x="2.5" start-y="2.5">
+   <graphic href="ROBO-INF/images/grod/grod.rsf" scale="0.4"/>
+   <gate-allowance type="AND" value="1"/>
+   <gate-allowance type="OR" value="1"/>
+   <gate-allowance type="NOT" value="1"/>
+  </grod>
+
+  <switch id="one" loc-x="3" loc-y="2" on-enter="two.enabled=true">
+   <graphic href="ROBO-INF/images/generic_switch.png"/>
+  </switch>
+  <switch id="two" loc-x="7" loc-y="2" enabled="false" on-enter="three.enabled=true">
+   <graphic href="ROBO-INF/images/generic_switch.png"/>
+  </switch>
+  <switch id="three" loc-x="11" loc-y="2" enabled="false" on-enter="cake.enabled=true">
+   <graphic href="ROBO-INF/images/generic_switch.png"/>
+  </switch>
+  <switch id="cake" loc-x="7" loc-y="1" label="Cake" enabled="false" on-enter="robot.setGoalReached(true); level.increaseScore(200);">
+   <graphic href="ROBO-INF/images/cake.png"/>
+  </switch>
+
+  <map>
+XXXXXXXXXXXXXX
+XRRYYGGCCBBMMX
+XRRYYGGCCBBMMX
+XRRYYGGCCBBMMX
+XRRYYGGCCBBMMX
+XRRYYGGCCBBMMX
+XWWWW    WWWWX
+XXXXXXXXXXXXXX
+  </map>
+ </level>
+
+ <level name="Near, yet far!" size-x="15" size-y="4">
+
+  <grod id="grod" name="Grod" step-size="0.1" start-x="1.5" start-y="1.5">
+   <graphic href="ROBO-INF/images/grod/grod.rsf" scale="0.4"/>
+   <gate-allowance type="AND" value="1"/>
+   <gate-allowance type="OR" value="1"/>
+   <gate-allowance type="NOT" value="1"/>
+  </grod>
+
+  <switch id="mover" loc-x="2" loc-y="1" on-enter="mover.setLocation(mover.getLocation().x+1, mover.getLocation().y); cake.setLocation(cake.getLocation().x+1, cake.getLocation().y);">
+   <graphic href="ROBO-INF/images/generic_switch.png"/>
+  </switch>
+  <switch id="cake" loc-x="3" loc-y="1" label="Cake" on-enter="robot.setGoalReached(true); level.increaseScore(200);">
+   <graphic href="ROBO-INF/images/cake.png"/>
+  </switch>
+
+  <map>
+XXXXXXXXXXXXXX
+XRRRRRRRRRRRRX
+XRRYYGGCCBBMMX
 XXXXXXXXXXXXXX
   </map>
  </level>
