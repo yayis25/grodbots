@@ -50,7 +50,7 @@
 
  <level name="Easy Map" size-x="15" size-y="10">
 
-  <grod id="grod" name="Gröd" step-size="0.1" start-x="2.5" start-y="2.5" evals-per-step="5">
+  <grod id="grod" label="Gröd" step-size="0.1" start-x="2.5" start-y="2.5" evals-per-step="5" label-direction="w">
    <graphic href="ROBO-INF/images/grod/grod.rsf" scale="0.4"/>
    <gate-allowance type="AND" value="10"/>
    <gate-allowance type="OR" value="10"/>
@@ -59,7 +59,7 @@
    <gate-allowance type="NOR" value="10"/>
   </grod>
 
-  <grod id="gregory" name="Gregory" step-size="0.1" start-x="8" start-y="8">
+  <grod id="gregory" label="Gregory" step-size="0.1" start-x="8" start-y="8">
    <graphic href="ROBO-INF/images/robot.png" />
    <gate-allowance type="NOT" value="10"/>
    <gate-allowance type="NAND" value="3"/>
@@ -69,7 +69,7 @@
    <graphic href="ROBO-INF/images/cake.png"/>
   </switch>
 
-  <switch id="teleport" loc-x="7" loc-y="4" label="Teleport Gregory" on-enter="gregory.setPosition(4.5,4.5); level.increaseScore(100);">
+  <switch id="teleport" loc-x="7" loc-y="4" label="Teleport Gregory" on-enter="gregory.x=4.5; gregory.y=4.5; level.increaseScore(100);">
    <graphic href="ROBO-INF/images/cow.png"/>
   </switch>
 
@@ -90,7 +90,7 @@ XXXXXXXXXXXXXXX
 
  <level name="Cow Map" size-x="15" size-y="10">
 
-  <grod id="grod" name="Grod" step-size="0.1" start-x="2.5" start-y="2.5">
+  <grod id="grod" label="Grod" step-size="0.1" start-x="2.5" start-y="2.5">
    <graphic href="ROBO-INF/images/grod/grod.rsf" scale="0.4"/>
    <gate-allowance type="AND" value="10"/>
    <gate-allowance type="OR" value="10"/>
@@ -117,7 +117,7 @@ XXXXXXXXXXXXXX
 
  <level name="Switchcraft" size-x="15" size-y="10">
 
-  <grod id="grod" name="Grod" step-size="0.1" start-x="2.5" start-y="2.5">
+  <grod id="grod" label="Grod" step-size="0.1" start-x="2.5" start-y="2.5">
    <graphic href="ROBO-INF/images/grod/grod.rsf" scale="0.4"/>
    <gate-allowance type="AND" value="1"/>
    <gate-allowance type="OR" value="1"/>
@@ -151,14 +151,14 @@ XXXXXXXXXXXXXX
 
  <level name="Near, yet far!" size-x="15" size-y="4">
 
-  <grod id="grod" name="Grod" step-size="0.1" start-x="1.5" start-y="1.5">
+  <grod id="grod" label="Grod" step-size="0.1" start-x="1.5" start-y="1.5">
    <graphic href="ROBO-INF/images/grod/grod.rsf" scale="0.4"/>
    <gate-allowance type="AND" value="1"/>
    <gate-allowance type="OR" value="1"/>
    <gate-allowance type="NOT" value="1"/>
   </grod>
 
-  <switch id="mover" loc-x="2" loc-y="1" on-enter="mover.setLocation(mover.getLocation().x+1, mover.getLocation().y); cake.setLocation(cake.getLocation().x+1, cake.getLocation().y);">
+  <switch id="mover" loc-x="2" loc-y="1" on-enter="mover.x++; cake.x++;">
    <graphic href="ROBO-INF/images/generic_switch.png"/>
   </switch>
   <switch id="cake" loc-x="3" loc-y="1" label="Cake" on-enter="robot.setGoalReached(true); level.increaseScore(200);">
@@ -173,4 +173,46 @@ XXXXXXXXXXXXXX
   </map>
  </level>
 
+ <level name="Labels Everywhere!" size-x="15" size-y="5">
+
+  <grod id="grod" label="Grod" step-size="0.1" start-x="1.5" start-y="1.5">
+   <graphic href="ROBO-INF/images/grod/grod.rsf" scale="0.4"/>
+   <gate-allowance type="AND" value="1"/>
+   <gate-allowance type="OR" value="1"/>
+   <gate-allowance type="NOT" value="1"/>
+  </grod>
+
+  <switch id="e" label-direction="e" loc-x="4" loc-y="2" label="East" on-enter="level.increaseScore(10);">
+   <graphic href="ROBO-INF/images/generic_switch.png"/>
+  </switch>
+  <switch id="se" label-direction="se" loc-x="4" loc-y="3" label="Southeast" on-enter="level.increaseScore(10);">
+   <graphic href="ROBO-INF/images/generic_switch.png"/>
+  </switch>
+  <switch id="s" label-direction="s" loc-x="3" loc-y="3" label="South" on-enter="level.increaseScore(10);">
+   <graphic href="ROBO-INF/images/generic_switch.png"/>
+  </switch>
+  <switch id="sw" label-direction="sw" loc-x="2" loc-y="3" label="Southwest" on-enter="level.increaseScore(10);">
+   <graphic href="ROBO-INF/images/generic_switch.png"/>
+  </switch>
+  <switch id="w" label-direction="w" loc-x="2" loc-y="2" label="West" on-enter="level.increaseScore(10);">
+   <graphic href="ROBO-INF/images/generic_switch.png"/>
+  </switch>
+  <switch id="nw" label-direction="nw" loc-x="2" loc-y="1" label="Northwest" on-enter="level.increaseScore(10);">
+   <graphic href="ROBO-INF/images/generic_switch.png"/>
+  </switch>
+  <switch id="n" label-direction="n" loc-x="3" loc-y="1" label="North" on-enter="level.increaseScore(10);">
+   <graphic href="ROBO-INF/images/generic_switch.png"/>
+  </switch>
+  <switch id="cake" label-direction="ne" loc-x="4" loc-y="1" label="Cake" on-enter="robot.setGoalReached(true); level.increaseScore(200);">
+   <graphic href="ROBO-INF/images/cake.png"/>
+  </switch>
+
+  <map>
+XXXXXXXXXXXXXX
+XRRRRRRRRRRRRX
+XRRYYGGCCBBMMX
+XRRYYGGCCBBMMX
+XXXXXXXXXXXXXX
+  </map>
+ </level>
 </rocky>

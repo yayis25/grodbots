@@ -19,7 +19,7 @@ import net.bluecow.robot.sprite.Sprite;
 /**
  * The robot.
  */
-public class Robot {
+public class Robot implements Labelable {
     
     private static final int MOVING_UP = 1 << 0;
     private static final int MOVING_DOWN = 1 << 1;
@@ -60,15 +60,18 @@ public class Robot {
     /** The position that this robot starts out on. */
     private Point2D.Float startPosition;
     
-    /** This robot's user-visible name */
-    private String name;
-
     /** This robot's scripting identifier */
     private String id;
     
     /** The circuit that controls this robot's behaviour. */
     private Circuit circuit;
-    
+
+    /** This robot's user-visible name */
+    private String labelText;
+
+    private boolean labelEnabled;
+    private Direction labelDirection = Direction.EAST;
+
     /**
      * The previous direction the robot was heading in. This is the most recent
      * value returned by {@link #getIconHeading()}.
@@ -80,7 +83,7 @@ public class Robot {
             Sprite sprite, Point2D.Float startPosition, float stepSize,
             Circuit circuit, int evalsPerStep) {
         this.id = id;
-        this.name = name;
+        this.labelText = name;
         this.level = level;
         this.sprite = sprite;
         this.startPosition = startPosition;
@@ -112,7 +115,7 @@ public class Robot {
      */
     public Robot(Robot src) {
         this(src.id, 
-                src.name,
+                src.labelText,
                 src.level,
                 new ArrayList<SensorConfig>(src.outputs.keySet()),
                 new ArrayList<GateConfig>(src.circuit.getGateConfigs().values()),
@@ -400,8 +403,28 @@ public class Robot {
         return theta;
     }
     
-    public String getName() {
-        return name;
+    public String getLabel() {
+        return labelText;
+    }
+    
+    public void setLabel(String l) {
+        labelText = l;
+    }
+
+    public Direction getLabelDirection() {
+        return labelDirection;
+    }
+
+    public void setLabelDirection(Direction labelDirection) {
+        this.labelDirection = labelDirection;
+    }
+
+    public boolean isLabelEnabled() {
+        return labelEnabled;
+    }
+
+    public void setLabelEnabled(boolean labelEnabled) {
+        this.labelEnabled = labelEnabled;
     }
 
     public String getId() {
@@ -428,8 +451,64 @@ public class Robot {
 	public final void setPosition(Point2D.Float position) {
 		this.position = new Point2D.Float(position.x, position.y);
 	}
+    
+    /**
+     * Reports this robot's x position.
+     * 
+     * <p>Note: this bean property is expressed as a double so that it will work
+     * in the bean shell with an expression like "grod.x = 1.0" (the literal
+     * 1.0 is a double, which requires a narrowing primitive conversion (such
+     * type conversions are not done implicitly).
+     */
+    public double getX() {
+        return position.x;
+    }
+    
+    /**
+     * Sets this robot's x position.  The y position will remain unchanged.
+     * 
+     * <p>Note: this bean property is expressed as a double so that it will work
+     * in the bean shell with an expression like "grod.x = 1.0" (the literal
+     * 1.0 is a double, which requires a narrowing primitive conversion (such
+     * type conversions are not done implicitly).
+     */
+    public void setX(double x) {
+        position.x = (float) x;
+    }
 
-    /** Sets this robot's position. */
+    /**
+     * Reports this robot's y position.
+     * 
+     * <p>Note: this bean property is expressed as a double so that it will work
+     * in the bean shell with an expression like "grod.x = 1.0" (the literal
+     * 1.0 is a double, which requires a narrowing primitive conversion (such
+     * type conversions are not done implicitly).
+     */
+    public double getY() {
+        return position.y;
+    }
+    
+    /**
+     * Sets this robot's y position.  The x position will remain unchanged.
+     * 
+     * <p>Note: this bean property is expressed as a double so that it will work
+     * in the bean shell with an expression like "grod.x = 1.0" (the literal
+     * 1.0 is a double, which requires a narrowing primitive conversion (such
+     * type conversions are not done implicitly).
+     */
+    public void setY(double y) {
+        position.y = (float) y;
+    }
+
+
+    /**
+     *  Sets this robot's position.
+     * 
+     * <p>Note: the arguments are declared as doubles so that it will work
+     * in the bean shell with an expression like "grod.setPosition(1.0, 1.0)" (the literal
+     * 1.0 is a double, which requires a narrowing primitive conversion (such
+     * type conversions are not done implicitly).
+     */
     public void setPosition(double x, double y) {
         setPosition(new Point2D.Float((float) x, (float) y));
     }

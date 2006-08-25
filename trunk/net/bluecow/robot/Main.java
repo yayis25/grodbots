@@ -669,7 +669,7 @@ public class Main {
             CircuitEditor ce = entry.getValue();
             JPanel efcp = new JPanel(new BorderLayout());
             efcp.add(ce, BorderLayout.CENTER);
-            JFrame editorFrame = new JFrame("Circuit Editor: "+robot.getName());
+            JFrame editorFrame = new JFrame("Circuit Editor: "+robot.getLabel());
             editorFrame.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
             editorFrame.setContentPane(efcp);
             editorFrame.pack();

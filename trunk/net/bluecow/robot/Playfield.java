@@ -12,8 +12,11 @@ import java.awt.Rectangle;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.geom.AffineTransform;
+import java.awt.geom.Area;
 import java.awt.geom.GeneralPath;
 import java.awt.geom.Point2D;
+import java.awt.geom.RoundRectangle2D;
+import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -173,7 +176,7 @@ public class Playfield extends JPanel {
         }
         
         for (LevelConfig.Switch s : level.getSwitches()) {
-            Point p = s.getLocation();
+            Point p = s.getPosition();
             s.getSprite().paint(g2, p.x*squareWidth, p.y*squareWidth);
             if (!s.isEnabled()) {
                 g2.setColor(Color.RED);
@@ -245,11 +248,11 @@ public class Playfield extends JPanel {
         if (labelOpacity > 0.0) {
             for (RoboStuff rs : robots) {
                 Robot robot = rs.getRobot();
-                drawLabel(g2, fm, robot.getName(), robot.getPosition());
+                drawLabel(g2, fm, robot, robot.getPosition());
             }
             
             for (Switch s : level.getSwitches()) {
-                drawLabel(g2, fm, s.getLabel(), s.getLocation());
+                drawLabel(g2, fm, s, s.getPosition());
             }
         }
         
@@ -288,8 +291,8 @@ public class Playfield extends JPanel {
     /**
      * Draws a label for the centre of the square at the given position.
      */
-    private void drawLabel(Graphics2D g2, FontMetrics fm, String label, Point position) {
-        drawLabel(g2, fm, label, new Point2D.Float(position.x + 0.5f, position.y + 0.5f));
+    private void drawLabel(Graphics2D g2, FontMetrics fm, Labelable labelable, Point position) {
+        drawLabel(g2, fm, labelable, new Point2D.Float(position.x + 0.5f, position.y + 0.5f));
     }
     
     /**
@@ -301,29 +304,98 @@ public class Playfield extends JPanel {
      * a map location.  For example, the point (x,y) = (3.5, 2.5) is at the screen
      * position (3.5*squareWidth, 2.5*squareWidth).
      */
-    private void drawLabel(Graphics2D g2, FontMetrics fm, String label, Point2D.Float position) {
+    private void drawLabel(Graphics2D g2, FontMetrics fm, Labelable labelable, Point2D.Float position) {
+        String label = labelable.getLabel();
         if (label == null) return;
-        float x = position.x * squareWidth;
-        float y = position.y * squareWidth;
+        int x = (int) (position.x * squareWidth);
+        int y = (int) (position.y * squareWidth);
         Composite backupComposite = g2.getComposite();
         g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, labelOpacity));
         g2.setColor(boxColor);
-        GeneralPath arrow = new GeneralPath();
-        arrow.moveTo(x, y);
-        arrow.lineTo(x - 10, y + 5);
-        arrow.lineTo(x - 7, y + 5);
-        arrow.lineTo(x - 7, y + 10);
-        arrow.lineTo(x + 7, y + 10);
-        arrow.lineTo(x + 7, y + 5);
-        arrow.lineTo(x + 10, y + 5);
-        arrow.lineTo(x, y);
-        g2.fill(arrow);
-        Rectangle box = new Rectangle(
-                (int) x - 15, (int) y + 10 ,
-                fm.stringWidth(label) + fm.getHeight()*2, fm.getHeight()*2);
-        g2.fillRoundRect(box.x, box.y, box.width, box.height, 4, 4);
+        GeneralPath arrowPath = new GeneralPath();
+        
+        final int arrowLength = 10;  // the distance from the tip of the arrow to its base
+
+        // this arrow points north
+        arrowPath.moveTo(0, 0);
+        arrowPath.lineTo(-10, 5);
+        arrowPath.lineTo(-7, 5);
+        arrowPath.lineTo(-7, arrowLength*2);  // the *2 is to make the stem long enough to
+        arrowPath.lineTo(7, arrowLength*2);   // properly meet the diagonal boxes.  It makes
+        arrowPath.lineTo(7, 5);               // no difference to the n, s, e, w cases.
+        arrowPath.lineTo(10, 5);
+        arrowPath.lineTo(0, 0);
+        Area arrowBox = new Area(arrowPath);
+        
+        Dimension boxSize = new Dimension(
+                fm.stringWidth(label) + fm.getHeight()*2,
+                fm.getHeight()*2);
+        RoundRectangle2D.Double box = 
+            new RoundRectangle2D.Double(0, 0, boxSize.width, boxSize.height, 4, 4);
+        
+        // three cases: corner, top/bottom, left/right
+        Direction dir = labelable.getLabelDirection();
+        if (dir == Direction.EAST) {
+            arrowBox.transform(AffineTransform.getRotateInstance(-Math.PI / 2.0));
+            arrowBox.transform(AffineTransform.getTranslateInstance(x, y));
+            box.x = x + arrowLength;
+            box.y = y - box.height / 2;
+            arrowBox.add(new Area(box));
+        } else if (dir == Direction.WEST) {
+            arrowBox.transform(AffineTransform.getRotateInstance(Math.PI / 2.0));
+            arrowBox.transform(AffineTransform.getTranslateInstance(x, y));
+            box.x = x - arrowLength - box.width;
+            box.y = y - box.height / 2;
+            arrowBox.add(new Area(box));
+        } else if (dir == Direction.NORTH) {
+            arrowBox.transform(AffineTransform.getRotateInstance(Math.PI));
+            arrowBox.transform(AffineTransform.getTranslateInstance(x, y));
+            box.x = x - box.width / 2;
+            box.y = y - box.height - arrowLength;
+            arrowBox.add(new Area(box));
+        } else if (dir == Direction.SOUTH) {
+            arrowBox.transform(AffineTransform.getRotateInstance(0.0));
+            arrowBox.transform(AffineTransform.getTranslateInstance(x, y));
+            box.x = x - box.width / 2;
+            box.y = y + arrowLength;
+            arrowBox.add(new Area(box));
+        } else if (dir == Direction.NORTHEAST) {
+            arrowBox.transform(AffineTransform.getRotateInstance(-3.0 * Math.PI / 4.0));
+            arrowBox.transform(AffineTransform.getTranslateInstance(x, y));
+            box.x = x + arrowLength/3;
+            box.y = y - box.height - arrowLength/3;
+            arrowBox.add(new Area(box));
+        } else if (dir == Direction.SOUTHEAST) {
+            arrowBox.transform(AffineTransform.getRotateInstance(-Math.PI / 4.0));
+            arrowBox.transform(AffineTransform.getTranslateInstance(x, y));
+            box.x = x + arrowLength/3;
+            box.y = y + arrowLength/3;
+            arrowBox.add(new Area(box));
+        } else if (dir == Direction.NORTHWEST) {
+            arrowBox.transform(AffineTransform.getRotateInstance(3.0 * Math.PI / 4.0));
+            arrowBox.transform(AffineTransform.getTranslateInstance(x, y));
+            box.x = x - box.width - arrowLength/3;
+            box.y = y - box.height - arrowLength/3;
+            arrowBox.add(new Area(box));
+        } else if (dir == Direction.SOUTHWEST) {
+            arrowBox.transform(AffineTransform.getRotateInstance(Math.PI / 4.0));
+            arrowBox.transform(AffineTransform.getTranslateInstance(x, y));
+            box.x = x - box.width - arrowLength/3;
+            box.y = y + arrowLength/3;
+            arrowBox.add(new Area(box));
+        } else {
+            throw new IllegalStateException("Unknown label direction "+dir);
+        }
+        
+        g2.fill(arrowBox);
+        
         g2.setColor(labelColor);
-        g2.drawString(label, box.x + fm.getHeight(), box.y + fm.getHeight()/2 + fm.getAscent());
+        g2.draw(arrowBox);
+//        g2.setColor(Color.GREEN);
+//        g2.draw(box);
+        
+        g2.setColor(labelColor);
+        g2.drawString(label, (int) (box.x + fm.getHeight()), (int) (box.y + fm.getHeight()/2 + fm.getAscent()));
         g2.setComposite(backupComposite);
     }
     
