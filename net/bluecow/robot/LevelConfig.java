@@ -35,17 +35,19 @@ public class LevelConfig {
      * @author fuerth
      * @version $Id$
      */
-    public class Switch {
-        private Point location;
+    public class Switch implements Labelable {
+        private Point position;
         private String id;
-        private String label;
         private Sprite sprite;
         private String onEnter;
         private String onExit;
         private boolean enabled = true;
+        private String label;
+        private boolean labelEnabled;
+        private Direction labelDirection = Direction.EAST;
         
-        public Switch(Point location, String id, String label, Sprite sprite, String onEnter) {
-            this.location = new Point(location);
+        public Switch(Point position, String id, String label, Sprite sprite, String onEnter) {
+            this.position = new Point(position);
             this.id = id;
             this.label = label;
             this.sprite = sprite;
@@ -57,13 +59,15 @@ public class LevelConfig {
          * as the given switch.
          */
         public Switch(Switch copyMe) {
-            this.location = new Point(copyMe.location);
+            this.position = new Point(copyMe.position);
             this.id = copyMe.id;
-            this.label = copyMe.label;
             this.sprite = copyMe.sprite;
             this.onEnter = copyMe.onEnter;
             this.onExit = copyMe.onExit;
             this.enabled = copyMe.enabled;
+            this.label = copyMe.label;
+            this.labelEnabled = copyMe.labelEnabled;
+            this.labelDirection = copyMe.labelDirection;
         }
 
         /**
@@ -100,36 +104,48 @@ public class LevelConfig {
         }
 
         /**
-         * Returns a copy of the point that determines this switch's location.
+         * Returns a copy of the point that determines this switch's position.
          */
-        public Point getLocation() {
-            return new Point(location);
+        public Point getPosition() {
+            return new Point(position);
         }
 
         /**
-         * Moves this switch to the given (x,y) location.
+         * Moves this switch to the given (x,y) position.
          * 
          * @param x the X coordinate
          * @param y the Y coordinate
          */
-        public void setLocation(int x, int y) {
-            this.location = new Point(x, y);
+        public void setPosition(int x, int y) {
+            this.position = new Point(x, y);
         }
 
         /**
-         * Moves this switch to the given (x,y) location.
+         * Moves this switch to the given (x,y) position.
          * 
-         * @param p The new location.  A copy of p will be made; you are free to
+         * @param p The new position.  A copy of p will be made; you are free to
          * modify p after calling this method without side effects.
          */
-        public void setLocation(Point p) {
-            setLocation(p.x, p.y);
-        }
-
-        public String getLabel() {
-            return label;
+        public void setPosition(Point p) {
+            setPosition(p.x, p.y);
         }
         
+        public int getX() {
+            return position.x;
+        }
+        
+        public void setX(int x) {
+            position.x = x;
+        }
+
+        public int getY() {
+            return position.y;
+        }
+        
+        public void setY(int y) {
+            position.y = y;
+        }
+
         public String getId() {
             return id;
         }
@@ -138,6 +154,10 @@ public class LevelConfig {
             return sprite;
         }
         
+        public void setSprite(Sprite sprite) {
+            this.sprite = sprite;
+        }
+
         public String getOnEnter() {
             return onEnter;
         }
@@ -150,10 +170,35 @@ public class LevelConfig {
             this.enabled = enabled;
         }
         
+        public String getLabel() {
+            return label;
+        }
+        
+        public void setLabel(String label) {
+            this.label = label;
+        }
+        
+        public boolean isLabelEnabled() {
+            return labelEnabled;
+        }
+        
+        public void setLabelEnabled(boolean enabled) {
+            this.labelEnabled = enabled;
+        }
+        
+        public Direction getLabelDirection() {
+            return labelDirection;
+        }
+        
+        public void setLabelDirection(Direction direction) {
+            this.labelDirection = direction;
+        }
+
         @Override
         public String toString() {
-            return "Switch@("+location.x+","+location.y+") \""+id+"\": "+(enabled?"en":"dis")+"abled; onEnter \""+onEnter+"\"; onExit\""+onExit+"\"";
+            return "Switch@("+position.x+","+position.y+") \""+id+"\": "+(enabled?"en":"dis")+"abled; onEnter \""+onEnter+"\"; onExit\""+onExit+"\"";
         }
+
     }
 
     private String name;
@@ -163,7 +208,7 @@ public class LevelConfig {
      * All the switches in this level.
      * <p>
      * Implementation note: This can't be a map of points to switches 
-     * because the bsh scripts are allowed to modify the switch locations
+     * because the bsh scripts are allowed to modify the switch positions
      * (and the key in the map wouldn't update accordingly).
      */
     private Collection<Switch> switches = new ArrayList<Switch>();
@@ -215,7 +260,6 @@ public class LevelConfig {
                 throw new IllegalArgumentException("This level already has a scripting object with id \""+r.getId()+"\"");
             }
             bsh.set(r.getId(), r);
-            System.out.println("Added robot '"+r.getId()+"'");
         } catch (EvalError e) {
             throw new RuntimeException(e);
         }
@@ -262,8 +306,8 @@ public class LevelConfig {
         return getSquare((int) x, (int) y);
     }
 
-    public Square getSquare(Point2D.Float location) {
-        return getSquare((int) location.x, (int) location.y);
+    public Square getSquare(Point2D.Float position) {
+        return getSquare((int) position.x, (int) position.y);
     }
 
     public void addSwitch(Switch s) {
@@ -272,7 +316,6 @@ public class LevelConfig {
                 throw new IllegalArgumentException("Level \""+name+"\" already has a scripting object with id \""+s.getId()+"\"");
             }
             bsh.set(s.getId(), s);
-            System.out.println("added switch '"+s.getId()+"'");
             switches.add(s);
         } catch (EvalError e) {
             throw new RuntimeException(e);
@@ -285,16 +328,16 @@ public class LevelConfig {
     }
 
     /**
-     * Returns the switch located on the given map location.
+     * Returns the switch located on the given map position.
      * 
-     * @param location The map location.  The given point object will not be modified.
-     * @return The switch located on the given map location, or null if there are no
+     * @param position The map position.  The given point object will not be modified.
+     * @return The switch located on the given map position, or null if there are no
      * switches there.
      */
-    public Switch getSwitch(Point2D.Float location) {
-        Point point = new Point((int) location.x, (int) location.y);
+    public Switch getSwitch(Point2D.Float position) {
+        Point point = new Point((int) position.x, (int) position.y);
         for (Switch s : switches) {
-            if (s.getLocation().equals(point)) {
+            if (s.getPosition().equals(point)) {
                 return s;
             }
         }

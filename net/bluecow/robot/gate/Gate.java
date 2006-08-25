@@ -126,10 +126,10 @@ public interface Gate {
      * provide a more sophisticated implementation as required.
      * 
      * @param x
-     *            The x location of the point of interest in the editor's
+     *            The x position of the point of interest in the editor's
      *            coordinate system.
      * @param y
-     *            The y location of the point of interest in the editor's
+     *            The y position of the point of interest in the editor's
      *            coordinate system.
      * @return The nearest input, or null if there is no input nearby.
      */

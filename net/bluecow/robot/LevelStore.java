@@ -150,11 +150,7 @@ public class LevelStore {
          */
         private Sprite sprite;
         
-        private String switchId;
-        private String switchLabel;
-        private Point switchLocation;
-        private String switchOnEnter;
-        private Boolean switchEnabled;
+        private LevelConfig.Switch newSwitch;
         
         /**
          * Character data within an element accumulates in this buffer.  It gets
@@ -211,9 +207,7 @@ public class LevelStore {
                             int minor = Integer.parseInt(magicMatcher.group(2));
                             debug("Found map file version "+major+"."+minor);
                         } else {
-                            warnings.add(new FileFormatException(
-                                    "Unknown attribute "+aname+"=\""+aval+"\" in element <"+qName+">",
-                                    loc.getLineNumber(), line, loc.getColumnNumber()));
+                            handleUnknownAttribute(qName, line, aname, aval);
                         }
                     }
                     
@@ -227,9 +221,7 @@ public class LevelStore {
                         if (aname.equals("type")) {
                             config.addSensorType(aval);
                         } else {
-                            warnings.add(new FileFormatException(
-                                    "Unknown attribute "+aname+"=\""+aval+"\" in element <"+qName+">",
-                                    loc.getLineNumber(), line, loc.getColumnNumber()));
+                            handleUnknownAttribute(qName, line, aname, aval);
                         }
                     }
                     
@@ -257,9 +249,7 @@ public class LevelStore {
                         } else if (aname.equals("class")) {
                             gateClass = aval;
                         } else {
-                            warnings.add(new FileFormatException(
-                                    "Unknown attribute "+aname+"=\""+aval+"\" in element <"+qName+">",
-                                    loc.getLineNumber(), line, loc.getColumnNumber()));
+                            handleUnknownAttribute(qName, line, aname, aval);
                         }
                     }
                     
@@ -297,9 +287,7 @@ public class LevelStore {
                         } else if (aname.equals("graphic")) {
                             squareGraphicsFileName = aval;
                         } else {
-                            warnings.add(new FileFormatException(
-                                    "Unknown attribute "+aname+"=\""+aval+"\" in element <"+qName+">",
-                                    loc.getLineNumber(), line, loc.getColumnNumber()));
+                            handleUnknownAttribute(qName, line, aname, aval);
                         }
                     }
                     
@@ -320,9 +308,7 @@ public class LevelStore {
                         if (aname.equals("type")) {
                             type = aval;
                         } else {
-                            warnings.add(new FileFormatException(
-                                    "Unknown attribute "+aname+"=\""+aval+"\" in element <"+qName+">",
-                                    loc.getLineNumber(), line, loc.getColumnNumber()));
+                            handleUnknownAttribute(qName, line, aname, aval);
                         }
                     }
                     
@@ -341,9 +327,7 @@ public class LevelStore {
                         if (aname.equals("type")) {
                             type = aval;
                         } else {
-                            warnings.add(new FileFormatException(
-                                    "Unknown attribute "+aname+"=\""+aval+"\" in element <"+qName+">",
-                                    loc.getLineNumber(), line, loc.getColumnNumber()));
+                            handleUnknownAttribute(qName, line, aname, aval);
                         }
                     }
                     
@@ -382,9 +366,7 @@ public class LevelStore {
                                 throw new FileFormatException("Couldn't parse Y size of level '"+level.getName()+"'", loc.getLineNumber(), line, loc.getColumnNumber());
                             }
                         } else {
-                            warnings.add(new FileFormatException(
-                                    "Unknown attribute "+aname+"=\""+aval+"\" in element <"+qName+">",
-                                    loc.getLineNumber(), line, loc.getColumnNumber()));
+                            handleUnknownAttribute(qName, line, aname, aval);
                         }
                     }
                     
@@ -398,7 +380,6 @@ public class LevelStore {
                 } else if (qName.equals("grod")) { // XXX: ensure this is inside a level element
                     
                     String id = null;
-                    String name = null;
                     Float stepSize = null;
                     Float startx = null;
                     Float starty = null;
@@ -410,8 +391,6 @@ public class LevelStore {
                         
                         if (aname.equals("id")) {
                             id = aval;
-                        } else if (aname.equals("name")) {
-                            name = aval;
                         } else if (aname.equals("step-size")) {
                             try {
                                 stepSize = Float.parseFloat(aval);
@@ -437,20 +416,19 @@ public class LevelStore {
                                 throw new FileFormatException("Couldn't parse evals per step as integer", loc.getLineNumber(), line, loc.getColumnNumber());
                             }
                         } else {
-                            warnings.add(new FileFormatException(
-                                    "Unknown attribute "+aname+"=\""+aval+"\" in element <"+qName+">",
-                                    loc.getLineNumber(), line, loc.getColumnNumber()));
+                            handleUnknownAttribute(qName, line, aname, aval);
                         }
                     }
                     
                     checkMandatory(qName, "id", id);
-                    checkMandatory(qName, "name", name);
                     checkMandatory(qName, "step-size", stepSize);
                     checkMandatory(qName, "start-x", startx);
                     checkMandatory(qName, "start-y", starty);
                     
-                    robot = new Robot(id, name, level, config.getSensorTypes(), config.getGateTypes(), null, new Point2D.Float(startx, starty), stepSize, null, evalsPerStep);
+                    robot = new Robot(id, "Grod", level, config.getSensorTypes(), config.getGateTypes(), null, new Point2D.Float(startx, starty), stepSize, null, evalsPerStep);
 
+                    setupLabel(robot, attributes);
+                    
                 } else if (qName.equals("gate-allowance")) { // XXX: ensure we're inside a grod element
                     String gateType = null;
                     Integer count = null;
@@ -470,9 +448,7 @@ public class LevelStore {
                                 throw new FileFormatException("Could not parse gate count '"+aval+"' as an integer.", loc.getLineNumber(), line, loc.getColumnNumber());
                             }
                         } else {
-                            warnings.add(new FileFormatException(
-                                    "Unknown attribute "+aname+"=\""+aval+"\" in element <"+qName+">",
-                                    loc.getLineNumber(), line, loc.getColumnNumber()));
+                            handleUnknownAttribute(qName, line, aname, aval);
                         }
                         
                     }
@@ -495,11 +471,9 @@ public class LevelStore {
                     
                 } else if (qName.equals("switch")) {
                     // switches and side effects
-                    switchId = null;
-                    switchLabel = null;
-                    switchLocation = null;
-                    switchOnEnter = null;
-                    switchEnabled = null;
+                    String switchId = null;
+                    String switchOnEnter = null;
+                    boolean switchEnabled = true;
                     Integer x = null;
                     Integer y = null;
                     
@@ -509,8 +483,6 @@ public class LevelStore {
                         
                         if (aname.equals("id")) {
                             switchId = aval;
-                        } else if (aname.equals("label")) {
-                            switchLabel = aval;
                         } else if (aname.equals("loc-x")) {
                             try {
                                 x = Integer.parseInt(aval);
@@ -528,9 +500,7 @@ public class LevelStore {
                         } else if (aname.equals("enabled")) {
                             switchEnabled = Boolean.parseBoolean(aval);
                         } else {
-                            warnings.add(new FileFormatException(
-                                    "Unknown attribute "+aname+"=\""+aval+"\" in element <"+qName+">",
-                                    loc.getLineNumber(), line, loc.getColumnNumber()));
+                            handleUnknownAttribute(qName, line, aname, aval);
                         }
                     }
                     
@@ -538,8 +508,12 @@ public class LevelStore {
                     checkMandatory(qName, "loc-x", x);
                     checkMandatory(qName, "loc-y", y);
                     
-                    switchLocation = new Point(x, y);
-                    // gets added in endElement
+                    Point switchPosition = new Point(x, y);
+                    
+                    newSwitch = level.new Switch(switchPosition, switchId, null, null, switchOnEnter);
+                    newSwitch.setEnabled(switchEnabled);
+                    setupLabel(newSwitch, attributes);
+                    // gets added to level in endElement
                     
                 } else if (qName.equals("map")) {
                     // The squares of the map
@@ -551,6 +525,14 @@ public class LevelStore {
                 throw new SAXException(ex);
             } catch (SpriteLoadException ex) {
                 throw new SAXException(ex);
+            }
+        }
+
+        private void handleUnknownAttribute(String qName, final String line, String attribName, String attribValue) {
+            if (!attribName.startsWith("label")) {
+                warnings.add(new FileFormatException(
+                        "Unknown attribute "+attribName+"=\""+attribValue+"\" in element <"+qName+">",
+                        loc.getLineNumber(), line, loc.getColumnNumber()));
             }
         }
 
@@ -578,8 +560,7 @@ public class LevelStore {
                     robot = null;
                 } else if (qName.equals("switch")) {
                     if (sprite ==  null) throw new FileFormatException("The <switch> element must contain a nested <graphic> element!", loc.getLineNumber(), line, loc.getColumnNumber());
-                    LevelConfig.Switch newSwitch = level.new Switch(switchLocation, switchId, switchLabel, sprite, switchOnEnter);
-                    if (switchEnabled != null) newSwitch.setEnabled(switchEnabled); 
+                    newSwitch.setSprite(sprite);
                     level.addSwitch(newSwitch);
                 } else if (qName.equals("map")) {
                     try {
@@ -629,6 +610,33 @@ public class LevelStore {
                 }
             } catch (FileFormatException ex) {
                 throw new SAXException(ex);
+            }
+        }
+        
+        private void setupLabel(Labelable obj, Attributes attributes) throws FileFormatException {
+            System.out.println("Attributes: "+attributes);
+            
+            String labelText = attributes.getValue("label");
+            obj.setLabel(labelText);
+
+            String enabled = attributes.getValue("label-enabled");
+            if (enabled == null || enabled.equals("true")) {
+                obj.setLabelEnabled(true);
+            } else if (enabled.equals("false")) {
+                obj.setLabelEnabled(false);
+            } else {
+                throw new FileFormatException(
+                        "The value of attribute label-enabled must be \"true\" or \"false\"." +
+                        " You used \""+enabled+"\"", loc.getLineNumber(),
+                        null, loc.getColumnNumber());
+            }
+            
+            try {
+                String position = attributes.getValue("label-direction");
+                if (position == null) obj.setLabelDirection(Direction.EAST);
+                else obj.setLabelDirection(Direction.get(position));
+            } catch (IllegalArgumentException e) {
+                throw new FileFormatException(e.getMessage(), loc.getLineNumber(), null, loc.getColumnNumber());
             }
         }
         

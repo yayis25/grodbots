@@ -1,6 +1,4 @@
 Game Features:
--make location vs. position consistent throughout (standardise on position)
--user-controllable label positioning for switches and grods (left, right, top, bottom)
 -Level editor
 -Batteries
 -Radio Communication between robots
@@ -34,6 +32,9 @@ Sounds:
 -little ditties for the beginning of each level (maybe this would be better suited to the MIDI sequencer api)
 
 Completed:
+-user-controllable label positioning for switches and grods (n, ne, e, se, s, sw, w, nw)
+-simpler robot and switch repositioning (via setX/getX and setY/getY)
+-make location vs. position consistent throughout (standardise on position)
 -allow map manipulation from switches
 -allow switches to enable/disable other switches
 -make it possible to start a switch in the disabled state (config file)
