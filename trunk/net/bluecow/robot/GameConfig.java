@@ -5,6 +5,8 @@
  */
 package net.bluecow.robot;
 
+import java.beans.PropertyChangeListener;
+import java.beans.PropertyChangeSupport;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -58,33 +60,57 @@ public class GameConfig {
         private Sprite sprite;
         private Collection<SensorConfig> sensorTypes;
         
+        public SquareConfig() {
+            sensorTypes = new ArrayList<SensorConfig>();
+        }
+        
         public SquareConfig(String name, char mapChar, boolean occupiable,
                 Sprite sprite, Collection<SensorConfig> sensorTypes) {
             this.name = name;
             this.mapChar = mapChar;
             this.occupiable = occupiable;
             this.sprite = sprite;
-            this.sensorTypes = Collections.unmodifiableCollection(sensorTypes);
+            this.sensorTypes = new ArrayList<SensorConfig>(sensorTypes);
         }
 
         public String getName() {
             return name;
         }
         
+        public void setName(String name) {
+            this.name = name;
+        }
+        
         public char getMapChar() {
             return mapChar;
         }
         
+        public void setMapChar(char mapChar) {
+            this.mapChar = mapChar;
+        }
+
         public boolean isOccupiable() {
             return occupiable;
         }
+        
+        public void setOccupiable(boolean occupiable) {
+            this.occupiable = occupiable;
+        }
 
         public Collection<SensorConfig> getSensorTypes() {
-            return sensorTypes;
+            return Collections.unmodifiableCollection(sensorTypes);
+        }
+        
+        public void setSensorTypes(Collection<SensorConfig> sensorTypes) {
+            this.sensorTypes = sensorTypes;
         }
 
         public Sprite getSprite() {
             return sprite;
+        }
+        
+        public void setSprite(Sprite sprite) {
+            this.sprite = sprite;
         }
     }
     
@@ -100,6 +126,10 @@ public class GameConfig {
             return id;
         }
         
+        public void setId(String id) {
+            this.id = id;
+        }
+
         @Override
         public int hashCode() {
             return id.hashCode();
@@ -109,7 +139,19 @@ public class GameConfig {
         public boolean equals(Object other) {
             return id.equals(((SensorConfig) other).id);
         }
+        
+        @Override
+        public String toString() {
+            return id;
+        }
+
     }
+
+    /**
+     * Provides the necessary support for maintaining a list of property
+     * change listeners and firing property change events to them.
+     */
+    private PropertyChangeSupport pcs = new PropertyChangeSupport(this);
     
     private Map<String, GateConfig> gateTypes = new HashMap<String, GateConfig>();
     private Map<Character, SquareConfig> squareTypes = new HashMap<Character, SquareConfig>();
@@ -154,7 +196,11 @@ public class GameConfig {
         return gateTypes.get(gateTypeName);
     }
 
-    public void addSquare(String squareName, char squareChar,
+    /**
+     * Adds a new square config to the game and fires a property change event
+     * for the property "squareTypes".
+     */
+    public void addSquareType(String squareName, char squareChar,
             boolean occupiable, String graphicsFileName,
             Collection<String> sensorTypeIdList) throws SpriteLoadException {
         
@@ -162,9 +208,20 @@ public class GameConfig {
         for (String st : sensorTypeIdList) {
             squareSensorTypes.add(sensorTypes.get(st));
         }
-        squareTypes.put(squareChar, new SquareConfig(squareName, squareChar,
+        SquareConfig squareConfig = 
+            new SquareConfig(squareName, squareChar,
                 occupiable, SpriteManager.load(graphicsFileName),
-                squareSensorTypes));
+                squareSensorTypes);
+        addSquareType(squareConfig);
+    }
+
+    /**
+     * Adds a new square config to the game and fires a property change event
+     * for the property "squareTypes".
+     */
+    public void addSquareType(SquareConfig squareConfig) {
+        squareTypes.put(squareConfig.getMapChar(), squareConfig);
+        pcs.firePropertyChange("squareTypes", null, null);
     }
 
     public SquareConfig getSquare(char squareChar) {
@@ -190,13 +247,30 @@ public class GameConfig {
         }
         return retval;
     }
-
-    public void addSensorType(String typeName) {
-        sensorTypes.put(typeName, new SensorConfig(typeName));
+    
+    public void addSensorType(SensorConfig sc) {
+        sensorTypes.put(sc.getId(), sc);
+        pcs.firePropertyChange("sensorTypes", null, sensorTypes);
     }
 
     public Object getSensor(String typeName) {
         return sensorTypes.get(typeName);
+    }
+
+    public void addPropertyChangeListener(PropertyChangeListener listener) {
+        pcs.addPropertyChangeListener(listener);
+    }
+
+    public void addPropertyChangeListener(String propertyName, PropertyChangeListener listener) {
+        pcs.addPropertyChangeListener(propertyName, listener);
+    }
+
+    public void removePropertyChangeListener(PropertyChangeListener listener) {
+        pcs.removePropertyChangeListener(listener);
+    }
+
+    public void removePropertyChangeListener(String propertyName, PropertyChangeListener listener) {
+        pcs.removePropertyChangeListener(propertyName, listener);
     }
 
 }

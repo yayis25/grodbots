@@ -16,7 +16,6 @@ import java.awt.geom.Area;
 import java.awt.geom.GeneralPath;
 import java.awt.geom.Point2D;
 import java.awt.geom.RoundRectangle2D;
-import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -101,6 +100,18 @@ public class Playfield extends JPanel {
      * manager is repainting this playfield.
      */
     private int frameDelay = 50;
+
+    /**
+     * When this field is true, the paintComponent() method will paint the
+     * "overall score" label.
+     */
+    private boolean paintingOverallScore = true;
+
+    /**
+     * When this field is true, the paintComponent() method will paint the
+     * "score for this level" label.
+     */
+    private boolean paintingLevelScore = true;
     
     /**
      * Creates a new playfield with the specified map.
@@ -221,7 +232,7 @@ public class Playfield extends JPanel {
             g2.drawString(fc, x, y + height - fm.getDescent());
         }
 
-        {
+        if (paintingOverallScore ) {
             String score = String.format("Overall Score: %4d", game.getScore());
             int width = fm.stringWidth(score);
             int height = fm.getHeight();
@@ -233,7 +244,7 @@ public class Playfield extends JPanel {
             g2.drawString(score, x, y + height - fm.getDescent());
         }        
 
-        {
+        if (paintingLevelScore ) {
             String levelScore = String.format("%s Score: %4d", level.getName(), level.getScore());
             int width = fm.stringWidth(levelScore);
             int height = fm.getHeight();
@@ -391,10 +402,6 @@ public class Playfield extends JPanel {
         
         g2.setColor(labelColor);
         g2.draw(arrowBox);
-//        g2.setColor(Color.GREEN);
-//        g2.draw(box);
-        
-        g2.setColor(labelColor);
         g2.drawString(label, (int) (box.x + fm.getHeight()), (int) (box.y + fm.getHeight()/2 + fm.getAscent()));
         g2.setComposite(backupComposite);
     }
@@ -499,5 +506,21 @@ public class Playfield extends JPanel {
         public void ancestorMoved(AncestorEvent event) {
             // don't care
         }
+    }
+
+    public boolean isPaintingLevelScore() {
+        return paintingLevelScore;
+    }
+
+    public void setPaintingLevelScore(boolean paintingLevelScore) {
+        this.paintingLevelScore = paintingLevelScore;
+    }
+
+    public boolean isPaintingOverallScore() {
+        return paintingOverallScore;
+    }
+
+    public void setPaintingOverallScore(boolean paintingOverallScore) {
+        this.paintingOverallScore = paintingOverallScore;
     }
 }

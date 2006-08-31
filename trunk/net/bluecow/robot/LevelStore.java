@@ -219,7 +219,7 @@ public class LevelStore {
                         String aval = attributes.getValue(i);
                         
                         if (aname.equals("type")) {
-                            config.addSensorType(aval);
+                            config.addSensorType(new GameConfig.SensorConfig(aval));
                         } else {
                             handleUnknownAttribute(qName, line, aname, aval);
                         }
@@ -549,7 +549,7 @@ public class LevelStore {
             try {
                 if (qName.equals("square")) {
                     try {
-                        config.addSquare(squareName, squareChar, !squareAttributes.contains(WALL_FLAG), squareGraphicsFileName, squareSensors);
+                        config.addSquareType(squareName, squareChar, !squareAttributes.contains(WALL_FLAG), squareGraphicsFileName, squareSensors);
                     } catch (SpriteLoadException ex) {
                         throw new SAXException("Failed to load a sprite", ex);
                     }
