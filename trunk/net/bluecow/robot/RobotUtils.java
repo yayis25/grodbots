@@ -11,6 +11,8 @@ import java.util.List;
 import java.util.prefs.BackingStoreException;
 import java.util.prefs.Preferences;
 
+import javax.swing.JOptionPane;
+
 public class RobotUtils {
     
     private RobotUtils() {
@@ -78,4 +80,12 @@ public class RobotUtils {
             if (path != null) prefs.put(key, path);
         }
     }
+    
+    public static void showFileFormatException(FileFormatException ex) {
+        JOptionPane.showMessageDialog(null, 
+                "Syntax error in project file:\n\n" +
+                ex.getMessage() + "\n\n" +
+                "at line "+ex.getLineNum()+" column "+ex.getBadCharPos()+": "+ex.getBadLine());
+    }
+
 }

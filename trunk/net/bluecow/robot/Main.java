@@ -283,7 +283,7 @@ public class Main {
                 System.out.println("Couldn't update user prefs");
                 ex.printStackTrace();
             } catch (FileFormatException ex) {
-                showFileFormatException(ex);
+                RobotUtils.showFileFormatException(ex);
             } catch (Exception ex) {
                 ex.printStackTrace();
                 JOptionPane.showMessageDialog(null, "Load Failed: "+ex.getMessage());
@@ -348,7 +348,7 @@ public class Main {
                 }
                 RobotUtils.updateRecentFiles(recentFiles, f);
             } catch (FileFormatException ex) {
-                showFileFormatException(ex);
+                RobotUtils.showFileFormatException(ex);
             } catch (BackingStoreException ex) {
                 System.out.println("Couldn't update user prefs");
                 ex.printStackTrace();
@@ -412,7 +412,7 @@ public class Main {
                     config = LevelStore.loadLevels(new FileInputStream(f));
                     setLevel(0);
                 } catch (FileFormatException ex) {
-                    showFileFormatException(ex);
+                    RobotUtils.showFileFormatException(ex);
                 } catch (FileNotFoundException ex) {
                     ex.printStackTrace();
                     JOptionPane.showMessageDialog(null,
@@ -531,7 +531,7 @@ public class Main {
             sm.addClip("win", ClassLoader.getSystemResource("ROBO-INF/sounds/win.wav"));
         } catch (FileFormatException ex) {
             ex.printStackTrace();
-            showFileFormatException(ex);
+            RobotUtils.showFileFormatException(ex);
         } catch (Exception e) {
             e.printStackTrace();
             JOptionPane.showMessageDialog(
@@ -689,13 +689,6 @@ public class Main {
     
     public GameConfig getGameConfig() {
         return config;
-    }
-
-    private void showFileFormatException(FileFormatException ex) {
-        JOptionPane.showMessageDialog(null, 
-                "Syntax error in project file:\n\n" +
-                ex.getMessage() + "\n\n" +
-                "at line "+ex.getLineNum()+" column "+ex.getBadCharPos()+": "+ex.getBadLine());
     }
 
 }

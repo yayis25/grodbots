@@ -545,4 +545,8 @@ public class Robot implements Labelable {
     public Circuit getCircuit() {
         return circuit;
     }
+
+    public float getStepSize() {
+        return stepSize;
+    }
 }
