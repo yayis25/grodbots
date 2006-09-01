@@ -124,7 +124,7 @@ public class Playfield extends JPanel {
         setupKeyboardActions();
     }
 
-    final void setGame(GameConfig game) {
+    public final void setGame(GameConfig game) {
         this.game = game;
     }
     
@@ -134,7 +134,7 @@ public class Playfield extends JPanel {
      *
      * @param level
      */
-    final void setLevel(LevelConfig level) {
+    public final void setLevel(LevelConfig level) {
         robots = new ArrayList<RoboStuff>();
         this.level = level;
         for (Robot r : level.getRobots()) {

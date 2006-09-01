@@ -1,5 +1,10 @@
 Game Features:
 -Level editor
+ -save and load
+ -add a version attribute to top-level elements and autobackup old versions
+ -effect for the "cursor" box to fade in and out and change colours and stuff
+ -add grods
+ -add switches
 -Batteries
 -Radio Communication between robots
 -init sound manager sound set from config file

@@ -1,7 +1,7 @@
 /*
  * Created on Aug 25, 2006
  *
- * This code belongs to onathan Fuerth
+ * This code belongs to Jonathan Fuerth
  */
 package net.bluecow.robot.editor;
 
@@ -12,7 +12,12 @@ import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.KeyEvent;
 import java.awt.event.WindowAdapter;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.ArrayList;
@@ -23,6 +28,7 @@ import javax.swing.Action;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JDialog;
+import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JList;
@@ -39,8 +45,11 @@ import javax.swing.ListSelectionModel;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 
+import net.bluecow.robot.FileFormatException;
 import net.bluecow.robot.GameConfig;
 import net.bluecow.robot.LevelConfig;
+import net.bluecow.robot.LevelStore;
+import net.bluecow.robot.RobotUtils;
 import net.bluecow.robot.GameConfig.SensorConfig;
 import net.bluecow.robot.GameConfig.SquareConfig;
 import net.bluecow.robot.sprite.SpriteManager;
@@ -72,6 +81,49 @@ public class EditorMain {
         }
 
     };
+    
+    private LevelEditor editor;
+    private SensorTypeListModel sensorTypeListModel;
+    private SquareChooserListModel squareChooserListModel;
+    
+    private LoadLevelsAction loadGameAction = new LoadLevelsAction();
+    
+    private class LoadLevelsAction extends AbstractAction {
+        
+        JFileChooser fc;
+        
+        public LoadLevelsAction() {
+            super("Open Levels...");
+            putValue(MNEMONIC_KEY, KeyEvent.VK_L);
+            fc = new JFileChooser();
+            fc.setDialogTitle("Choose a Robot Levels File");
+        }
+        
+        public void actionPerformed(ActionEvent e) {
+            int choice = fc.showOpenDialog(null);
+            if (choice == JFileChooser.APPROVE_OPTION) {
+                File f = fc.getSelectedFile();
+                try {
+                    setGameConfig(LevelStore.loadLevels(new FileInputStream(f)));
+                } catch (FileFormatException ex) {
+                    RobotUtils.showFileFormatException(ex);
+                } catch (FileNotFoundException ex) {
+                    ex.printStackTrace();
+                    JOptionPane.showMessageDialog(null,
+                            "Could not find file '"+f.getPath()+"'");
+                } catch (IOException ex) {
+                    ex.printStackTrace();
+                    JOptionPane.showMessageDialog(
+                            null,
+                            "Couldn't load the levels:\n\n"
+                               +ex.getMessage()+"\n\n"
+                               +"A stack trace is available on the Java Console.",
+                            "Load Error", JOptionPane.ERROR_MESSAGE, null);
+                }
+            }
+        }
+
+    }
     
     private static JDialog makeSensorPropsDialog(final JFrame parent, GameConfig gc, final SensorConfig sc) {
         final JDialog d = new JDialog(parent, "Sensor Type Properties");
@@ -219,22 +271,26 @@ public class EditorMain {
                 confirmExit();
             }
         });
-        gameConfig = new GameConfig();
-        gameConfig.addSensorType(new GameConfig.SensorConfig("Green"));
-        gameConfig.addSensorType(new GameConfig.SensorConfig("Blue"));
-        gameConfig.addSensorType(new GameConfig.SensorConfig("Red"));
-        levelConfig = new LevelConfig();
-        levelConfig.setName("New Level");
-        levelConfig.setSize(15, 15);
+        
+        // just some default stuff to bootstrap the components so we can lay them out
+        GameConfig myGameConfig = new GameConfig();
+        LevelConfig myLevelConfig = new LevelConfig();
+        myLevelConfig.setName("New Level");
+        myLevelConfig.setSize(15, 15);
+        myGameConfig.addLevel(myLevelConfig);
+        
         frame.getContentPane().setLayout(new BorderLayout());
-        final LevelEditor editor = new LevelEditor(gameConfig, levelConfig);
+        
+        editor = new LevelEditor(myGameConfig, myLevelConfig);
         frame.add(editor, BorderLayout.CENTER);
         
         JPanel sensorTypesPanel = new JPanel(new BorderLayout());
-        sensorTypesPanel.add(new JScrollPane(new JList(new SensorTypeListModel(gameConfig))), BorderLayout.CENTER);
+        sensorTypeListModel = new SensorTypeListModel(myGameConfig);
+        sensorTypesPanel.add(new JScrollPane(new JList(sensorTypeListModel)), BorderLayout.CENTER);
         sensorTypesPanel.add(new JButton(addSensorTypeAction), BorderLayout.SOUTH);
         
-        final JList squareList = new JList(new SquareChooserListModel(gameConfig));
+        squareChooserListModel = new SquareChooserListModel(myGameConfig);
+        final JList squareList = new JList(squareChooserListModel);
         squareList.setCellRenderer(new SquareChooserListRenderer());
         squareList.setPreferredSize(new Dimension(200, 10));
         squareList.addListSelectionListener(new ListSelectionListener() {
@@ -253,6 +309,9 @@ public class EditorMain {
         frame.add(eastPanel, BorderLayout.EAST);
         
         setupMenu();
+        
+        setGameConfig(myGameConfig);
+        
         frame.pack();
         frame.setVisible(true);
     }
@@ -265,6 +324,7 @@ public class EditorMain {
         JMenu m;
         JMenuItem mi;
         mb.add (m = new JMenu("File"));
+        m.add(mi = new JMenuItem(loadGameAction));
         m.add(mi = new JMenuItem(exitAction));
         
         frame.setJMenuBar(mb);
@@ -291,6 +351,15 @@ public class EditorMain {
         }
     }
     
+    private void setGameConfig(GameConfig config) {
+        gameConfig = config;
+        levelConfig = gameConfig.getLevels().get(0);
+        editor.setGame(gameConfig);
+        editor.setLevel(levelConfig);
+        sensorTypeListModel.setGame(gameConfig);
+        squareChooserListModel.setGame(gameConfig);
+    }
+
     /**
      * Shows the given message and the exception's message and stack trace
      * in a modal dialog.

@@ -34,15 +34,14 @@ public class SquareChooserListModel extends AbstractListModel {
 
     }
 
+    private GameConfigListener listener = new GameConfigListener();
+    
     private GameConfig gameConfig;
 
     private List<SquareConfig> squares;
     
     public SquareChooserListModel(GameConfig gameConfig) {
-        this.gameConfig = gameConfig;
-        squares = new ArrayList<SquareConfig>();
-        squares.addAll(gameConfig.getSquareTypes());
-        gameConfig.addPropertyChangeListener("squareTypes", new GameConfigListener());
+        setGame(gameConfig);
     }
     
     public Object getElementAt(int index) {
@@ -53,4 +52,14 @@ public class SquareChooserListModel extends AbstractListModel {
         return squares.size();
     }
 
+    public void setGame(GameConfig gameConfig) {
+        if (this.gameConfig != null) {
+            this.gameConfig.removePropertyChangeListener(listener);
+        }
+        this.gameConfig = gameConfig;
+        squares = new ArrayList<SquareConfig>();
+        squares.addAll(gameConfig.getSquareTypes());
+        gameConfig.addPropertyChangeListener("squareTypes", listener);
+        fireContentsChanged(this, 0, getSize());
+    }
 }

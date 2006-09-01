@@ -76,7 +76,9 @@ public class LevelEditor extends Playfield {
     }
     
     private void changeSquareType(Point paintingLocation, SquareConfig paintingSquare) {
-        getLevel().setSquare(paintingLocation.x, paintingLocation.y, paintingSquare);
+        if (paintingLocation != null && paintingSquare != null) {
+            getLevel().setSquare(paintingLocation.x, paintingLocation.y, paintingSquare);
+        }
     }
 
     public void setPaintingSquareType(SquareConfig sc) {
@@ -112,7 +114,13 @@ public class LevelEditor extends Playfield {
         double x = p.getX();
         double y = p.getY();
         double squareWidth = getSquareWidth();
-        paintingLocationDouble = new Point2D.Double(x / squareWidth, y / squareWidth);
-        paintingLocation = new Point((int) (x / squareWidth), (int) (y / squareWidth));
+        if (x < 0 || x >= getSquareWidth() * getLevel().getWidth()
+                || y < 0 || y >= getSquareWidth() * getLevel().getHeight()) {
+            paintingLocation = null;
+            paintingLocationDouble = null;
+        } else {
+            paintingLocationDouble = new Point2D.Double(x / squareWidth, y / squareWidth);
+            paintingLocation = new Point((int) (x / squareWidth), (int) (y / squareWidth));
+        }
     }
 }
