@@ -13,8 +13,26 @@ package net.bluecow.robot;
  * @version $Id$
  */
 public enum Direction {
-    NORTH, NORTHEAST, EAST, SOUTHEAST, SOUTH, SOUTHWEST, WEST, NORTHWEST;
+    
+    NORTH("n"),
+    NORTHEAST("ne"),
+    EAST("e"),
+    SOUTHEAST("se"),
+    SOUTH("s"),
+    SOUTHWEST("sw"),
+    WEST("w"),
+    NORTHWEST("nw");
 
+    private String code;
+    
+    Direction(String code) {
+        this.code = code;
+    }
+    
+    public String getCode() {
+        return code;
+    }
+    
     /**
      * Returns the direction associated with the code.
      * 
@@ -26,14 +44,11 @@ public enum Direction {
      */
     public static Direction get(String code) {
         code = code.toLowerCase();
-        if (code.equals("n")) return NORTH;
-        if (code.equals("ne")) return NORTHEAST;
-        if (code.equals("e")) return EAST;
-        if (code.equals("se")) return SOUTHEAST;
-        if (code.equals("s")) return SOUTH;
-        if (code.equals("sw")) return SOUTHWEST;
-        if (code.equals("w")) return WEST;
-        if (code.equals("nw")) return NORTHWEST;
+        for (Direction dir : values()) {
+            if (dir.getCode().equals(code)) {
+                return dir;
+            }
+        }
         throw new IllegalArgumentException("Unknown direction code '"+code+"'");
     }
 }

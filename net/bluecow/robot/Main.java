@@ -62,8 +62,6 @@ public class Main {
     
     private GameState state = GameState.NOT_STARTED;
     
-    private Preferences prefs = Preferences.userNodeForPackage(Main.class);
-
     private class GameLoopResetter implements PropertyChangeListener {
 
         private GameLoop gl;
@@ -219,7 +217,7 @@ public class Main {
         }
         
         public void actionPerformed(ActionEvent e) {
-            Preferences recentFiles = prefs.node("recentCircuitFiles");
+            Preferences recentFiles = RobotUtils.getPrefs().node("recentCircuitFiles");
             OutputStream out = null;
             try {
                 JFileChooser fc = new JFileChooser();
@@ -262,7 +260,7 @@ public class Main {
         
         public void actionPerformed(ActionEvent e) {
             InputStream in = null;
-            Preferences recentFiles = prefs.node("recentCircuitFiles");
+            Preferences recentFiles = RobotUtils.getPrefs().node("recentCircuitFiles");
             try {
                 File f = new File(e.getActionCommand() == null ? "!@#$%^&*" : e.getActionCommand());
                 if ( ! (f.isFile() && f.canRead()) ) {
@@ -317,7 +315,7 @@ public class Main {
         
         public void actionPerformed(ActionEvent e) {
             InputStream in = null;
-            Preferences recentFiles = prefs.node("recentGhostFiles");
+            Preferences recentFiles = RobotUtils.getPrefs().node("recentGhostFiles");
             try {
                 File f = new File(e.getActionCommand() == null ? "!@#$%^&*" : e.getActionCommand());
                 if ( ! (f.isFile() && f.canRead()) ) {
@@ -405,27 +403,36 @@ public class Main {
         }
         
         public void actionPerformed(ActionEvent e) {
-            int choice = fc.showOpenDialog(null);
-            if (choice == JFileChooser.APPROVE_OPTION) {
-                File f = fc.getSelectedFile();
-                try {
-                    config = LevelStore.loadLevels(new FileInputStream(f));
-                    setLevel(0);
-                } catch (FileFormatException ex) {
-                    RobotUtils.showFileFormatException(ex);
-                } catch (FileNotFoundException ex) {
-                    ex.printStackTrace();
-                    JOptionPane.showMessageDialog(null,
-                            "Could not find file '"+f.getPath()+"'");
-                } catch (IOException ex) {
-                    ex.printStackTrace();
-                    JOptionPane.showMessageDialog(
-                            null,
-                            "Couldn't load the levels:\n\n"
-                               +ex.getMessage()+"\n\n"
-                               +"A stack trace is available on the Java Console.",
-                            "Load Error", JOptionPane.ERROR_MESSAGE, null);
+            Preferences recentFiles = RobotUtils.getPrefs().node("recentGameFiles");
+            
+            File f = new File(e.getActionCommand() == null ? "!@#$%^&*" : e.getActionCommand());
+            try {
+                if ( ! (f.isFile() && f.canRead()) ) {
+                    fc.setCurrentDirectory(new File(recentFiles.get("0", System.getProperty("user.home"))));
+                    int choice = fc.showOpenDialog(null);
+                    if (choice != JFileChooser.APPROVE_OPTION) return;
+                    f = fc.getSelectedFile();
                 }
+                RobotUtils.updateRecentFiles(recentFiles, f);
+                config = LevelStore.loadLevels(new FileInputStream(f));
+                setLevel(0);
+            } catch (BackingStoreException ex) {
+                System.out.println("Couldn't update user prefs");
+                ex.printStackTrace();
+            } catch (FileFormatException ex) {
+                RobotUtils.showFileFormatException(ex);
+            } catch (FileNotFoundException ex) {
+                ex.printStackTrace();
+                JOptionPane.showMessageDialog(null,
+                        "Could not find file '"+f.getPath()+"'");
+            } catch (IOException ex) {
+                ex.printStackTrace();
+                JOptionPane.showMessageDialog(
+                        null,
+                        "Couldn't load the levels:\n\n"
+                        +ex.getMessage()+"\n\n"
+                        +"A stack trace is available on the Java Console.",
+                        "Load Error", JOptionPane.ERROR_MESSAGE, null);
             }
         }
     }
@@ -477,13 +484,13 @@ public class Main {
         playfieldFrame.addComponentListener(new ComponentAdapter() {
             @Override
             public void componentMoved(ComponentEvent e) {
-                prefs.putInt("PlayfieldFrame.x", playfieldFrame.getX());
-                prefs.putInt("PlayfieldFrame.y", playfieldFrame.getY());
+                RobotUtils.getPrefs().putInt("PlayfieldFrame.x", playfieldFrame.getX());
+                RobotUtils.getPrefs().putInt("PlayfieldFrame.y", playfieldFrame.getY());
             }
         });
         playfieldFrame.setLocation(
-                prefs.getInt("PlayfieldFrame.x", 30),
-                prefs.getInt("PlayfieldFrame.y", 30));
+                RobotUtils.getPrefs().getInt("PlayfieldFrame.x", 30),
+                RobotUtils.getPrefs().getInt("PlayfieldFrame.y", 30));
         
         JMenuBar mb;
         JMenu menu;
@@ -492,16 +499,18 @@ public class Main {
         mb.add(menu = new JMenu("File"));
         menu.setMnemonic(KeyEvent.VK_F);
         menu.add(item = new JMenuItem(loadLevelsAction));
-        menu.add(item = new RecentFilesMenu("Open Recent Circuit", loadCircuitAction, prefs.node("recentCircuitFiles")));
-        item.setMnemonic(KeyEvent.VK_R);
+        menu.add(item = new RecentFilesMenu("Open Recent Levels", loadLevelsAction, RobotUtils.getPrefs().node("recentGameFiles")));
+        item.setMnemonic(KeyEvent.VK_T);
         menu.add(item = new JMenuItem(loadCircuitAction));
+        menu.add(item = new RecentFilesMenu("Open Recent Circuit", loadCircuitAction, RobotUtils.getPrefs().node("recentCircuitFiles")));
+        item.setMnemonic(KeyEvent.VK_R);
         menu.add(item = new JMenuItem(saveCircuitAction));
         menu.add(item = new JMenuItem(quitAction));
         
         mb.add(menu = new JMenu("Ghost"));
         menu.setMnemonic(KeyEvent.VK_G);
         menu.add(item = new JMenuItem(loadGhostAction));
-        menu.add(item = new RecentFilesMenu("Open Recent Ghost", loadGhostAction, prefs.node("recentGhostFiles")));
+        menu.add(item = new RecentFilesMenu("Open Recent Ghost", loadGhostAction, RobotUtils.getPrefs().node("recentGhostFiles")));
         item.setMnemonic(KeyEvent.VK_R);
 
         try {

@@ -15,12 +15,18 @@ import javax.swing.JOptionPane;
 
 public class RobotUtils {
     
+    private static Preferences prefs = Preferences.userNodeForPackage(RobotUtils.class);
+
     private RobotUtils() {
         throw new UnsupportedOperationException("This utility class is not instantiable");
     }
     
     //TODO: seems to only keep the latest item!  should keep MAX_PATHS items
 
+    public static Preferences getPrefs() {
+        return prefs;
+    }
+    
     /**
      * Updates a recent files list stored in the given preferences node. At
      * completion, the preferences key <code>"0"</code> will have
