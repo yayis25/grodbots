@@ -14,14 +14,21 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.WindowAdapter;
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.FileWriter;
 import java.io.IOException;
+import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.io.Writer;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.prefs.BackingStoreException;
+import java.util.prefs.Preferences;
 
 import javax.swing.AbstractAction;
 import javax.swing.Action;
@@ -56,55 +63,29 @@ import net.bluecow.robot.sprite.SpriteManager;
 
 public class EditorMain {
 
-    private JFrame frame;
-    private GameConfig gameConfig;
-    private LevelConfig levelConfig;
-
-    private Action addSquareTypeAction = new AbstractAction("Add Square Type") {
-        public void actionPerformed(ActionEvent e) {
-            SquareConfig squareConfig = new GameConfig.SquareConfig();
-            JDialog d = makeSquarePropsDialog(frame, gameConfig, squareConfig);
-            d.setModal(true);
-            d.setVisible(true);
-            gameConfig.addSquareType(squareConfig);
-        }
-
-    };
-    
-    private Action addSensorTypeAction = new AbstractAction("Add Sensor Type") {
-        public void actionPerformed(ActionEvent e) {
-            SensorConfig sensorConfig = new GameConfig.SensorConfig("");
-            JDialog d = makeSensorPropsDialog(frame, gameConfig, sensorConfig);
-            d.setModal(true);
-            d.setVisible(true);
-            gameConfig.addSensorType(sensorConfig);
-        }
-
-    };
-    
-    private LevelEditor editor;
-    private SensorTypeListModel sensorTypeListModel;
-    private SquareChooserListModel squareChooserListModel;
-    
-    private LoadLevelsAction loadGameAction = new LoadLevelsAction();
-    
-    private class LoadLevelsAction extends AbstractAction {
+    private class LoadGameAction extends AbstractAction {
         
         JFileChooser fc;
         
-        public LoadLevelsAction() {
+        public LoadGameAction() {
             super("Open Levels...");
-            putValue(MNEMONIC_KEY, KeyEvent.VK_L);
+            putValue(MNEMONIC_KEY, KeyEvent.VK_O);
             fc = new JFileChooser();
             fc.setDialogTitle("Choose a Robot Levels File");
         }
         
         public void actionPerformed(ActionEvent e) {
+            Preferences recentFiles = RobotUtils.getPrefs().node("recentGameFiles");
+            fc.setCurrentDirectory(new File(recentFiles.get("0", System.getProperty("user.home"))));
             int choice = fc.showOpenDialog(null);
             if (choice == JFileChooser.APPROVE_OPTION) {
                 File f = fc.getSelectedFile();
                 try {
                     setGameConfig(LevelStore.loadLevels(new FileInputStream(f)));
+                    RobotUtils.updateRecentFiles(recentFiles, fc.getSelectedFile());
+                } catch (BackingStoreException ex) {
+                    System.out.println("Couldn't update user prefs");
+                    ex.printStackTrace();
                 } catch (FileFormatException ex) {
                     RobotUtils.showFileFormatException(ex);
                 } catch (FileNotFoundException ex) {
@@ -124,6 +105,73 @@ public class EditorMain {
         }
 
     }
+    
+    private class SaveGameAction extends AbstractAction {
+        
+        public SaveGameAction() {
+            super("Save Levels...");
+            putValue(MNEMONIC_KEY, KeyEvent.VK_S);
+        }
+        
+        public void actionPerformed(ActionEvent e) {
+            Preferences recentFiles = RobotUtils.getPrefs().node("recentGameFiles");
+            Writer out = null;
+            try {
+                JFileChooser fc = new JFileChooser();
+                fc.setDialogTitle("Save Levels File");
+                fc.setCurrentDirectory(new File(recentFiles.get("0", System.getProperty("user.home"))));
+                int choice = fc.showSaveDialog(frame);
+                if (choice == JFileChooser.APPROVE_OPTION) {
+                    String encoding = "utf-8";
+                    out = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(fc.getSelectedFile()), encoding));
+                    LevelStore.save(out, gameConfig, encoding);
+                    RobotUtils.updateRecentFiles(recentFiles, fc.getSelectedFile());
+                }
+            } catch (IOException ex) {
+                JOptionPane.showMessageDialog(frame, "Save Failed: "+ex.getMessage());
+            } catch (BackingStoreException ex) {
+                System.out.println("Couldn't update user prefs");
+                ex.printStackTrace();
+            } finally {
+                try {
+                    if (out != null) out.close();
+                } catch (IOException e1) {
+                    System.out.println("Bad luck.. couldn't close output file!");
+                    e1.printStackTrace();
+                }
+            }
+        }
+    }
+
+    private Action addSquareTypeAction = new AbstractAction("Add Square Type") {
+        public void actionPerformed(ActionEvent e) {
+            SquareConfig squareConfig = new GameConfig.SquareConfig();
+            JDialog d = makeSquarePropsDialog(frame, gameConfig, squareConfig);
+            d.setModal(true);
+            d.setVisible(true);
+            gameConfig.addSquareType(squareConfig);
+        }
+    };
+    
+    private Action addSensorTypeAction = new AbstractAction("Add Sensor Type") {
+        public void actionPerformed(ActionEvent e) {
+            SensorConfig sensorConfig = new GameConfig.SensorConfig("");
+            JDialog d = makeSensorPropsDialog(frame, gameConfig, sensorConfig);
+            d.setModal(true);
+            d.setVisible(true);
+            gameConfig.addSensorType(sensorConfig);
+        }
+    };
+    
+    private JFrame frame;
+    private GameConfig gameConfig;
+    private LevelConfig levelConfig;
+    private LevelEditor editor;
+    private SensorTypeListModel sensorTypeListModel;
+    private SquareChooserListModel squareChooserListModel;
+    
+    private LoadGameAction loadGameAction = new LoadGameAction();
+    private SaveGameAction saveGameAction = new SaveGameAction();
     
     private static JDialog makeSensorPropsDialog(final JFrame parent, GameConfig gc, final SensorConfig sc) {
         final JDialog d = new JDialog(parent, "Sensor Type Properties");
@@ -322,10 +370,10 @@ public class EditorMain {
     private void setupMenu() {
         JMenuBar mb = new JMenuBar();
         JMenu m;
-        JMenuItem mi;
         mb.add (m = new JMenu("File"));
-        m.add(mi = new JMenuItem(loadGameAction));
-        m.add(mi = new JMenuItem(exitAction));
+        m.add(new JMenuItem(loadGameAction));
+        m.add(new JMenuItem(saveGameAction));
+        m.add(new JMenuItem(exitAction));
         
         frame.setJMenuBar(mb);
     }

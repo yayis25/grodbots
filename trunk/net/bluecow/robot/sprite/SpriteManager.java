@@ -50,9 +50,9 @@ public class SpriteManager {
             
             Sprite sprite;
             if (resourcePath.endsWith(".rsf")) {
-                sprite = new AnimatedSprite(resourceURL);
+                sprite = new AnimatedSprite(resourceURL, attribs);
             } else {
-                sprite = new IconSprite(resourceURL);
+                sprite = new IconSprite(resourceURL, attribs);
             }
             
             if (attribs.get("scale") != null) {

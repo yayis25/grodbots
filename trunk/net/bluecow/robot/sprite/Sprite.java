@@ -1,11 +1,12 @@
 /*
  * Created on Apr 18, 2006
  *
- * This code belongs to SQL Power Group Inc.
+ * This code belongs to Jonathan Fuerth
  */
 package net.bluecow.robot.sprite;
 
 import java.awt.Graphics2D;
+import java.util.Map;
 
 /**
  * Sprite is an interface to any type of moving or static image resource
@@ -17,6 +18,12 @@ import java.awt.Graphics2D;
  */
 public interface Sprite {
 
+    /**
+     * Returns the attribute map that was passed to the SpriteManager in
+     * order to create this sprite object.
+     */
+    Map<String, String> getAttributes();
+    
     /**
      * Paints this sprite into the given graphics
      * at the given (x,y) coordinates.

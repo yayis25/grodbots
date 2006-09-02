@@ -78,7 +78,8 @@ public class AnimatedSprite extends AbstractSprite {
     private List<ImageIcon> sequence = new ArrayList<ImageIcon>();
     private int curSeqNum = 0;
     
-    public AnimatedSprite(URL url) throws ParserConfigurationException, SAXException, IOException {
+    public AnimatedSprite(URL url, Map<String, String> attribs) throws ParserConfigurationException, SAXException, IOException {
+        super(attribs);
         baseURL = url;
         SAXParser parser = SAXParserFactory.newInstance().newSAXParser();
         // turn off validation parser.setProperty()

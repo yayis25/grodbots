@@ -24,6 +24,7 @@ import javax.xml.parsers.SAXParserFactory;
 import net.bluecow.robot.GameConfig.GateConfig;
 import net.bluecow.robot.GameConfig.SensorConfig;
 import net.bluecow.robot.GameConfig.SquareConfig;
+import net.bluecow.robot.gate.Gate;
 import net.bluecow.robot.sprite.Sprite;
 import net.bluecow.robot.sprite.SpriteLoadException;
 import net.bluecow.robot.sprite.SpriteManager;
@@ -46,8 +47,8 @@ public class LevelStore {
 
     private static boolean debugging = false;
     
-    public static void save(Writer out, GameConfig gc) throws IOException {
-        out.write("<?xml version=\"1.0\" encoding=\"utf-8\"?>\n");
+    public static void save(Writer out, GameConfig gc, String encoding) throws IOException {
+        out.write("<?xml version=\"1.0\" encoding=\""+encoding+"\"?>\n");
         out.write("<rocky version=\"4.0\">");
 
         out.write("\n");
@@ -58,24 +59,31 @@ public class LevelStore {
         
         out.write("\n");
         
+        Map<Class<Gate>, String> gateNameMap = new HashMap<Class<Gate>, String>();
         for (GateConfig gate : gc.getGateTypes()) {
             out.write("  <gate type=\""+gate.getName()+"\" " +
-                          "mnemonic=\""+gate.getAccelerator()+"\" " +
-                             "class=\""+gate.getGateClass()+"\" />\n");
+                          "mnemonic=\""+gate.getAccelerator().getKeyChar()+"\" " +
+                             "class=\""+gate.getGateClass().getName()+"\" />\n");
+            gateNameMap.put(gate.getGateClass(), gate.getName());
         }
         
         out.write("\n");
 
         for (SquareConfig square : gc.getSquareTypes()) {
-            out.write("  <square type=\"\" mapchar=\"\" graphic=\"\">\n");
+            out.write("  <square type=\""+square.getName()+"\" " +
+                             "mapchar=\""+square.getMapChar()+"\" " +
+                             "graphic=\""+square.getSprite().getAttributes().get("href")+"\">\n");
             if (!square.isOccupiable()) {
                 out.write("    <attribute type=\"WALL\" />\n");
             }
             for (SensorConfig sensor : square.getSensorTypes()) {
                 out.write("    <activate-sensor type=\""+sensor.getId()+"\" />\n");
             }
+            out.write("  </square>\n");
         }
-        
+
+        out.write("\n");
+
         for (LevelConfig level : gc.getLevels()) {
             out.write("  <level name=\""+level.getName()+"\" " +
                              "size-x=\""+level.getWidth()+"\" " +
@@ -83,184 +91,72 @@ public class LevelStore {
             
             for (Robot r : level.getRobots()) {
                 out.write("    <grod id=\""+r.getId()+"\" " +
-                                 "label=\""+r.getLabel()+"\" " +
                              "step-size=\""+r.getStepSize()+"\" " +
                                "start-x=\""+r.getPosition().x+"\" " +
                                "start-y=\""+r.getPosition().y+"\" " +
-                        "evals=per-step=\""+r.getEvalsPerStep()+"\" " +
-                       "label-direction=\""+r.getLabelDirection()+"\">\n");
+                        "evals-per-step=\""+r.getEvalsPerStep()+"\" " +
+                       makeLabelAttributes(r) +
+                       ">\n");
+                out.write("      "+makeSpriteTag(r.getSprite())+"\n");
+                
+                for (Map.Entry<Class<? extends Gate>, Integer> ent : r.getCircuit().getGateAllowances().entrySet()) {
+                    String gateType = gateNameMap.get(ent.getKey());
+                    int allowance = ent.getValue();
+                    out.write("      <gate-allowance type=\""+gateType+"\" value=\""+allowance+"\" />\n");
+                }
+                
+                out.write("    </grod>\n");
             }
+
+            out.write("\n");
+
+            for (LevelConfig.Switch s : level.getSwitches()) {
+                out.write("    <switch id=\""+s.getId()+"\" " +
+                                   "loc-x=\""+s.getX()+"\" " +
+                                   "loc-y=\""+s.getY()+"\" " +
+                                "on-enter=\""+s.getOnEnter()+"\" " +
+                                 "enabled=\""+s.isEnabled()+"\" " +
+                                  ""+makeLabelAttributes(s)+">\n");
+                out.write("      "+makeSpriteTag(s.getSprite())+"\n");
+                out.write("    </switch>\n");
+            }
+
+            out.write("\n");
+
+            out.write("    <map>\n");
+            for (int x = 0; x < level.getMap()[0].length; x++) {
+                for (int y = 0; y < level.getMap().length; y++) {
+                    out.write(level.getMap()[y][x].getMapChar());
+                }
+                out.write("\n");
+            }
+            out.write("    </map>\n");
+            
+            out.write("  </level>\n");
         }
-        /*
-  <grod id="grod" label="Gršd" step-size="0.1" start-x="2.5" start-y="2.5" evals-per-step="5" label-direction="w">
-   <graphic href="ROBO-INF/images/grod/grod.rsf" scale="0.4"/>
-   <gate-allowance type="AND" value="10"/>
-   <gate-allowance type="OR" value="10"/>
-   <gate-allowance type="NOT" value="10"/>
-   <gate-allowance type="NAND" value="10"/>
-   <gate-allowance type="NOR" value="10"/>
-  </grod>
-
-  <grod id="gregory" label="Gregory" step-size="0.1" start-x="8" start-y="8">
-   <graphic href="ROBO-INF/images/robot.png" />
-   <gate-allowance type="NOT" value="10"/>
-   <gate-allowance type="NAND" value="3"/>
-  </grod>
-
-  <switch id="cake" loc-x="7" loc-y="1" label="Cake" on-enter="robot.setGoalReached(true); level.increaseScore(200);">
-   <graphic href="ROBO-INF/images/cake.png"/>
-  </switch>
-
-  <switch id="teleport" loc-x="7" loc-y="4" label="Teleport Gregory" on-enter="gregory.x=4.5; gregory.y=4.5; level.increaseScore(100);">
-   <graphic href="ROBO-INF/images/cow.png"/>
-  </switch>
-
-  <map>
-XXXXXXXXXXXXXXX
-X R  X Y      X
-X R  X /      X
-X RCMYW/      X
-X GGGGG/      X
-X             X
-XXXXXXXXXXXXXXX
-X             X
-X             X
-XXXXXXXXXXXXXXX
-  </map>
- </level>
-
-
- <level name="Cow Map" size-x="15" size-y="10">
-
-  <grod id="grod" label="Grod" step-size="0.1" start-x="2.5" start-y="2.5">
-   <graphic href="ROBO-INF/images/grod/grod.rsf" scale="0.4"/>
-   <gate-allowance type="AND" value="10"/>
-   <gate-allowance type="OR" value="10"/>
-   <gate-allowance type="NOT" value="10"/>
-   <gate-allowance type="NAND" value="10"/>
-   <gate-allowance type="NOR" value="10"/>
-  </grod>
-
-  <switch id="cake" loc-x="7" loc-y="1" label="Cake" on-enter="robot.setGoalReached(true); level.increaseScore(200);">
-   <graphic href="ROBO-INF/images/cake.png"/>
-  </switch>
-
-  <map>
-XXXXXXXXXXXXXX
-XRRYYGGCCBBMMX
-XRRYYGGCCBBMMX
-XRRYYGGCCBBMMX
-XRRYYGGCCBBMMX
-XRRYYGGCCBBMMX
-XWWWW    WWWWX
-XXXXXXXXXXXXXX
-  </map>
- </level>
-
- <level name="Switchcraft" size-x="15" size-y="10">
-
-  <grod id="grod" label="Grod" step-size="0.1" start-x="2.5" start-y="2.5">
-   <graphic href="ROBO-INF/images/grod/grod.rsf" scale="0.4"/>
-   <gate-allowance type="AND" value="1"/>
-   <gate-allowance type="OR" value="1"/>
-   <gate-allowance type="NOT" value="1"/>
-  </grod>
-
-  <switch id="one" loc-x="3" loc-y="2" on-enter="two.enabled=true">
-   <graphic href="ROBO-INF/images/generic_switch.png"/>
-  </switch>
-  <switch id="two" loc-x="7" loc-y="2" enabled="false" on-enter="three.enabled=true">
-   <graphic href="ROBO-INF/images/generic_switch.png"/>
-  </switch>
-  <switch id="three" loc-x="11" loc-y="2" enabled="false" on-enter="cake.enabled=true">
-   <graphic href="ROBO-INF/images/generic_switch.png"/>
-  </switch>
-  <switch id="cake" loc-x="7" loc-y="1" label="Cake" enabled="false" on-enter="robot.setGoalReached(true); level.increaseScore(200);">
-   <graphic href="ROBO-INF/images/cake.png"/>
-  </switch>
-
-  <map>
-XXXXXXXXXXXXXX
-XRRYYGGCCBBMMX
-XRRYYGGCCBBMMX
-XRRYYGGCCBBMMX
-XRRYYGGCCBBMMX
-XRRYYGGCCBBMMX
-XWWWW    WWWWX
-XXXXXXXXXXXXXX
-  </map>
- </level>
-
- <level name="Near, yet far!" size-x="15" size-y="4">
-
-  <grod id="grod" label="Grod" step-size="0.1" start-x="1.5" start-y="1.5">
-   <graphic href="ROBO-INF/images/grod/grod.rsf" scale="0.4"/>
-   <gate-allowance type="AND" value="1"/>
-   <gate-allowance type="OR" value="1"/>
-   <gate-allowance type="NOT" value="1"/>
-  </grod>
-
-  <switch id="mover" loc-x="2" loc-y="1" on-enter="mover.x++; cake.x++;">
-   <graphic href="ROBO-INF/images/generic_switch.png"/>
-  </switch>
-  <switch id="cake" loc-x="3" loc-y="1" label="Cake" on-enter="robot.setGoalReached(true); level.increaseScore(200);">
-   <graphic href="ROBO-INF/images/cake.png"/>
-  </switch>
-
-  <map>
-XXXXXXXXXXXXXX
-XRRRRRRRRRRRRX
-XRRYYGGCCBBMMX
-XXXXXXXXXXXXXX
-  </map>
- </level>
-
- <level name="Labels Everywhere!" size-x="15" size-y="5">
-
-  <grod id="grod" label="Grod" step-size="0.1" start-x="1.5" start-y="1.5">
-   <graphic href="ROBO-INF/images/grod/grod.rsf" scale="0.4"/>
-   <gate-allowance type="AND" value="1"/>
-   <gate-allowance type="OR" value="1"/>
-   <gate-allowance type="NOT" value="1"/>
-  </grod>
-
-  <switch id="e" label-direction="e" loc-x="4" loc-y="2" label="East" on-enter="level.increaseScore(10);">
-   <graphic href="ROBO-INF/images/generic_switch.png"/>
-  </switch>
-  <switch id="se" label-direction="se" loc-x="4" loc-y="3" label="Southeast" on-enter="level.increaseScore(10);">
-   <graphic href="ROBO-INF/images/generic_switch.png"/>
-  </switch>
-  <switch id="s" label-direction="s" loc-x="3" loc-y="3" label="South" on-enter="level.increaseScore(10);">
-   <graphic href="ROBO-INF/images/generic_switch.png"/>
-  </switch>
-  <switch id="sw" label-direction="sw" loc-x="2" loc-y="3" label="Southwest" on-enter="level.increaseScore(10);">
-   <graphic href="ROBO-INF/images/generic_switch.png"/>
-  </switch>
-  <switch id="w" label-direction="w" loc-x="2" loc-y="2" label="West" on-enter="level.increaseScore(10);">
-   <graphic href="ROBO-INF/images/generic_switch.png"/>
-  </switch>
-  <switch id="nw" label-direction="nw" loc-x="2" loc-y="1" label="Northwest" on-enter="level.increaseScore(10);">
-   <graphic href="ROBO-INF/images/generic_switch.png"/>
-  </switch>
-  <switch id="n" label-direction="n" loc-x="3" loc-y="1" label="North" on-enter="level.increaseScore(10);">
-   <graphic href="ROBO-INF/images/generic_switch.png"/>
-  </switch>
-  <switch id="cake" label-direction="ne" loc-x="4" loc-y="1" label="Cake" on-enter="robot.setGoalReached(true); level.increaseScore(200);">
-   <graphic href="ROBO-INF/images/cake.png"/>
-  </switch>
-
-  <map>
-XXXXXXXXXXXXXX
-XRRRRRRRRRRRRX
-XRRYYGGCCBBMMX
-XRRYYGGCCBBMMX
-XXXXXXXXXXXXXX
-  </map>
- </level>
-</rocky>
-
-         */
+        out.write("</rocky>\n");
     }
+    
+    private static String makeLabelAttributes(Labelable labelable) {
+        if (labelable.getLabel() == null) {
+            return "";
+        } else {
+            return        "label=\""+labelable.getLabel()+"\" " +
+                "label-direction=\""+labelable.getLabelDirection().getCode()+"\" " +
+                  "label-enabled=\""+labelable.isLabelEnabled()+"\"";
+        }
+    }
+
+    private static String makeSpriteTag(Sprite sprite) throws IOException {
+        StringBuffer tag = new StringBuffer();
+        tag.append("<graphic");
+        for (Map.Entry<String, String> ent : sprite.getAttributes().entrySet()) {
+            tag.append(" ").append(ent.getKey()).append("=\"").append(ent.getValue()).append("\"");
+        }
+        tag.append("/>");
+        return tag.toString();
+    }
+    
     /**
      * Reads in a list of 0 or more levels from the given input stream.  The file
      * format is documented only by the code that makes up this implementation.
@@ -676,8 +572,8 @@ XXXXXXXXXXXXXX
                     
                     robot.getCircuit().addGateAllowance(config.getGate(gateType).getGateClass(), count);
                     
-                } else if (qName.equals("graphic")) { // could apply to anything that has a sprite
-                    // <graphic href="ROBO-INF/images/grod/grod.rsf" scale="0.4">
+                } else if (qName.equals("graphic")) {
+                    // could apply to anything that has a sprite
                     Map<String,String> spriteAttribs = new HashMap<String,String>();
                     for (int i = 0; i < attributes.getLength(); i++) {
                         String aname = attributes.getQName(i);

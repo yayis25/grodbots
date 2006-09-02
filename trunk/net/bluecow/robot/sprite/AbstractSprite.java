@@ -8,9 +8,24 @@ package net.bluecow.robot.sprite;
 import java.awt.Graphics2D;
 import java.awt.Image;
 import java.awt.geom.AffineTransform;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 public abstract class AbstractSprite implements Sprite {
+    private Map<String, String> attributes;
     private double scale = 1.0;
+
+    protected AbstractSprite(Map<String, String> attributes) {
+        this.attributes = new LinkedHashMap<String, String>(attributes);
+    }
+
+    public Map<String, String> getAttributes() {
+        return attributes;
+    }
+
+    public void setAttributes(Map<String, String> attributes) {
+        this.attributes = attributes;
+    }
 
     /**
      * Paints this sprite at the given co-ordinates at the current scale
