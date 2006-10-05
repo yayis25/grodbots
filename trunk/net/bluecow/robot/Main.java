@@ -28,8 +28,6 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.net.URL;
-import java.net.URLConnection;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedHashMap;
@@ -54,10 +52,12 @@ import javax.swing.SwingUtilities;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
+import net.bluecow.robot.resource.ResourceLoader;
+import net.bluecow.robot.resource.SystemResourceLoader;
+import net.bluecow.robot.resource.ZipFileResourceLoader;
+
 public class Main {
     
-    private static final String DEFAULT_MAP_RESOURCE_PATH = "ROBO-INF/default.map";
-
     private static enum GameState { NOT_STARTED, RESET, STEP, RUNNING, PAUSED, WON };
     
     private GameState state = GameState.NOT_STARTED;
@@ -414,7 +414,8 @@ public class Main {
                     f = fc.getSelectedFile();
                 }
                 RobotUtils.updateRecentFiles(recentFiles, f);
-                config = LevelStore.loadLevels(new FileInputStream(f));
+                ResourceLoader resourceLoader = new ZipFileResourceLoader(f);
+                config = LevelStore.loadLevels(resourceLoader);
                 setLevel(0);
             } catch (BackingStoreException ex) {
                 System.out.println("Couldn't update user prefs");
@@ -514,30 +515,27 @@ public class Main {
         item.setMnemonic(KeyEvent.VK_R);
 
         try {
-            URL levelMapURL = ClassLoader.getSystemResource(DEFAULT_MAP_RESOURCE_PATH);
-            if (levelMapURL == null) {
-                throw new RuntimeException(
-                        "Could not find default map at resource path " +
-                        DEFAULT_MAP_RESOURCE_PATH);
-            }
-            URLConnection levelMapURLConnection = levelMapURL.openConnection();
-            config = LevelStore.loadLevels(levelMapURLConnection.getInputStream());
+            ResourceLoader builtInResourceLoader = new SystemResourceLoader();
+            config = LevelStore.loadLevels(builtInResourceLoader);
             
-            sm = new SoundManager();
-            sm.addClip("create-AND", ClassLoader.getSystemResource("ROBO-INF/sounds/create-AND.wav"));
-            sm.addClip("create-OR",  ClassLoader.getSystemResource("ROBO-INF/sounds/create-OR.wav"));
-            sm.addClip("create-NOT", ClassLoader.getSystemResource("ROBO-INF/sounds/create-NOT.wav"));
-            sm.addClip("delete_gate", ClassLoader.getSystemResource("ROBO-INF/sounds/delete_gate.wav"));
-            sm.addClip("drag-AND", ClassLoader.getSystemResource("ROBO-INF/sounds/drag-AND.wav"));
-            sm.addClip("drag-OR",  ClassLoader.getSystemResource("ROBO-INF/sounds/drag-OR.wav"));
-            sm.addClip("drag-NOT", ClassLoader.getSystemResource("ROBO-INF/sounds/drag-NOT.wav"));
-            sm.addClip("enter_gate", ClassLoader.getSystemResource("ROBO-INF/sounds/enter_gate.wav"));
-            sm.addClip("leave_gate", ClassLoader.getSystemResource("ROBO-INF/sounds/leave_gate.wav"));
-            sm.addClip("pull_wire", ClassLoader.getSystemResource("ROBO-INF/sounds/pull_wire.wav"));
-            sm.addClip("start_drawing_wire", ClassLoader.getSystemResource("ROBO-INF/sounds/start_drawing_wire.wav"));
-            sm.addClip("unterminated_wire", ClassLoader.getSystemResource("ROBO-INF/sounds/unterminated_wire.wav"));
-            sm.addClip("terminated_wire", ClassLoader.getSystemResource("ROBO-INF/sounds/terminated_wire.wav"));
-            sm.addClip("win", ClassLoader.getSystemResource("ROBO-INF/sounds/win.wav"));
+            sm = new SoundManager(builtInResourceLoader);
+            
+            // this could be moved into a section of the game config xml file, then the
+            // levelstore could init the sound manager and stash it in the gameconfig
+            sm.addClip("create-AND", "ROBO-INF/sounds/create-AND.wav");
+            sm.addClip("create-OR",  "ROBO-INF/sounds/create-OR.wav");
+            sm.addClip("create-NOT", "ROBO-INF/sounds/create-NOT.wav");
+            sm.addClip("delete_gate", "ROBO-INF/sounds/delete_gate.wav");
+            sm.addClip("drag-AND", "ROBO-INF/sounds/drag-AND.wav");
+            sm.addClip("drag-OR",  "ROBO-INF/sounds/drag-OR.wav");
+            sm.addClip("drag-NOT", "ROBO-INF/sounds/drag-NOT.wav");
+            sm.addClip("enter_gate", "ROBO-INF/sounds/enter_gate.wav");
+            sm.addClip("leave_gate", "ROBO-INF/sounds/leave_gate.wav");
+            sm.addClip("pull_wire", "ROBO-INF/sounds/pull_wire.wav");
+            sm.addClip("start_drawing_wire", "ROBO-INF/sounds/start_drawing_wire.wav");
+            sm.addClip("unterminated_wire", "ROBO-INF/sounds/unterminated_wire.wav");
+            sm.addClip("terminated_wire", "ROBO-INF/sounds/terminated_wire.wav");
+            sm.addClip("win", "ROBO-INF/sounds/win.wav");
         } catch (FileFormatException ex) {
             ex.printStackTrace();
             RobotUtils.showFileFormatException(ex);
