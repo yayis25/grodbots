@@ -1,0 +1,160 @@
+/*
+ * Created on Sep 26, 2006
+ *
+ * This code belongs to SQL Power Group Inc.
+ */
+package net.bluecow.robot.editor;
+
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStreamWriter;
+import java.io.Writer;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.jar.JarEntry;
+import java.util.jar.JarOutputStream;
+
+import net.bluecow.robot.GameConfig;
+import net.bluecow.robot.LevelConfig;
+import net.bluecow.robot.LevelStore;
+import net.bluecow.robot.resource.DirectoryResourceLoader;
+import net.bluecow.robot.resource.ResourceLoader;
+
+public class Project {
+
+    /**
+     * The location of this project in the file system.
+     */
+    private File dir;
+    
+    /**
+     * The game config associated with this project.
+     */
+    private GameConfig gameConfig;
+    
+    /**
+     * Creates a new project with a default empty level.  This operation creates
+     * the project's directory and its ROBO-INF subdirectory.
+     * 
+     * @param dir The directory that will hold this project.  It must not exist yet.
+     * @return The new project.
+     * @throws IOException If the directory already exists, or it can't be created.
+     */
+    public static Project createNewProject(File dir) throws IOException {
+        if (dir.exists()) {
+            throw new IOException(
+                    "Directory "+dir.getAbsolutePath()+" already exists.");
+        }
+        File newRoboInfDir = new File(dir, "ROBO-INF");
+        if (!newRoboInfDir.mkdirs()) {
+            throw new IOException(
+                    "Failed to create project config dir "+
+                    newRoboInfDir.getAbsolutePath());
+        }
+        
+        Project proj = new Project();
+        proj.dir = dir;
+        proj.gameConfig = new GameConfig(new DirectoryResourceLoader(dir));
+        LevelConfig myLevelConfig = new LevelConfig();
+        myLevelConfig.setName("New Level");
+        myLevelConfig.setSize(15, 15);
+        proj.gameConfig.addLevel(myLevelConfig);
+        
+        return proj;
+    }
+    
+    public static Project load(File dir) throws IOException {
+        ResourceLoader resourceLoader = new DirectoryResourceLoader(dir);
+        Project proj = new Project();
+        proj.gameConfig = LevelStore.loadLevels(resourceLoader);
+        proj.dir = dir;
+        return proj;
+    }
+
+    public GameConfig getGameConfig() {
+        return gameConfig;
+    }
+    
+    /**
+     * Returns a list of all resources that currently exist in this
+     * project's directory.
+     */
+    public List<String> getAllResourceNames() {
+        return recursiveListResources("", dir, new ArrayList<String>());
+    }
+    
+    /**
+     * Recursive subroutine that appends the names of all files
+     * at and below the given directory.
+     * 
+     * @param resources The list to append to.
+     * @return The resources list.
+     */
+    private List<String> recursiveListResources(String pathName, File dir, List<String> resources) {
+        File[] files = dir.listFiles();
+        Arrays.sort(files);
+        for (File file : files) {
+            if (file.isDirectory()) {
+                recursiveListResources(pathName + "/" + file.getName(), file, resources);
+            } else {
+                resources.add(pathName + "/" + file.getName());
+            }
+        }
+        return resources;
+    }
+
+    /**
+     * Saves all the resources associated with this project into
+     * a single JAR file.
+     * 
+     * @param location the file to save into (doesn't have to exist yet)
+     * @throws IOException If there are any problems during the save operation
+     */
+    public void saveLevelPack(File location) throws IOException {
+        String encoding = "utf-8";
+        Writer out = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(new File(dir, LevelStore.DEFAULT_MAP_RESOURCE_PATH)), encoding));
+        LevelStore.save(out, getGameConfig(), encoding);
+        out.close();
+        out = null;
+        
+        JarOutputStream jout = new JarOutputStream(new BufferedOutputStream(new FileOutputStream(location)));
+        recursiveSaveFilesToJar(jout, dir, "");
+        jout.flush();
+        jout.close();
+    }
+
+    private void recursiveSaveFilesToJar(JarOutputStream out, File baseDir, String path) throws IOException {
+        File thisDir = new File(baseDir, path);
+        System.out.println("JAR: starting dir "+thisDir);
+        for (String subPath : thisDir.list()) {
+            File f = new File(thisDir, subPath);
+            System.out.println("     entry "+f);
+            if (f.isDirectory()) {
+                String newPath;
+                if (path.length() == 0) {
+                    newPath = subPath;  // this prevents a leading slash in entry name
+                } else {
+                    newPath = path + "/" + subPath;
+                }
+                recursiveSaveFilesToJar(out, baseDir, newPath);
+            } else {
+                InputStream in = new BufferedInputStream(new FileInputStream(f));
+                System.out.println("     adding to jar "+path + "/" + subPath);
+                out.putNextEntry(new JarEntry(path + "/" + subPath));
+                byte[] buf = new byte[4096];
+                int count;
+                while ((count = in.read(buf)) != -1) {
+                    out.write(buf, 0, count);
+                }
+                in.close();
+            }
+        }
+    }
+}

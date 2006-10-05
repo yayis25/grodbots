@@ -16,10 +16,8 @@ import java.awt.event.KeyEvent;
 import java.awt.event.WindowAdapter;
 import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
@@ -34,6 +32,7 @@ import javax.swing.AbstractAction;
 import javax.swing.Action;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
+import javax.swing.JComboBox;
 import javax.swing.JDialog;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
@@ -49,6 +48,7 @@ import javax.swing.JSplitPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.ListSelectionModel;
+import javax.swing.SwingUtilities;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 
@@ -63,53 +63,26 @@ import net.bluecow.robot.sprite.SpriteManager;
 
 public class EditorMain {
 
-    private class LoadGameAction extends AbstractAction {
+    private class LoadProjectAction extends AbstractAction {
         
-        JFileChooser fc;
         
-        public LoadGameAction() {
-            super("Open Levels...");
+        public LoadProjectAction() {
+            super("Open Project...");
             putValue(MNEMONIC_KEY, KeyEvent.VK_O);
-            fc = new JFileChooser();
-            fc.setDialogTitle("Choose a Robot Levels File");
         }
         
         public void actionPerformed(ActionEvent e) {
-            Preferences recentFiles = RobotUtils.getPrefs().node("recentGameFiles");
-            fc.setCurrentDirectory(new File(recentFiles.get("0", System.getProperty("user.home"))));
-            int choice = fc.showOpenDialog(null);
-            if (choice == JFileChooser.APPROVE_OPTION) {
-                File f = fc.getSelectedFile();
-                try {
-                    setGameConfig(LevelStore.loadLevels(new FileInputStream(f)));
-                    RobotUtils.updateRecentFiles(recentFiles, fc.getSelectedFile());
-                } catch (BackingStoreException ex) {
-                    System.out.println("Couldn't update user prefs");
-                    ex.printStackTrace();
-                } catch (FileFormatException ex) {
-                    RobotUtils.showFileFormatException(ex);
-                } catch (FileNotFoundException ex) {
-                    ex.printStackTrace();
-                    JOptionPane.showMessageDialog(null,
-                            "Could not find file '"+f.getPath()+"'");
-                } catch (IOException ex) {
-                    ex.printStackTrace();
-                    JOptionPane.showMessageDialog(
-                            null,
-                            "Couldn't load the levels:\n\n"
-                               +ex.getMessage()+"\n\n"
-                               +"A stack trace is available on the Java Console.",
-                            "Load Error", JOptionPane.ERROR_MESSAGE, null);
-                }
+            Project proj = promptUserForProject();
+            if (proj != null) {
+                setProject(proj);
             }
         }
-
     }
     
-    private class SaveGameAction extends AbstractAction {
+    private class SaveLevelPackAction extends AbstractAction {
         
-        public SaveGameAction() {
-            super("Save Levels...");
+        public SaveLevelPackAction() {
+            super("Save Level Pack...");
             putValue(MNEMONIC_KEY, KeyEvent.VK_S);
         }
         
@@ -118,13 +91,11 @@ public class EditorMain {
             Writer out = null;
             try {
                 JFileChooser fc = new JFileChooser();
-                fc.setDialogTitle("Save Levels File");
+                fc.setDialogTitle("Save Level Pack");
                 fc.setCurrentDirectory(new File(recentFiles.get("0", System.getProperty("user.home"))));
                 int choice = fc.showSaveDialog(frame);
                 if (choice == JFileChooser.APPROVE_OPTION) {
-                    String encoding = "utf-8";
-                    out = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(fc.getSelectedFile()), encoding));
-                    LevelStore.save(out, gameConfig, encoding);
+                    project.saveLevelPack(fc.getSelectedFile());
                     RobotUtils.updateRecentFiles(recentFiles, fc.getSelectedFile());
                 }
             } catch (IOException ex) {
@@ -146,32 +117,36 @@ public class EditorMain {
     private Action addSquareTypeAction = new AbstractAction("Add Square Type") {
         public void actionPerformed(ActionEvent e) {
             SquareConfig squareConfig = new GameConfig.SquareConfig();
-            JDialog d = makeSquarePropsDialog(frame, gameConfig, squareConfig);
+            JDialog d = makeSquarePropsDialog(frame, project, squareConfig);
             d.setModal(true);
             d.setVisible(true);
-            gameConfig.addSquareType(squareConfig);
+            project.getGameConfig().addSquareType(squareConfig);
         }
     };
     
     private Action addSensorTypeAction = new AbstractAction("Add Sensor Type") {
         public void actionPerformed(ActionEvent e) {
             SensorConfig sensorConfig = new GameConfig.SensorConfig("");
-            JDialog d = makeSensorPropsDialog(frame, gameConfig, sensorConfig);
+            JDialog d = makeSensorPropsDialog(frame, project.getGameConfig(), sensorConfig);
             d.setModal(true);
             d.setVisible(true);
-            gameConfig.addSensorType(sensorConfig);
+            project.getGameConfig().addSensorType(sensorConfig);
         }
     };
     
+    /**
+     * The project this editor is currently editing.
+     */
+    private Project project;
+
     private JFrame frame;
-    private GameConfig gameConfig;
-    private LevelConfig levelConfig;
     private LevelEditor editor;
     private SensorTypeListModel sensorTypeListModel;
     private SquareChooserListModel squareChooserListModel;
     
-    private LoadGameAction loadGameAction = new LoadGameAction();
-    private SaveGameAction saveGameAction = new SaveGameAction();
+    private LoadProjectAction loadProjectAction = new LoadProjectAction();
+    private SaveLevelPackAction saveLevelPackAction = new SaveLevelPackAction();
+
     
     private static JDialog makeSensorPropsDialog(final JFrame parent, GameConfig gc, final SensorConfig sc) {
         final JDialog d = new JDialog(parent, "Sensor Type Properties");
@@ -213,7 +188,45 @@ public class EditorMain {
         return d;
     }
     
-    private static JDialog makeSquarePropsDialog(final JFrame parent, GameConfig gc, SquareConfig sc) {
+    public static Project promptUserForProject() {
+        JFileChooser fc = new JFileChooser();
+        fc.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+        fc.setDialogTitle("Choose a Robot Project Directory");
+        Preferences recentFiles = RobotUtils.getPrefs().node("recentProjects");
+        fc.setCurrentDirectory(new File(recentFiles.get("0", System.getProperty("user.home"))));
+        int choice = fc.showOpenDialog(null);
+        if (choice == JFileChooser.APPROVE_OPTION) {
+            File f = fc.getSelectedFile();
+            try {
+                Project proj = Project.load(f);
+                RobotUtils.updateRecentFiles(recentFiles, fc.getSelectedFile());
+                return proj;
+            } catch (BackingStoreException ex) {
+                System.out.println("Couldn't update user prefs");
+                ex.printStackTrace();
+            } catch (FileFormatException ex) {
+                RobotUtils.showFileFormatException(ex);
+            } catch (FileNotFoundException ex) {
+                ex.printStackTrace();
+                JOptionPane.showMessageDialog(null,
+                        "Could not find file '"+f.getPath()+"'");
+            } catch (IOException ex) {
+                ex.printStackTrace();
+                JOptionPane.showMessageDialog(
+                        null,
+                        "Couldn't load the levels:\n\n"
+                           +ex.getMessage()+"\n\n"
+                           +"A stack trace is available on the Java Console.",
+                        "Load Error", JOptionPane.ERROR_MESSAGE, null);
+            }
+        }
+
+        // either load failed, or user cancelled
+        return null;
+    }
+
+    private static JDialog makeSquarePropsDialog(final JFrame parent, final Project project, final SquareConfig sc) {
+        final GameConfig gc = project.getGameConfig();
         final JDialog d = new JDialog(parent, "Square Type Properties");
         final JTextField nameField = new JTextField(sc.getName() == null ? "" : sc.getName(), 20);
         final JTextField mapCharField = new JTextField(sc.getMapChar());
@@ -221,12 +234,11 @@ public class EditorMain {
         occupiableBox.setSelected(true);
         final JList sensorTypesList = new JList(gc.getSensorTypes().toArray());
         sensorTypesList.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
-        final JTextField spritePathField = new JTextField();  // FIXME: need a SpriteWell component
+        final JComboBox spritePathField = new JComboBox(new ResourcesComboBoxModel(project));
         final JButton okButton = new JButton("OK");
         okButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 try {
-                    SquareConfig sc = (SquareConfig) nameField.getClientProperty(SquareConfig.class);
                     sc.setName(nameField.getText());
                     sc.setMapChar(mapCharField.getText().charAt(0));
                     sc.setOccupiable(occupiableBox.isSelected());
@@ -236,16 +248,15 @@ public class EditorMain {
                         sensorTypes.add((SensorConfig) sensor);
                     }
                     sc.setSensorTypes(sensorTypes);
-                    sc.setSprite(SpriteManager.load(spritePathField.getText()));
+                    sc.setSprite(SpriteManager.load(
+                                            gc.getResourceLoader(),
+                                            (String) spritePathField.getSelectedItem()));
                     d.dispose();
                 } catch (Exception ex) {
                     showException(parent, "Couldn't apply square config", ex);
                 }
             }
         });
-
-        // stash the square config so the ok button can get it back later
-        nameField.putClientProperty(SquareConfig.class, sc);
 
         // set up the form
         GridBagConstraints gbc = new GridBagConstraints();
@@ -296,7 +307,7 @@ public class EditorMain {
         gbc.weighty = 0.0;
         gbc.fill = GridBagConstraints.NONE;
         gbc.anchor = GridBagConstraints.LINE_END;
-        cp.add(new JLabel("Sprite File:"), gbc);
+        cp.add(new JLabel("Sprite File Location in Project:"), gbc);
 
         gbc.gridwidth = GridBagConstraints.REMAINDER;
         gbc.fill = GridBagConstraints.HORIZONTAL;
@@ -311,7 +322,7 @@ public class EditorMain {
         return d;
     }
     
-    public EditorMain() {
+    public EditorMain(Project project) {
         frame = new JFrame("Robot Level Editor");
         frame.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
         frame.addWindowListener(new WindowAdapter() {
@@ -320,12 +331,8 @@ public class EditorMain {
             }
         });
         
-        // just some default stuff to bootstrap the components so we can lay them out
-        GameConfig myGameConfig = new GameConfig();
-        LevelConfig myLevelConfig = new LevelConfig();
-        myLevelConfig.setName("New Level");
-        myLevelConfig.setSize(15, 15);
-        myGameConfig.addLevel(myLevelConfig);
+        final GameConfig myGameConfig = project.getGameConfig();
+        final LevelConfig myLevelConfig = myGameConfig.getLevels().get(0);
         
         frame.getContentPane().setLayout(new BorderLayout());
         
@@ -334,20 +341,28 @@ public class EditorMain {
         
         JPanel sensorTypesPanel = new JPanel(new BorderLayout());
         sensorTypeListModel = new SensorTypeListModel(myGameConfig);
-        sensorTypesPanel.add(new JScrollPane(new JList(sensorTypeListModel)), BorderLayout.CENTER);
+        sensorTypesPanel.add(new JScrollPane(
+                new JList(sensorTypeListModel),
+                    JScrollPane.VERTICAL_SCROLLBAR_ALWAYS,
+                    JScrollPane.HORIZONTAL_SCROLLBAR_NEVER),
+                BorderLayout.CENTER);
         sensorTypesPanel.add(new JButton(addSensorTypeAction), BorderLayout.SOUTH);
         
         squareChooserListModel = new SquareChooserListModel(myGameConfig);
         final JList squareList = new JList(squareChooserListModel);
         squareList.setCellRenderer(new SquareChooserListRenderer());
-        squareList.setPreferredSize(new Dimension(200, 10));
         squareList.addListSelectionListener(new ListSelectionListener() {
             public void valueChanged(ListSelectionEvent e) {
+                System.out.println("Square List selection changed. squares="+myGameConfig.getSquareTypes());
                 editor.setPaintingSquareType((SquareConfig) squareList.getSelectedValue());
             }
         });
         JPanel squareListPanel = new JPanel(new BorderLayout());
-        squareListPanel.add(new JScrollPane(squareList), BorderLayout.CENTER);
+        squareListPanel.add(
+                new JScrollPane(squareList,
+                    JScrollPane.VERTICAL_SCROLLBAR_ALWAYS,
+                    JScrollPane.HORIZONTAL_SCROLLBAR_NEVER),
+                BorderLayout.CENTER);
         squareListPanel.add(new JButton(addSquareTypeAction), BorderLayout.SOUTH);
         
         JSplitPane eastPanel = new JSplitPane(JSplitPane.VERTICAL_SPLIT, true);
@@ -358,7 +373,7 @@ public class EditorMain {
         
         setupMenu();
         
-        setGameConfig(myGameConfig);
+        setProject(project);
         
         frame.pack();
         frame.setVisible(true);
@@ -371,8 +386,8 @@ public class EditorMain {
         JMenuBar mb = new JMenuBar();
         JMenu m;
         mb.add (m = new JMenu("File"));
-        m.add(new JMenuItem(loadGameAction));
-        m.add(new JMenuItem(saveGameAction));
+        m.add(new JMenuItem(loadProjectAction));
+        m.add(new JMenuItem(saveLevelPackAction));
         m.add(new JMenuItem(exitAction));
         
         frame.setJMenuBar(mb);
@@ -399,13 +414,12 @@ public class EditorMain {
         }
     }
     
-    private void setGameConfig(GameConfig config) {
-        gameConfig = config;
-        levelConfig = gameConfig.getLevels().get(0);
-        editor.setGame(gameConfig);
-        editor.setLevel(levelConfig);
-        sensorTypeListModel.setGame(gameConfig);
-        squareChooserListModel.setGame(gameConfig);
+    private void setProject(Project proj) {
+        this.project = proj;
+        editor.setGame(proj.getGameConfig());
+        editor.setLevel(proj.getGameConfig().getLevels().get(0));
+        sensorTypeListModel.setGame(proj.getGameConfig());
+        squareChooserListModel.setGame(proj.getGameConfig());
     }
 
     /**
@@ -427,7 +441,51 @@ public class EditorMain {
      * @param args
      */
     public static void main(String[] args) {
-        new EditorMain();
+        SwingUtilities.invokeLater(new Runnable() {
+            public void run() {
+                try {
+                    presentWelcomeMenu();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    JOptionPane.showMessageDialog(null, "Fatal error:\n\n"+e
+                            +"\n\nMore information is available on the system or Java console.");
+                    System.exit(0);
+                }
+            }
+        });
+    }
+
+    protected static void presentWelcomeMenu() throws IOException {
+        int choice = JOptionPane.showOptionDialog(
+                null, 
+                "Welcome to the Robot Editor.\n" +
+                 "Do you want to open an existing project\n" +
+                 "or start a new one?", "Robot Editor",
+                JOptionPane.YES_NO_CANCEL_OPTION, 
+                JOptionPane.PLAIN_MESSAGE, null, 
+                new String[] {"Quit", "Open Existing", "Create new"},
+                "Create new");
+        System.out.println("Choice: "+choice);
+        
+        Project proj = null;
+        if (choice == 1) {
+            // open existing
+            proj = promptUserForProject();
+        } else if (choice == 2) {
+            // create new
+            String projName = JOptionPane.showInputDialog("What will your project be called?");
+            JFileChooser fc = new JFileChooser();
+            fc.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+            fc.setDialogTitle("Where do you want to save your project?");
+            int fcChoice = fc.showSaveDialog(null);
+            if (fcChoice == JFileChooser.APPROVE_OPTION) {
+                proj = Project.createNewProject(new File(fc.getSelectedFile(), projName));
+            }
+        }
+        
+        if (proj != null) {
+            new EditorMain(proj);
+        }
     }
 
 }

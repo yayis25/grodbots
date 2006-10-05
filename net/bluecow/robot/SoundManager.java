@@ -6,7 +6,6 @@
 package net.bluecow.robot;
 
 import java.io.IOException;
-import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -16,6 +15,8 @@ import javax.sound.sampled.Clip;
 import javax.sound.sampled.Line;
 import javax.sound.sampled.LineUnavailableException;
 import javax.sound.sampled.UnsupportedAudioFileException;
+
+import net.bluecow.robot.resource.ResourceLoader;
 
 /**
  * The SoundManager handles loading, playing, looping, and stopping
@@ -40,6 +41,12 @@ public class SoundManager {
      */
     Map<String, Clip> clips = new HashMap<String, Clip>();
     
+    private ResourceLoader resourceLoader;
+    
+    public SoundManager(ResourceLoader resourceLoader) {
+        this.resourceLoader = resourceLoader;
+    }
+    
     /**
      * Adds a clip to the library, so that you can later use it with
      * {@link #play(String)}, {@link #loop(String)}, and {@link #stop(String)}.
@@ -50,14 +57,14 @@ public class SoundManager {
      * 
      * @throws RuntimeException if the sound clip cannot be loaded for any reason.
      */
-    public void addClip(String name, URL data) {
+    public void addClip(String name, String path) {
         try {
             Line.Info linfo = new Line.Info(Clip.class);
             Line line;
             line = AudioSystem.getLine(linfo);
             Clip clip = (Clip) line;
             //clip.addLineListener(this);
-            AudioInputStream ais = AudioSystem.getAudioInputStream(data);
+            AudioInputStream ais = AudioSystem.getAudioInputStream(resourceLoader.getResourceAsStream(path));
             clip.open(ais);
             clips.put(name, clip);
         } catch (LineUnavailableException e) {

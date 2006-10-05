@@ -20,6 +20,7 @@ import java.util.Set;
 import javax.swing.KeyStroke;
 
 import net.bluecow.robot.gate.Gate;
+import net.bluecow.robot.resource.ResourceLoader;
 import net.bluecow.robot.sprite.Sprite;
 import net.bluecow.robot.sprite.SpriteLoadException;
 import net.bluecow.robot.sprite.SpriteManager;
@@ -157,6 +158,18 @@ public class GameConfig {
     private Map<Character, SquareConfig> squareTypes = new HashMap<Character, SquareConfig>();
     private Map<String, SensorConfig> sensorTypes = new LinkedHashMap<String, SensorConfig>();
     private List<LevelConfig> levels = new ArrayList<LevelConfig>();
+
+    /**
+     * The resource loader that is responsible for loading all the auxiliary resources
+     * for this game config (images, sounds, the config file, and so on).
+     */
+    private ResourceLoader resourceLoader;
+    
+    
+    public GameConfig(ResourceLoader resourceLoader) {
+        this.resourceLoader = resourceLoader;
+    }
+    
     
     /**
      * Calculates the total score for this game by adding up the current scores
@@ -210,7 +223,7 @@ public class GameConfig {
         }
         SquareConfig squareConfig = 
             new SquareConfig(squareName, squareChar,
-                occupiable, SpriteManager.load(graphicsFileName),
+                occupiable, SpriteManager.load(resourceLoader, graphicsFileName),
                 squareSensorTypes);
         addSquareType(squareConfig);
     }
@@ -273,4 +286,7 @@ public class GameConfig {
         pcs.removePropertyChangeListener(propertyName, listener);
     }
 
+    public ResourceLoader getResourceLoader() {
+        return resourceLoader;
+    }
 }

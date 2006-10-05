@@ -2,8 +2,8 @@
 <classpath>
 	<classpathentry excluding="build|regress/" kind="src" path=""/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
-	<classpathentry sourcepath="ECLIPSE_HOME/plugins/org.eclipse.jdt.source_3.1.1/src/org.junit_3.8.1/junitsrc.zip" kind="var" path="JUNIT_HOME/junit.jar"/>
 	<classpathentry kind="src" path="regress"/>
 	<classpathentry kind="lib" path="lib/bsh.jar"/>
+	<classpathentry sourcepath="/JUNIT_SRC_HOME" kind="var" path="JUNIT_HOME/junit.jar"/>
 	<classpathentry kind="output" path="eclipse_build"/>
 </classpath>

@@ -6,17 +6,21 @@
 package net.bluecow.robot.sprite;
 
 import java.awt.Image;
-import java.net.URL;
+import java.io.IOException;
 import java.util.Map;
 
 import javax.swing.ImageIcon;
 
+import net.bluecow.robot.resource.ResourceLoader;
+
 public class IconSprite extends AbstractSprite {
     private ImageIcon icon;
     
-    public IconSprite(URL imageURL, Map<String, String> attribs) {
+    public IconSprite(
+            ResourceLoader resourceLoader, String imagePath,
+            Map<String, String> attribs) throws IOException {
         super(attribs);
-        icon = new ImageIcon(imageURL);
+        icon = new ImageIcon(resourceLoader.getResourceBytes(imagePath));
     }
     
     @Override

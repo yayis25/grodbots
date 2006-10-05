@@ -1,10 +1,16 @@
 Game Features:
 -Level editor
- -save and load
+ -make square configs and sensor configs editable
+ -make level selection list (with add button)
+ -make level properties editor
+ -make robot selection list (with add button)
+ -make robot properties editor
+ -make switch selection list (with add button)
+ -make switch properties editor
+ -make label editor and hook into switch and robot properties
+ -implement a GUI resource manager (for adding and removing files in the project) and do away with project directories
  -add a version attribute to top-level elements and autobackup old versions
  -effect for the "cursor" box to fade in and out and change colours and stuff
- -add grods
- -add switches
 -Batteries
 -Radio Communication between robots
 -init sound manager sound set from config file
@@ -37,6 +43,9 @@ Sounds:
 -little ditties for the beginning of each level (maybe this would be better suited to the MIDI sequencer api)
 
 Completed:
+-Level Editor:
+ -implement the "project" paradigm
+ -save and load
 -user-controllable label positioning for switches and grods (n, ne, e, se, s, sw, w, nw)
 -simpler robot and switch repositioning (via setX/getX and setY/getY)
 -make location vs. position consistent throughout (standardise on position)

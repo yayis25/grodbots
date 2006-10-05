@@ -7,11 +7,12 @@ package net.bluecow.robot.sprite;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
 
 import javax.xml.parsers.ParserConfigurationException;
+
+import net.bluecow.robot.resource.ResourceLoader;
 
 import org.xml.sax.SAXException;
 
@@ -39,20 +40,16 @@ public class SpriteManager {
      * @throws FileNotFoundException If the system resource at the given path does not exist.
      * @throws IllegalArgumentException If any attributes are not in the name=value form.
      */
-    public static Sprite load(Map<String, String> attribs) throws SpriteLoadException {
+    public static Sprite load(ResourceLoader resourceLoader, Map<String, String> attribs) throws SpriteLoadException {
         String resourcePath = attribs.get("href");
         
         try {
-            URL resourceURL = ClassLoader.getSystemResource(resourcePath);
-            if (resourceURL == null) {
-                throw new FileNotFoundException("Sprite resource '"+resourcePath+"' not found.");
-            }
             
             Sprite sprite;
             if (resourcePath.endsWith(".rsf")) {
-                sprite = new AnimatedSprite(resourceURL, attribs);
+                sprite = new AnimatedSprite(resourceLoader, resourcePath, attribs);
             } else {
-                sprite = new IconSprite(resourceURL, attribs);
+                sprite = new IconSprite(resourceLoader, resourcePath, attribs);
             }
             
             if (attribs.get("scale") != null) {
@@ -80,10 +77,10 @@ public class SpriteManager {
      * @return The newly-loaded Sprite instance
      * @throws SpriteLoadException if there is a problem creating the sprite
      */
-    public static Sprite load(String href) throws SpriteLoadException {
+    public static Sprite load(ResourceLoader resourceLoader, String href) throws SpriteLoadException {
         Map<String, String> attribs = new HashMap<String, String>();
         attribs.put("href", href);
-        return load(attribs);
+        return load(resourceLoader, attribs);
     }
     
 }

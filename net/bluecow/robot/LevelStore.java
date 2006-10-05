@@ -7,6 +7,7 @@ package net.bluecow.robot;
 
 import java.awt.Point;
 import java.awt.geom.Point2D;
+import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Writer;
@@ -25,6 +26,7 @@ import net.bluecow.robot.GameConfig.GateConfig;
 import net.bluecow.robot.GameConfig.SensorConfig;
 import net.bluecow.robot.GameConfig.SquareConfig;
 import net.bluecow.robot.gate.Gate;
+import net.bluecow.robot.resource.ResourceLoader;
 import net.bluecow.robot.sprite.Sprite;
 import net.bluecow.robot.sprite.SpriteLoadException;
 import net.bluecow.robot.sprite.SpriteManager;
@@ -43,6 +45,8 @@ import org.xml.sax.helpers.DefaultHandler;
  */
 public class LevelStore {
     
+    public static final String DEFAULT_MAP_RESOURCE_PATH = "ROBO-INF/default.map";
+
     public static final String WALL_FLAG = "WALL";
 
     private static boolean debugging = false;
@@ -135,6 +139,7 @@ public class LevelStore {
             out.write("  </level>\n");
         }
         out.write("</rocky>\n");
+        out.flush();
     }
     
     private static String makeLabelAttributes(Labelable labelable) {
@@ -156,6 +161,10 @@ public class LevelStore {
         tag.append("/>");
         return tag.toString();
     }
+
+    public static GameConfig loadLevels(ResourceLoader resourceLoader) throws IOException {
+        return loadLevels(resourceLoader, DEFAULT_MAP_RESOURCE_PATH);
+    }
     
     /**
      * Reads in a list of 0 or more levels from the given input stream.  The file
@@ -171,8 +180,9 @@ public class LevelStore {
      * this method.
      * @throws IOException If there is a general I/O problem reading the file.
      */
-    public static GameConfig loadLevels(InputStream inStream) throws IOException {
-        LevelSaxHandler handler = new LevelSaxHandler();
+    public static GameConfig loadLevels(ResourceLoader resourceLoader, String mapResourcePath) throws IOException {
+        InputStream inStream = new BufferedInputStream(resourceLoader.getResourceAsStream(mapResourcePath));
+        LevelSaxHandler handler = new LevelSaxHandler(resourceLoader);
         try {
             SAXParser parser = SAXParserFactory.newInstance().newSAXParser();
             // turn off validation parser.setProperty()
@@ -275,8 +285,8 @@ public class LevelStore {
          */
         private StringBuffer charData;
         
-        public LevelSaxHandler() {
-            this.config = new GameConfig();
+        public LevelSaxHandler(ResourceLoader resourceLoader) {
+            this.config = new GameConfig(resourceLoader);
             this.warnings = new ArrayList<FileFormatException>();
         }
 
@@ -581,7 +591,7 @@ public class LevelStore {
                         
                         spriteAttribs.put(aname, aval);
                     }
-                    sprite = SpriteManager.load(spriteAttribs);
+                    sprite = SpriteManager.load(config.getResourceLoader(), spriteAttribs);
                     
                 } else if (qName.equals("switch")) {
                     // switches and side effects

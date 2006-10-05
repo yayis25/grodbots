@@ -30,12 +30,14 @@ public class LevelEditor extends Playfield {
     private SquareConfig paintingSquare = null;
     
     /**
-     * The exact location of the pointer in square coordinates.
+     * The exact location of the pointer in square coordinates.  Useful for placing objects
+     * such as robots, which don't occupy one specific square location.
      */
     private Point2D.Double paintingLocationDouble = null;
 
     /**
-     * The square coordinate that the mouse is over.  For finer detail,
+     * The square coordinate that the mouse is over.  Useful for placing tiles, switches,
+     * and other stuff that occupies exactly one square on the map.  For finer detail,
      * see paintingLocationDouble.
      */
     private Point paintingLocation = null;
