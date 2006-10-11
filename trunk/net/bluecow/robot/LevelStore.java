@@ -76,7 +76,7 @@ public class LevelStore {
         for (SquareConfig square : gc.getSquareTypes()) {
             out.write("  <square type=\""+square.getName()+"\" " +
                              "mapchar=\""+square.getMapChar()+"\" " +
-                             "graphic=\""+square.getSprite().getAttributes().get("href")+"\">\n");
+                             "graphic=\""+square.getSprite().getAttributes().get(Sprite.KEY_HREF)+"\">\n");
             if (!square.isOccupiable()) {
                 out.write("    <attribute type=\"WALL\" />\n");
             }

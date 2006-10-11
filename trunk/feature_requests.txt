@@ -1,7 +1,6 @@
 Game Features:
 -Level editor
- -make square configs and sensor configs editable
- -make level selection list (with add button)
+ -autoload the project that was opened last time the editor was running
  -make level properties editor
  -make robot selection list (with add button)
  -make robot properties editor
@@ -44,6 +43,8 @@ Sounds:
 
 Completed:
 -Level Editor:
+ -make level selection list (with add button)
+ -make square configs and sensor configs editable
  -implement the "project" paradigm
  -save and load
 -user-controllable label positioning for switches and grods (n, ne, e, se, s, sw, w, nw)

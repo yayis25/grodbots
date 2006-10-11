@@ -57,7 +57,7 @@ public class GameConfig {
     public static class SquareConfig implements Square {
         private String name;
         private char mapChar;
-        private boolean occupiable;
+        private boolean occupiable = true;
         private Sprite sprite;
         private Collection<SensorConfig> sensorTypes;
         
@@ -247,6 +247,7 @@ public class GameConfig {
 
     public void addLevel(LevelConfig level) {
         levels.add(level);
+        pcs.firePropertyChange("levels", null, level);
     }
 
     public List<LevelConfig> getLevels() {
