@@ -6,20 +6,18 @@
 package net.bluecow.robot.editor;
 
 import java.awt.BorderLayout;
-import java.awt.Dimension;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.awt.event.WindowAdapter;
-import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.io.Writer;
@@ -55,10 +53,10 @@ import javax.swing.event.ListSelectionListener;
 import net.bluecow.robot.FileFormatException;
 import net.bluecow.robot.GameConfig;
 import net.bluecow.robot.LevelConfig;
-import net.bluecow.robot.LevelStore;
 import net.bluecow.robot.RobotUtils;
 import net.bluecow.robot.GameConfig.SensorConfig;
 import net.bluecow.robot.GameConfig.SquareConfig;
+import net.bluecow.robot.sprite.Sprite;
 import net.bluecow.robot.sprite.SpriteManager;
 
 public class EditorMain {
@@ -133,7 +131,16 @@ public class EditorMain {
             project.getGameConfig().addSensorType(sensorConfig);
         }
     };
-    
+
+    private Action addLevelAction = new AbstractAction("Add Level") {
+        public void actionPerformed(ActionEvent e) {
+            LevelConfig level = new LevelConfig();
+            level.setName("New Level");
+            project.getGameConfig().addLevel(level);
+            levelChooser.setSelectedValue(level, true);
+        }
+    };
+
     /**
      * The project this editor is currently editing.
      */
@@ -141,6 +148,8 @@ public class EditorMain {
 
     private JFrame frame;
     private LevelEditor editor;
+    private JList levelChooser;
+    private LevelChooserListModel levelChooserListModel;
     private SensorTypeListModel sensorTypeListModel;
     private SquareChooserListModel squareChooserListModel;
     
@@ -229,12 +238,24 @@ public class EditorMain {
         final GameConfig gc = project.getGameConfig();
         final JDialog d = new JDialog(parent, "Square Type Properties");
         final JTextField nameField = new JTextField(sc.getName() == null ? "" : sc.getName(), 20);
-        final JTextField mapCharField = new JTextField(sc.getMapChar());
+        final JTextField mapCharField = new JTextField(String.valueOf(sc.getMapChar()));
         final JCheckBox occupiableBox = new JCheckBox("Occupiable", sc.isOccupiable());
-        occupiableBox.setSelected(true);
         final JList sensorTypesList = new JList(gc.getSensorTypes().toArray());
         sensorTypesList.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
+        
+        // have to jump through hoops to make an array of selection indices
+        List<Integer> sensorsToSelect = new ArrayList<Integer>();
+        for (GameConfig.SensorConfig sensor : sc.getSensorTypes()) {
+            sensorsToSelect.add(gc.getSensorTypes().indexOf(sensor));
+        }
+        int[] selectionIndices = new int[sensorsToSelect.size()];
+        for (int i = 0; i < sensorsToSelect.size(); i++) {
+            selectionIndices[i] = sensorsToSelect.get(i);
+        }
+        sensorTypesList.setSelectedIndices(selectionIndices);
+        
         final JComboBox spritePathField = new JComboBox(new ResourcesComboBoxModel(project));
+        spritePathField.setSelectedItem(sc.getSprite().getAttributes().get(Sprite.KEY_HREF));
         final JButton okButton = new JButton("OK");
         okButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
@@ -301,7 +322,7 @@ public class EditorMain {
         gbc.gridwidth = GridBagConstraints.REMAINDER;
         gbc.weighty = 1.0;
         gbc.fill = GridBagConstraints.BOTH;
-        cp.add(sensorTypesList, gbc);
+        cp.add(new JScrollPane(sensorTypesList), gbc);
 
         gbc.gridwidth = 1;
         gbc.weighty = 0.0;
@@ -336,16 +357,47 @@ public class EditorMain {
         
         frame.getContentPane().setLayout(new BorderLayout());
         
+        JPanel levelChooserPanel = new JPanel(new BorderLayout());
+        levelChooserListModel = new LevelChooserListModel(myGameConfig);
+        levelChooser = new JList(levelChooserListModel);
+        levelChooser.setCellRenderer(new LevelChooserListRenderer());
+        levelChooser.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        levelChooser.addListSelectionListener(new ListSelectionListener() {
+            public void valueChanged(ListSelectionEvent e) {
+                LevelConfig level = (LevelConfig) levelChooser.getSelectedValue();
+                editor.setLevel(level);
+            }
+        });
+        levelChooserPanel.add(new JScrollPane(levelChooser), BorderLayout.CENTER);
+        JButton addLevelButton = new JButton(addLevelAction);
+        levelChooserPanel.add(addLevelButton, BorderLayout.SOUTH);
+        
+        frame.add(levelChooserPanel, BorderLayout.WEST);
+        
         editor = new LevelEditor(myGameConfig, myLevelConfig);
         frame.add(editor, BorderLayout.CENTER);
         
         JPanel sensorTypesPanel = new JPanel(new BorderLayout());
         sensorTypeListModel = new SensorTypeListModel(myGameConfig);
+        final JList sensorTypesList = new JList(sensorTypeListModel);
         sensorTypesPanel.add(new JScrollPane(
-                new JList(sensorTypeListModel),
+                    sensorTypesList,
                     JScrollPane.VERTICAL_SCROLLBAR_ALWAYS,
                     JScrollPane.HORIZONTAL_SCROLLBAR_NEVER),
                 BorderLayout.CENTER);
+        sensorTypesList.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                System.out.println("Click");
+                if (e.getClickCount() == 2 && SwingUtilities.isLeftMouseButton(e)) {
+                    GameConfig.SensorConfig sc = (SensorConfig) sensorTypesList.getSelectedValue();
+                    System.out.println("Double Click (selectedValue="+sc+")");
+                    if (sc != null) {
+                        makeSensorPropsDialog(frame, getProject().getGameConfig(), sc).setVisible(true);
+                    }
+                }
+            }
+        });
         sensorTypesPanel.add(new JButton(addSensorTypeAction), BorderLayout.SOUTH);
         
         squareChooserListModel = new SquareChooserListModel(myGameConfig);
@@ -363,6 +415,19 @@ public class EditorMain {
                     JScrollPane.VERTICAL_SCROLLBAR_ALWAYS,
                     JScrollPane.HORIZONTAL_SCROLLBAR_NEVER),
                 BorderLayout.CENTER);
+        squareList.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                System.out.println("Click");
+                if (e.getClickCount() == 2 && SwingUtilities.isLeftMouseButton(e)) {
+                    GameConfig.SquareConfig sc = (SquareConfig) squareList.getSelectedValue();
+                    System.out.println("Double Click (selectedValue="+sc+")");
+                    if (sc != null) {
+                        makeSquarePropsDialog(frame, getProject(), sc).setVisible(true);
+                    }
+                }
+            }
+        });
         squareListPanel.add(new JButton(addSquareTypeAction), BorderLayout.SOUTH);
         
         JSplitPane eastPanel = new JSplitPane(JSplitPane.VERTICAL_SPLIT, true);
@@ -417,9 +482,14 @@ public class EditorMain {
     private void setProject(Project proj) {
         this.project = proj;
         editor.setGame(proj.getGameConfig());
-        editor.setLevel(proj.getGameConfig().getLevels().get(0));
         sensorTypeListModel.setGame(proj.getGameConfig());
         squareChooserListModel.setGame(proj.getGameConfig());
+        levelChooserListModel.setGame(proj.getGameConfig());
+        levelChooser.setSelectedIndex(0);
+    }
+    
+    private Project getProject() {
+        return project;
     }
 
     /**

@@ -101,10 +101,16 @@ public class Project {
         File[] files = dir.listFiles();
         Arrays.sort(files);
         for (File file : files) {
-            if (file.isDirectory()) {
-                recursiveListResources(pathName + "/" + file.getName(), file, resources);
+            String newPath;
+            if (pathName.length() == 0) {
+                newPath = file.getName();  // this prevents a leading slash in entry name
             } else {
-                resources.add(pathName + "/" + file.getName());
+                newPath = pathName + "/" + file.getName();
+            }
+            if (file.isDirectory()) {
+                recursiveListResources(newPath, file, resources);
+            } else {
+                resources.add(newPath);
             }
         }
         return resources;

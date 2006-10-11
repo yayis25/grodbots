@@ -19,8 +19,18 @@ import java.util.Map;
 public interface Sprite {
 
     /**
+     * Attribute key for the resource path of the file that defines this 
+     * Sprite's appearance.
+     * 
+     * <p>See {@link #getAttributes()}.
+     */
+    public static final String KEY_HREF = "href";
+    
+    /**
      * Returns the attribute map that was passed to the SpriteManager in
-     * order to create this sprite object.
+     * order to create this sprite object.  Passing this map back to the
+     * SpriteManager would result in the creation of an identically-configured
+     * sprite.
      */
     Map<String, String> getAttributes();
     
