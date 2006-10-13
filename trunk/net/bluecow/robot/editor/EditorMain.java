@@ -28,9 +28,11 @@ import java.util.prefs.Preferences;
 
 import javax.swing.AbstractAction;
 import javax.swing.Action;
+import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
+import javax.swing.JComponent;
 import javax.swing.JDialog;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
@@ -142,11 +144,18 @@ public class EditorMain {
     };
 
     /**
+     * The preferences node that stores a list of most recently saved
+     * and opened project locations.
+     */
+    private static Preferences recentProjects = RobotUtils.getPrefs().node("recentProjects");
+
+    /**
      * The project this editor is currently editing.
      */
     private Project project;
 
     private JFrame frame;
+    private JPanel levelEditPanel;
     private LevelEditor editor;
     private JList levelChooser;
     private LevelChooserListModel levelChooserListModel;
@@ -201,14 +210,13 @@ public class EditorMain {
         JFileChooser fc = new JFileChooser();
         fc.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
         fc.setDialogTitle("Choose a Robot Project Directory");
-        Preferences recentFiles = RobotUtils.getPrefs().node("recentProjects");
-        fc.setCurrentDirectory(new File(recentFiles.get("0", System.getProperty("user.home"))));
+        fc.setCurrentDirectory(new File(recentProjects.get("0", System.getProperty("user.home"))));
         int choice = fc.showOpenDialog(null);
         if (choice == JFileChooser.APPROVE_OPTION) {
             File f = fc.getSelectedFile();
             try {
                 Project proj = Project.load(f);
-                RobotUtils.updateRecentFiles(recentFiles, fc.getSelectedFile());
+                RobotUtils.updateRecentFiles(recentProjects, fc.getSelectedFile());
                 return proj;
             } catch (BackingStoreException ex) {
                 System.out.println("Couldn't update user prefs");
@@ -353,9 +361,9 @@ public class EditorMain {
         });
         
         final GameConfig myGameConfig = project.getGameConfig();
-        final LevelConfig myLevelConfig = myGameConfig.getLevels().get(0);
         
-        frame.getContentPane().setLayout(new BorderLayout());
+        frame.getContentPane().setLayout(new BorderLayout(8, 8));
+        ((JComponent) frame.getContentPane()).setBorder(BorderFactory.createEmptyBorder(6, 6, 6, 6));
         
         JPanel levelChooserPanel = new JPanel(new BorderLayout());
         levelChooserListModel = new LevelChooserListModel(myGameConfig);
@@ -365,21 +373,24 @@ public class EditorMain {
         levelChooser.addListSelectionListener(new ListSelectionListener() {
             public void valueChanged(ListSelectionEvent e) {
                 LevelConfig level = (LevelConfig) levelChooser.getSelectedValue();
-                editor.setLevel(level);
+                setLevelToEdit(level);
             }
         });
+        levelChooserPanel.add(new JLabel("Levels"), BorderLayout.NORTH);
         levelChooserPanel.add(new JScrollPane(levelChooser), BorderLayout.CENTER);
         JButton addLevelButton = new JButton(addLevelAction);
         levelChooserPanel.add(addLevelButton, BorderLayout.SOUTH);
         
         frame.add(levelChooserPanel, BorderLayout.WEST);
         
-        editor = new LevelEditor(myGameConfig, myLevelConfig);
-        frame.add(editor, BorderLayout.CENTER);
+        levelEditPanel = new JPanel();
+        levelEditPanel.add(new JLabel("To edit a level, select it from the list on the left-hand side."));
+        frame.add(levelEditPanel, BorderLayout.CENTER);
         
         JPanel sensorTypesPanel = new JPanel(new BorderLayout());
         sensorTypeListModel = new SensorTypeListModel(myGameConfig);
         final JList sensorTypesList = new JList(sensorTypeListModel);
+        sensorTypesPanel.add(new JLabel("Sensor Types"), BorderLayout.NORTH);
         sensorTypesPanel.add(new JScrollPane(
                     sensorTypesList,
                     JScrollPane.VERTICAL_SCROLLBAR_ALWAYS,
@@ -410,6 +421,7 @@ public class EditorMain {
             }
         });
         JPanel squareListPanel = new JPanel(new BorderLayout());
+        squareListPanel.add(new JLabel("Square Types"), BorderLayout.NORTH);
         squareListPanel.add(
                 new JScrollPane(squareList,
                     JScrollPane.VERTICAL_SCROLLBAR_ALWAYS,
@@ -481,7 +493,6 @@ public class EditorMain {
     
     private void setProject(Project proj) {
         this.project = proj;
-        editor.setGame(proj.getGameConfig());
         sensorTypeListModel.setGame(proj.getGameConfig());
         squareChooserListModel.setGame(proj.getGameConfig());
         levelChooserListModel.setGame(proj.getGameConfig());
@@ -490,6 +501,54 @@ public class EditorMain {
     
     private Project getProject() {
         return project;
+    }
+
+    private void setLevelToEdit(LevelConfig level) {
+        if (levelEditPanel != null) {
+            frame.remove(levelEditPanel);
+        }
+        levelEditPanel = new JPanel(new BorderLayout(8, 8));
+        editor = new LevelEditor(project.getGameConfig(), level);
+        levelEditPanel.add(editor, BorderLayout.CENTER);
+        
+        levelEditPanel.add(makeLevelPropsPanel(level), BorderLayout.NORTH);
+        
+        frame.add(levelEditPanel, BorderLayout.CENTER);
+        frame.validate();
+    }
+    
+    private JPanel makeLevelPropsPanel(LevelConfig level) {
+        GridBagConstraints gbc = new GridBagConstraints();
+        JPanel p = new JPanel(new GridBagLayout());
+        
+        gbc.weighty = 0.0;
+        gbc.weightx = 1.0;
+        gbc.fill = GridBagConstraints.NONE;
+        gbc.anchor = GridBagConstraints.LINE_END;
+        p.add(new JLabel("Level Name:"), gbc);
+
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.gridwidth = GridBagConstraints.REMAINDER;
+        p.add(new JTextField(level.getName()), gbc);
+        
+        gbc.gridwidth = 1;
+        gbc.anchor = GridBagConstraints.CENTER;
+        gbc.fill = GridBagConstraints.NONE;
+        p.add(new JLabel("Robots"), gbc);
+        gbc.gridwidth = GridBagConstraints.REMAINDER;
+        p.add(new JLabel("Switches"), gbc);
+        
+        gbc.gridwidth = 1;
+        gbc.weighty = 1.0;
+        gbc.fill = GridBagConstraints.BOTH;
+        final JList robotChooser = new JList(new RobotListModel(level));
+        p.add(new JScrollPane(robotChooser), gbc);
+        
+        gbc.gridwidth = GridBagConstraints.REMAINDER;
+        final JList switchChooser = new JList(new SwitchListModel(level));
+        p.add(new JScrollPane(switchChooser), gbc);
+
+        return p;
     }
 
     /**
@@ -514,7 +573,9 @@ public class EditorMain {
         SwingUtilities.invokeLater(new Runnable() {
             public void run() {
                 try {
-                    presentWelcomeMenu();
+                    if (!autoloadMostRecentProject()) {
+                        presentWelcomeMenu();
+                    }
                 } catch (Exception e) {
                     e.printStackTrace();
                     JOptionPane.showMessageDialog(null, "Fatal error:\n\n"+e
@@ -523,6 +584,30 @@ public class EditorMain {
                 }
             }
         });
+    }
+
+    private static boolean autoloadMostRecentProject() {
+        if (recentProjects.get("0", null) == null) {
+            return false;
+        }
+        File mostRecentProjectLocation = new File(recentProjects.get("0", null));
+        if (mostRecentProjectLocation.isDirectory()) {
+            try {
+                Project project = Project.load(mostRecentProjectLocation);
+                new EditorMain(project);
+                return true;
+            } catch (Exception ex) {
+                System.err.println("autoloadMostRecentProject():");
+                System.err.println("  Exception while opening most recent project from '"+
+                        mostRecentProjectLocation.getPath()+"'. Giving up.");
+                ex.printStackTrace();
+            }
+        } else {
+            System.out.println("autoloadMostRecentProject():");
+            System.out.println("  Most recent project location '"+
+                        mostRecentProjectLocation.getPath()+"' isn't a directory. Giving up.");
+        }
+        return false;
     }
 
     protected static void presentWelcomeMenu() throws IOException {
