@@ -6,15 +6,19 @@
 package net.bluecow.robot.editor;
 
 import java.awt.BorderLayout;
+import java.awt.Component;
+import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
+import java.awt.Point;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.WindowAdapter;
+import java.awt.geom.Point2D;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -44,20 +48,28 @@ import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JSpinner;
 import javax.swing.JSplitPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
+import javax.swing.KeyStroke;
 import javax.swing.ListSelectionModel;
+import javax.swing.SpinnerNumberModel;
 import javax.swing.SwingUtilities;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 
 import net.bluecow.robot.FileFormatException;
 import net.bluecow.robot.GameConfig;
 import net.bluecow.robot.LevelConfig;
+import net.bluecow.robot.Playfield;
+import net.bluecow.robot.Robot;
 import net.bluecow.robot.RobotUtils;
 import net.bluecow.robot.GameConfig.SensorConfig;
 import net.bluecow.robot.GameConfig.SquareConfig;
+import net.bluecow.robot.LevelConfig.Switch;
 import net.bluecow.robot.sprite.Sprite;
 import net.bluecow.robot.sprite.SpriteManager;
 
@@ -201,7 +213,11 @@ public class EditorMain {
         gbc.fill = GridBagConstraints.NONE;
         cp.add(okButton, gbc);
 
+        cp.getActionMap().put("cancel", new DialogCancelAction(d));
+        cp.getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT).put(KeyStroke.getKeyStroke("ESCAPE"), "cancel");
+        cp.setBorder(BorderFactory.createEmptyBorder(8, 8, 8, 8));
         d.setContentPane(cp);
+        d.getRootPane().setDefaultButton(okButton);
         d.pack();
         return d;
     }
@@ -263,7 +279,9 @@ public class EditorMain {
         sensorTypesList.setSelectedIndices(selectionIndices);
         
         final JComboBox spritePathField = new JComboBox(new ResourcesComboBoxModel(project));
-        spritePathField.setSelectedItem(sc.getSprite().getAttributes().get(Sprite.KEY_HREF));
+        if (sc.getSprite() != null) {
+            spritePathField.setSelectedItem(sc.getSprite().getAttributes().get(Sprite.KEY_HREF));
+        }
         final JButton okButton = new JButton("OK");
         okButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
@@ -346,10 +364,307 @@ public class EditorMain {
         gbc.fill = GridBagConstraints.NONE;
         cp.add(okButton, gbc);
 
+        cp.getActionMap().put("cancel", new DialogCancelAction(d));
+        cp.getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT).put(KeyStroke.getKeyStroke("ESCAPE"), "cancel");
+        cp.setBorder(BorderFactory.createEmptyBorder(8, 8, 8, 8));
         d.setContentPane(cp);
+        d.getRootPane().setDefaultButton(okButton);
         d.pack();
         return d;
     }
+    
+    /**
+     * Creates a JDialog with a GUI for editing the properties of the given
+     * robot.  The GUI will default to describing the current state of the robot.
+     * The dialog has an OK button which, when pressed, will update the robot's
+     * properties to reflect the new values in the GUI.
+     * 
+     * @param parent The frame that owns this dialog
+     * @param project The project that the robot ultimately belongs to
+     * @param robot The robot to edit
+     * @param okAction An action to perform after the OK button has been
+     * presses and robot's properties have been updated.  This action will
+     * only be invoked if the user OK's the dialog; it will not be invoked
+     * (and the robot properties will not be modified) if the user cancels
+     * the dialog.  Also, you can safely pass in <tt>null</tt> for this
+     * action if you don't need to do anything when the user hits OK. 
+     * @return A non-modal JDialog which has been pack()ed, but not set visible.
+     * You are free to setModal(true) on the dialog before displaying it if
+     * you want it to be modal. 
+     */
+    private static JDialog makeRobotPropsDialog(final JFrame parent,
+            final Project project, final LevelConfig level, final Robot robot, final ActionListener okAction) {
+        final JDialog d = new JDialog(parent, "Switch Properties");
+
+        final JTextField idField = new JTextField(robot.getId());
+        final JTextField labelField = new JTextField(robot.getLabel());
+        final JSpinner xPosition = new JSpinner(new SpinnerNumberModel(robot.getX(), 0.0, level.getWidth(), robot.getStepSize()));
+        final JSpinner yPosition = new JSpinner(new SpinnerNumberModel(robot.getY(), 0.0, level.getHeight(), robot.getStepSize()));
+        final JComboBox spritePathField = new JComboBox(new ResourcesComboBoxModel(project));
+        if (robot.getSprite() != null) {
+            spritePathField.setSelectedItem(robot.getSprite().getAttributes().get(Sprite.KEY_HREF));
+        }
+        final JSpinner evalsPerStep = new JSpinner(new SpinnerNumberModel(robot.getEvalsPerStep(), 1, null, 1));
+        final JSpinner stepSize = new JSpinner(new SpinnerNumberModel(new Double(robot.getStepSize()), 0.01, null, 0.01));
+        
+        final JButton okButton = new JButton("OK");
+        okButton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                try {
+                    robot.setId(idField.getText());
+                    robot.setLabel(labelField.getText());
+                    Point2D pos = new Point2D.Double(
+                            (Double) xPosition.getValue(),
+                            (Double) yPosition.getValue());
+                    robot.setPosition(pos);
+                    robot.setSprite(SpriteManager.load(
+                            project.getGameConfig().getResourceLoader(),
+                            (String) spritePathField.getSelectedItem()));
+                    robot.setEvalsPerStep((Integer) evalsPerStep.getValue());
+                    robot.setStepSize(((Double) stepSize.getValue()).floatValue());
+                    
+                    if (okAction != null) {
+                        okAction.actionPerformed(e);
+                    }
+
+                } catch (Exception ex) {
+                    showException(parent, "Couldn't update Robot properties", ex);
+                }
+                
+                d.setVisible(false);
+                d.dispose();
+            }
+        });
+        
+        // set up the form
+        GridBagConstraints gbc = new GridBagConstraints();
+        JPanel cp = new JPanel(new GridBagLayout());
+        gbc.weighty = 0.0;
+        gbc.insets = new Insets(4, 4, 4, 4);
+        
+        gbc.weightx = 0.0;
+        gbc.gridwidth = 1;
+        gbc.fill = GridBagConstraints.NONE;
+        gbc.anchor = GridBagConstraints.LINE_END;
+        cp.add(new JLabel("Robot ID:"), gbc);
+
+        gbc.weightx = 1.0;
+        gbc.gridwidth = GridBagConstraints.REMAINDER;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        cp.add(idField, gbc);
+
+        gbc.weightx = 0.0;
+        gbc.gridwidth = 1;
+        gbc.fill = GridBagConstraints.NONE;
+        gbc.anchor = GridBagConstraints.LINE_END;
+        cp.add(new JLabel("Position:"), gbc);
+
+        gbc.gridwidth = 1;
+        gbc.weightx = 0.5;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        cp.add(xPosition, gbc);
+
+        gbc.gridwidth = GridBagConstraints.REMAINDER;
+        gbc.weightx = 0.5;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        cp.add(yPosition, gbc);
+
+        gbc.weightx = 0.0;
+        gbc.gridwidth = 1;
+        gbc.fill = GridBagConstraints.NONE;
+        gbc.anchor = GridBagConstraints.LINE_END;
+        cp.add(new JLabel("Label:"), gbc);
+
+        gbc.weightx = 1.0;
+        gbc.gridwidth = GridBagConstraints.REMAINDER;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        cp.add(labelField, gbc);
+
+        gbc.weightx = 0.0;
+        gbc.gridwidth = 1;
+        gbc.fill = GridBagConstraints.NONE;
+        gbc.anchor = GridBagConstraints.LINE_END;
+        cp.add(new JLabel("Sprite Path:"), gbc);
+
+        gbc.weightx = 1.0;
+        gbc.gridwidth = GridBagConstraints.REMAINDER;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        cp.add(spritePathField, gbc);
+
+        gbc.weightx = 0.0;
+        gbc.gridwidth = 1;
+        gbc.fill = GridBagConstraints.NONE;
+        gbc.anchor = GridBagConstraints.LINE_END;
+        cp.add(new JLabel("Evals per step:"), gbc);
+
+        gbc.weightx = 1.0;
+        gbc.gridwidth = GridBagConstraints.REMAINDER;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        cp.add(evalsPerStep, gbc);
+
+        gbc.weightx = 0.0;
+        gbc.gridwidth = 1;
+        gbc.fill = GridBagConstraints.NONE;
+        gbc.anchor = GridBagConstraints.LINE_END;
+        cp.add(new JLabel("Step size (squares):"), gbc);
+
+        gbc.weightx = 1.0;
+        gbc.gridwidth = GridBagConstraints.REMAINDER;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        cp.add(stepSize, gbc);
+
+        gbc.gridwidth = GridBagConstraints.REMAINDER;
+        gbc.fill = GridBagConstraints.NONE;
+        cp.add(okButton, gbc);
+
+        cp.getActionMap().put("cancel", new DialogCancelAction(d));
+        cp.getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT).put(KeyStroke.getKeyStroke("ESCAPE"), "cancel");
+        cp.setBorder(BorderFactory.createEmptyBorder(8, 8, 8, 8));
+        d.setContentPane(cp);
+        d.getRootPane().setDefaultButton(okButton);
+        d.pack();
+        return d;
+    }
+    
+    /**
+     * Works very much like {@link #makeRobotPropsDialog(JFrame, Project, Robot, ActionListener)},
+     * but is for editing switch properties.
+     */
+    private static JDialog makeSwitchPropsDialog(final JFrame parent,
+            final Project project, final LevelConfig level, final Switch sw,
+            final ActionListener okAction) {
+        final JDialog d = new JDialog(parent, "Switch Properties");
+
+        final JTextField idField = new JTextField(sw.getId());
+        final JCheckBox enabledBox = new JCheckBox("Start enabled", sw.isEnabled());
+        final JSpinner xPosition = new JSpinner(new SpinnerNumberModel(sw.getX(), 0, level.getWidth(), 1));
+        final JSpinner yPosition = new JSpinner(new SpinnerNumberModel(sw.getY(), 0, level.getHeight(), 1));
+        final JTextField labelField = new JTextField(sw.getLabel());
+        final JComboBox spritePathField = new JComboBox(new ResourcesComboBoxModel(project));
+        if (sw.getSprite() != null) {
+            spritePathField.setSelectedItem(sw.getSprite().getAttributes().get(Sprite.KEY_HREF));
+        }
+        final JTextArea onEnterArea = new JTextArea(sw.getOnEnter(), 6, 15);
+
+        final JButton okButton = new JButton("OK");
+        okButton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                try {
+                    sw.setId(idField.getText());
+                    sw.setEnabled(enabledBox.isSelected());
+                    Point pos = new Point();
+                    pos.x = (Integer) xPosition.getValue();
+                    pos.y = (Integer) yPosition.getValue();
+                    sw.setPosition(pos);
+                    sw.setLabel(labelField.getText());
+                    sw.setSprite(SpriteManager.load(
+                            project.getGameConfig().getResourceLoader(),
+                            (String) spritePathField.getSelectedItem()));
+                    sw.setOnEnter(onEnterArea.getText());
+                    
+                    if (okAction != null) {
+                        okAction.actionPerformed(e);
+                    }
+
+                } catch (Exception ex) {
+                    showException(parent, "Couldn't update Switch properties", ex);
+                }
+                d.setVisible(false);
+                d.dispose();
+            }
+        });
+        
+        // set up the form
+        GridBagConstraints gbc = new GridBagConstraints();
+        JPanel cp = new JPanel(new GridBagLayout());
+        gbc.weighty = 0.0;
+        gbc.insets = new Insets(4, 4, 4, 4);
+        
+        gbc.weightx = 0.0;
+        gbc.gridwidth = 1;
+        gbc.fill = GridBagConstraints.NONE;
+        gbc.anchor = GridBagConstraints.LINE_END;
+        cp.add(new JLabel("Switch ID:"), gbc);
+
+        gbc.weightx = 1.0;
+        gbc.gridwidth = GridBagConstraints.REMAINDER;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        cp.add(idField, gbc);
+
+        gbc.weightx = 0.0;
+        gbc.gridwidth = 1;
+        gbc.fill = GridBagConstraints.NONE;
+        gbc.anchor = GridBagConstraints.LINE_END;
+        cp.add(new JLabel(""), gbc);
+
+        gbc.weightx = 1.0;
+        gbc.gridwidth = GridBagConstraints.REMAINDER;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        cp.add(enabledBox, gbc);
+
+        gbc.weightx = 0.0;
+        gbc.gridwidth = 1;
+        gbc.fill = GridBagConstraints.NONE;
+        gbc.anchor = GridBagConstraints.LINE_END;
+        cp.add(new JLabel("Position:"), gbc);
+
+        gbc.gridwidth = 1;
+        gbc.weightx = 0.5;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        cp.add(xPosition, gbc);
+
+        gbc.gridwidth = GridBagConstraints.REMAINDER;
+        gbc.weightx = 0.5;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        cp.add(yPosition, gbc);
+
+        gbc.weightx = 0.0;
+        gbc.gridwidth = 1;
+        gbc.fill = GridBagConstraints.NONE;
+        gbc.anchor = GridBagConstraints.LINE_END;
+        cp.add(new JLabel("Label:"), gbc);
+
+        gbc.weightx = 1.0;
+        gbc.gridwidth = GridBagConstraints.REMAINDER;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        cp.add(labelField, gbc);
+
+        gbc.weightx = 0.0;
+        gbc.gridwidth = 1;
+        gbc.fill = GridBagConstraints.NONE;
+        gbc.anchor = GridBagConstraints.LINE_END;
+        cp.add(new JLabel("Sprite:"), gbc);
+
+        gbc.weightx = 1.0;
+        gbc.gridwidth = GridBagConstraints.REMAINDER;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        cp.add(spritePathField, gbc);
+
+        gbc.weightx = 0.0;
+        gbc.gridwidth = 1;
+        gbc.fill = GridBagConstraints.NONE;
+        gbc.anchor = GridBagConstraints.LINE_END;
+        cp.add(new JLabel("On Enter Script:"), gbc);
+
+        gbc.weightx = 1.0;
+        gbc.gridwidth = GridBagConstraints.REMAINDER;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        cp.add(new JScrollPane(onEnterArea), gbc);
+
+        gbc.gridwidth = GridBagConstraints.REMAINDER;
+        gbc.fill = GridBagConstraints.NONE;
+        cp.add(okButton, gbc);
+        
+        cp.getActionMap().put("cancel", new DialogCancelAction(d));
+        cp.getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT).put(KeyStroke.getKeyStroke("ESCAPE"), "cancel");
+        cp.setBorder(BorderFactory.createEmptyBorder(8, 8, 8, 8));
+        d.setContentPane(cp);
+        d.getRootPane().setDefaultButton(okButton);
+        d.pack();
+        return d;
+    }
+    
+    
     
     public EditorMain(Project project) {
         frame = new JFrame("Robot Level Editor");
@@ -509,7 +824,9 @@ public class EditorMain {
         }
         levelEditPanel = new JPanel(new BorderLayout(8, 8));
         editor = new LevelEditor(project.getGameConfig(), level);
-        levelEditPanel.add(editor, BorderLayout.CENTER);
+        JPanel floaterPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
+        floaterPanel.add(editor);
+        levelEditPanel.add(floaterPanel, BorderLayout.CENTER);
         
         levelEditPanel.add(makeLevelPropsPanel(level), BorderLayout.NORTH);
         
@@ -517,36 +834,134 @@ public class EditorMain {
         frame.validate();
     }
     
-    private JPanel makeLevelPropsPanel(LevelConfig level) {
+    private JPanel makeLevelPropsPanel(final LevelConfig level) {
         GridBagConstraints gbc = new GridBagConstraints();
         JPanel p = new JPanel(new GridBagLayout());
         
+        // all components in the layout will have 4px of space around them
+        gbc.insets = new Insets(4, 4, 4, 4);
+        
         gbc.weighty = 0.0;
-        gbc.weightx = 1.0;
+        gbc.weightx = 0.0;
         gbc.fill = GridBagConstraints.NONE;
         gbc.anchor = GridBagConstraints.LINE_END;
         p.add(new JLabel("Level Name:"), gbc);
 
         gbc.fill = GridBagConstraints.HORIZONTAL;
         gbc.gridwidth = GridBagConstraints.REMAINDER;
-        p.add(new JTextField(level.getName()), gbc);
+        final JTextField levelNameField = new JTextField(level.getName());
+        levelNameField.getDocument().addDocumentListener(new DocumentListener() {
+            public void changedUpdate(DocumentEvent e) { update(); }
+            public void insertUpdate(DocumentEvent e) { update(); }
+            public void removeUpdate(DocumentEvent e) { update(); }
+            void update() { level.setName(levelNameField.getText()); }
+        });
+        p.add(levelNameField, gbc);
         
-        gbc.gridwidth = 1;
+        gbc.gridwidth = 2;
+        gbc.weightx = 1.0;
         gbc.anchor = GridBagConstraints.CENTER;
         gbc.fill = GridBagConstraints.NONE;
         p.add(new JLabel("Robots"), gbc);
         gbc.gridwidth = GridBagConstraints.REMAINDER;
         p.add(new JLabel("Switches"), gbc);
         
-        gbc.gridwidth = 1;
+        final JList robotChooser = new JList(new RobotListModel(level));
+        final JList switchChooser = new JList(new SwitchListModel(level));
+
+        gbc.gridwidth = 2;
         gbc.weighty = 1.0;
         gbc.fill = GridBagConstraints.BOTH;
-        final JList robotChooser = new JList(new RobotListModel(level));
+        robotChooser.setCellRenderer(new RobotListRenderer());
+        robotChooser.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                if (e.getClickCount() == 2 && SwingUtilities.isLeftMouseButton(e)) {
+                    Robot robot = (Robot) robotChooser.getSelectedValue();
+                    if (robot != null) {
+                        JDialog d = makeRobotPropsDialog(frame, project, level, robot, null);
+                        d.setVisible(true);
+                    }
+                }
+            }
+        });
+        robotChooser.addListSelectionListener(new ListSelectionListener() {
+            public void valueChanged(ListSelectionEvent e) {
+                Robot r = (Robot) robotChooser.getSelectedValue();
+                if (r == null) {
+                    editor.setSpotlightLocation(null);
+                    ((Playfield) editor).setSpotlightRadius(0.0);
+                } else {
+                    switchChooser.clearSelection();
+                    editor.setSpotlightLocation(r.getPosition());
+                    editor.setSpotlightRadius(1.0);
+                }
+            }
+        });
         p.add(new JScrollPane(robotChooser), gbc);
         
         gbc.gridwidth = GridBagConstraints.REMAINDER;
-        final JList switchChooser = new JList(new SwitchListModel(level));
+        switchChooser.setCellRenderer(new SwitchListRenderer());
+        switchChooser.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                if (e.getClickCount() == 2 && SwingUtilities.isLeftMouseButton(e)) {
+                    Switch sw = (Switch) switchChooser.getSelectedValue();
+                    if (sw != null) {
+                        JDialog d = makeSwitchPropsDialog(frame, project, level, sw, null);
+                        d.setVisible(true);
+                    }
+                }
+            }
+        });
+        switchChooser.addListSelectionListener(new ListSelectionListener() {
+            public void valueChanged(ListSelectionEvent e) {
+                Switch s = (Switch) switchChooser.getSelectedValue();
+                if (s == null) {
+                    editor.setSpotlightLocation(null);
+                    ((Playfield) editor).setSpotlightRadius(0.0);
+                } else {
+                    robotChooser.clearSelection();
+                    Point p = s.getPosition();
+                    editor.setSpotlightLocation(new Point2D.Double(p.x+0.5, p.y+0.5));
+                    editor.setSpotlightRadius(1.0);
+                }
+            }
+        });
         p.add(new JScrollPane(switchChooser), gbc);
+
+        gbc.gridwidth = 2;
+        gbc.weightx = 1.0;
+        gbc.anchor = GridBagConstraints.CENTER;
+        gbc.fill = GridBagConstraints.NONE;
+        final JButton addRobotButton = new JButton("Add Robot");
+        addRobotButton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                final Robot robot = project.createRobot();
+                ActionListener addRobot = new ActionListener() {
+                    public void actionPerformed(ActionEvent e) { level.addRobot(robot); }
+                };
+                JDialog d = makeRobotPropsDialog(frame, project, level, robot, addRobot);
+                d.setModal(true);
+                d.setVisible(true);
+            }
+        });
+        p.add(addRobotButton, gbc);
+        
+        gbc.gridwidth = GridBagConstraints.REMAINDER;
+        final JButton addSwitchButton = new JButton("Add Switch");
+        addSwitchButton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                final Switch sw = project.createSwitch();
+                ActionListener addSwitch = new ActionListener() {
+                    public void actionPerformed(ActionEvent e) { level.addSwitch(sw); }
+                };
+                JDialog d = makeSwitchPropsDialog(frame, project, level, sw, addSwitch);
+                d.setModal(true);
+                d.setVisible(true);
+            }
+        });
+        p.add(addSwitchButton, gbc);
 
         return p;
     }
@@ -555,7 +970,7 @@ public class EditorMain {
      * Shows the given message and the exception's message and stack trace
      * in a modal dialog.
      */
-    public static void showException(JFrame owner, String message, Throwable ex) {
+    public static void showException(Component owner, String message, Throwable ex) {
         StringWriter sw = new StringWriter();
         PrintWriter pw = new PrintWriter(sw);
         ex.printStackTrace(pw);

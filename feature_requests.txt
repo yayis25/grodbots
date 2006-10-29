@@ -1,20 +1,12 @@
 Game Features:
 -Level editor
- -make the map appear centred in the editor/playfield (applies in-game as well as in-editor)
- -create a LevelSelectionListener system that fires events when the selected level changes?
-    (listeners would include: the levelChooser list, the LevelEditor component, and
-    the LevelProperties component. Robot Chooser and Switch Chooser will also have to
-    know when the current level changes.. but would it be cleaner to create a whole new
-    set of those components whenever the selected level changes?  Probably so.)
- -make level properties editor (attached to level map editor)
- -make robot selection list (with add button)
- -make robot properties editor
- -make switch selection list (with add button)
- -make switch properties editor
+ -factor out each makeXXXProps.. editor into its own class, and add validate methods
  -make label editor and hook into switch and robot properties
+ -make sprite editor and hook into switch and robot properties
  -implement a GUI resource manager (for adding and removing files in the project) and do away with project directories
  -in config files, add a version attribute to top-level element and autobackup old versions
  -effect for the "cursor" box to fade in and out and change colours and stuff
+ -put a real spotlight on the currently-selected robot or switch
 -Batteries
 -Radio Communication between robots
 -init sound manager sound set from config file
@@ -48,6 +40,17 @@ Sounds:
 
 Completed:
 -Level Editor:
+ -make it possible to set positions for robots and switches
+ -make the map appear centred in the editor/playfield (by tweaking layouts)
+ -put a red circle around the currently-selected robot or switch
+ -make ESC cancel a property dialog (close button on window should also work)
+ -make switch selection list (with add button)
+ -make OK the default button on property dialogs
+ -make robot selection list (with add button)
+ -make robot properties editor
+ -make switch properties editor
+ -make level properties editor (attached to level map editor)
+ -make the level edit panel rebuild every time user picks a different level
  -autoload the project that was opened last time the editor was running
  -make level selection list (with add button)
  -make square configs and sensor configs editable
@@ -116,3 +119,12 @@ Completed:
 Dismissed/Changed/Bad Ideas:
 -Different floor textures that the robot can detect (metal, carpet, dirt, tile, ...)
 -Random gate delays in "hard" mode
+-In the level editor,
+    create a LevelSelectionListener system that fires events when the selected level changes?
+    (listeners would include: the levelChooser list, the LevelEditor component, and
+    the LevelProperties component. Robot Chooser and Switch Chooser will also have to
+    know when the current level changes.. but would it be cleaner to create a whole new
+    set of those components whenever the selected level changes?  Probably so.)
+ -Fix problem where the framerate doubles when you re-visit a level in the editor
+   (it fixed itself...?)
+ 

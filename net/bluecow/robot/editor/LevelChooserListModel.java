@@ -25,6 +25,20 @@ public class LevelChooserListModel extends AbstractListModel {
                 fireContentsChanged(LevelChooserListModel.this, 0, gameConfig.getLevels().size());
             }
         });
+        
+        PropertyChangeListener levelNameListener = new PropertyChangeListener() {
+            public void propertyChange(PropertyChangeEvent evt) {
+                if ("name".equals(evt.getPropertyName())) {
+                    int index = gameConfig.getLevels().indexOf(evt.getSource());
+                    if (index >= 0) {
+                        fireContentsChanged(LevelChooserListModel.this, index, index);
+                    }
+                }
+            }
+        };
+        for (LevelConfig level : gc.getLevels()) {
+            level.addPropertyChangeListener(levelNameListener);
+        }
     }
     
     /**

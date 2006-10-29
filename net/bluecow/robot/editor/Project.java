@@ -5,6 +5,8 @@
  */
 package net.bluecow.robot.editor;
 
+import java.awt.Point;
+import java.awt.geom.Point2D;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.BufferedWriter;
@@ -24,6 +26,8 @@ import java.util.jar.JarOutputStream;
 import net.bluecow.robot.GameConfig;
 import net.bluecow.robot.LevelConfig;
 import net.bluecow.robot.LevelStore;
+import net.bluecow.robot.Robot;
+import net.bluecow.robot.LevelConfig.Switch;
 import net.bluecow.robot.resource.DirectoryResourceLoader;
 import net.bluecow.robot.resource.ResourceLoader;
 
@@ -38,6 +42,18 @@ public class Project {
      * The game config associated with this project.
      */
     private GameConfig gameConfig;
+    
+    /**
+     * The prototype robot for creating new ones.  One day, this will
+     * be modifiable by the user and get saved with the project.
+     */
+    private Robot defaultRobot = new Robot(
+            "new_robot", "Grod", null, new ArrayList<GameConfig.SensorConfig>(),
+            new ArrayList<GameConfig.GateConfig>(), null,
+            new Point2D.Float(0.5f, 0.5f), 0.1f, null, 1);
+    
+    private Switch defaultSwitch = new LevelConfig.Switch(
+            new Point(1, 1), "new_switch", "", null, null, null);
     
     /**
      * Creates a new project with a default empty level.  This operation creates
@@ -162,5 +178,20 @@ public class Project {
                 in.close();
             }
         }
+    }
+    
+    /**
+     * Creates a new Robot which has properties the same as the default
+     * robot.
+     * 
+     * @return the new robot instance.
+     */
+    public Robot createRobot() {
+        Robot r = new Robot(defaultRobot);
+        return r;
+    }
+    
+    public Switch createSwitch() {
+        return new LevelConfig.Switch(defaultSwitch);
     }
 }

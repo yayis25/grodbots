@@ -634,7 +634,8 @@ public class LevelStore {
                     
                     Point switchPosition = new Point(x, y);
                     
-                    newSwitch = level.new Switch(switchPosition, switchId, null, null, switchOnEnter);
+                    // XXX this might not work (maybe the switch should have a level reference and get the interpreter as needed)
+                    newSwitch = new LevelConfig.Switch(switchPosition, switchId, null, null, switchOnEnter, level.getBshInterpreter());
                     newSwitch.setEnabled(switchEnabled);
                     setupLabel(newSwitch, attributes);
                     // gets added to level in endElement
