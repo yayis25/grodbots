@@ -294,6 +294,10 @@ public class Robot implements Labelable {
         return evalsPerStep;
     }
     
+    public void setEvalsPerStep(int evalsPerStep) {
+        this.evalsPerStep = evalsPerStep;
+    }
+    
 	/**
 	 * Returns the input that will cause the robot to move UP when the
 	 * input state is TRUE.
@@ -431,6 +435,10 @@ public class Robot implements Labelable {
         return id;
     }
     
+    public void setId(String id) {
+        this.id = id;
+    }
+    
 	public Sprite getSprite() {
 		return sprite;
 	}
@@ -448,8 +456,8 @@ public class Robot implements Labelable {
      * 
      * <p>This method is final because it is called from the constructor.
      */
-	public final void setPosition(Point2D.Float position) {
-		this.position = new Point2D.Float(position.x, position.y);
+	public final void setPosition(Point2D position) {
+		this.position = new Point2D.Float((float) position.getX(), (float) position.getY());
 	}
     
     /**
@@ -548,5 +556,9 @@ public class Robot implements Labelable {
 
     public float getStepSize() {
         return stepSize;
+    }
+    
+    public void setStepSize(float stepSize) {
+        this.stepSize = stepSize;
     }
 }

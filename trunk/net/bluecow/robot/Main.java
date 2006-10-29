@@ -657,9 +657,12 @@ public class Main {
         buttonPanel.add(topButtonPanel, BorderLayout.NORTH);
         buttonPanel.add(bottomButtonPanel, BorderLayout.SOUTH);
         
+        JPanel floaterPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
+        floaterPanel.add(playfield);
+
         JComponent pffcp = new JPanel(new BorderLayout());
         pffcp.add(new JLabel(level.getName(), JLabel.CENTER), BorderLayout.NORTH);
-        pffcp.add(playfield, BorderLayout.CENTER);
+        pffcp.add(floaterPanel, BorderLayout.CENTER);
         pffcp.add(buttonPanel, BorderLayout.SOUTH);
         
         playfieldFrame.setTitle("CakeBots: Level "+newLevelNum);

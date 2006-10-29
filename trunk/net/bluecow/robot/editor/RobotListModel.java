@@ -5,6 +5,8 @@
  */
 package net.bluecow.robot.editor;
 
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 import java.util.List;
 
 import javax.swing.AbstractListModel;
@@ -17,8 +19,12 @@ public class RobotListModel extends AbstractListModel {
     private LevelConfig level;
     
     public RobotListModel(LevelConfig level) {
-        // XXX need a listener to track updates to the level's robot list
         this.level = level;
+        level.addPropertyChangeListener("robots", new PropertyChangeListener() {
+            public void propertyChange(PropertyChangeEvent evt) {
+                fireContentsChanged(RobotListModel.this, 0, RobotListModel.this.level.getRobots().size());
+            }
+        });
     }
 
     public Object getElementAt(int index) {

@@ -1,6 +1,7 @@
 package net.bluecow.robot;
 
 import java.awt.AlphaComposite;
+import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Composite;
 import java.awt.Dimension;
@@ -102,6 +103,16 @@ public class Playfield extends JPanel {
     private int frameDelay = 50;
 
     /**
+     * The location, in squares, of the spotlight.
+     */
+    private Point2D spotlightLocation;
+    
+    /**
+     * The radius, in squares, of the spotlight.
+     */
+    private double spotlightRadius;
+    
+    /**
      * When this field is true, the paintComponent() method will paint the
      * "overall score" label.
      */
@@ -169,7 +180,9 @@ public class Playfield extends JPanel {
 
     public void paintComponent(Graphics g) {
         super.paintComponent(g);
-        Graphics2D g2 = (Graphics2D) g;
+        g.setColor(getBackground());
+        g.fillRect(0, 0, getWidth(), getHeight());
+        Graphics2D g2 = (Graphics2D) g.create();
         Square[][] squares = level.getMap();
         for (int i = 0; i < squares.length; i++) {
             for (int j = 0; j < squares[0].length; j++) {
@@ -219,6 +232,24 @@ public class Playfield extends JPanel {
         }
         g2.setComposite(backupComposite);
         
+        if (spotlightLocation != null) {
+            // XXX I wanted to dim everything but the robot, but couldn't
+            //     get it working.  This is just a temporary workaround.
+            //     I think what would solve it would be to draw everything
+            //     into a bufferedimage with an alpha channel and then blit
+            //     it onto the component at the end of this method.  It would
+            //     make sense to turn off double buffering on this component
+            //     in that case.
+            Graphics2D gg = (Graphics2D) g2.create();
+            gg.setStroke(new BasicStroke(7));
+            gg.setColor(Color.RED);
+            gg.drawOval(
+                    (int) (spotlightLocation.getX()*squareWidth - spotlightRadius*squareWidth),
+                    (int) (spotlightLocation.getY()*squareWidth - spotlightRadius*squareWidth),
+                    (int) (spotlightRadius*squareWidth*2),
+                    (int) (spotlightRadius*squareWidth*2));
+        }
+        
         FontMetrics fm = getFontMetrics(getFont());
         if (frameCount != null) {
             String fc = String.format("%4d", frameCount);
@@ -232,7 +263,7 @@ public class Playfield extends JPanel {
             g2.drawString(fc, x, y + height - fm.getDescent());
         }
 
-        if (paintingOverallScore ) {
+        if (paintingOverallScore) {
             String score = String.format("Overall Score: %4d", game.getScore());
             int width = fm.stringWidth(score);
             int height = fm.getHeight();
@@ -244,7 +275,7 @@ public class Playfield extends JPanel {
             g2.drawString(score, x, y + height - fm.getDescent());
         }        
 
-        if (paintingLevelScore ) {
+        if (paintingLevelScore) {
             String levelScore = String.format("%s Score: %4d", level.getName(), level.getScore());
             int width = fm.stringWidth(levelScore);
             int height = fm.getHeight();
@@ -522,5 +553,21 @@ public class Playfield extends JPanel {
 
     public void setPaintingOverallScore(boolean paintingOverallScore) {
         this.paintingOverallScore = paintingOverallScore;
+    }
+    
+    public Point2D getSpotlightLocation() {
+        return spotlightLocation;
+    }
+
+    public void setSpotlightLocation(Point2D spotlightLocation) {
+        this.spotlightLocation = spotlightLocation;
+    }
+
+    public double getSpotlightRadius() {
+        return spotlightRadius;
+    }
+
+    public void setSpotlightRadius(double spotlightRadius) {
+        this.spotlightRadius = spotlightRadius;
     }
 }

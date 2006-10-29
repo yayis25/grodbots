@@ -8,6 +8,8 @@ package net.bluecow.robot;
 import java.awt.Dimension;
 import java.awt.Point;
 import java.awt.geom.Point2D;
+import java.beans.PropertyChangeListener;
+import java.beans.PropertyChangeSupport;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -31,27 +33,26 @@ public class LevelConfig {
     /**
      * The Switch class represents an effect that can happen to a level
      * when a robot enters or leaves a square.
-     *
-     * @author fuerth
-     * @version $Id$
      */
-    public class Switch implements Labelable {
+    public static class Switch implements Labelable {
         private Point position;
         private String id;
         private Sprite sprite;
         private String onEnter;
         private String onExit;
+        private Interpreter bsh; // XXX this might not work (maybe the switch should have a level reference and get the interpreter as needed)
         private boolean enabled = true;
         private String label;
         private boolean labelEnabled;
         private Direction labelDirection = Direction.EAST;
         
-        public Switch(Point position, String id, String label, Sprite sprite, String onEnter) {
+        public Switch(Point position, String id, String label, Sprite sprite, String onEnter, Interpreter bshContext) {
             this.position = new Point(position);
             this.id = id;
             this.label = label;
             this.sprite = sprite;
             this.onEnter = onEnter;
+            this.bsh = bshContext;
         }
         
         /**
@@ -64,6 +65,7 @@ public class LevelConfig {
             this.sprite = copyMe.sprite;
             this.onEnter = copyMe.onEnter;
             this.onExit = copyMe.onExit;
+            this.bsh = copyMe.bsh;  // this might not be a good idea.. maybe get it from copyMe's level, or leave null
             this.enabled = copyMe.enabled;
             this.label = copyMe.label;
             this.labelEnabled = copyMe.labelEnabled;
@@ -103,6 +105,14 @@ public class LevelConfig {
             bsh.set("robot", null);
         }
 
+        public void setBshInterpreter(Interpreter bshInterpreter) {
+            this.bsh = bshInterpreter;
+        }
+        
+        public Interpreter getBshInterpreter() {
+            return bsh;
+        }
+        
         /**
          * Returns a copy of the point that determines this switch's position.
          */
@@ -150,6 +160,10 @@ public class LevelConfig {
             return id;
         }
         
+        public void setId(String newid) {
+            this.id = newid;
+        }
+        
         public Sprite getSprite() {
             return sprite;
         }
@@ -160,6 +174,10 @@ public class LevelConfig {
 
         public String getOnEnter() {
             return onEnter;
+        }
+        
+        public void setOnEnter(String onEnter) {
+            this.onEnter = onEnter;
         }
 
         public boolean isEnabled() {
@@ -211,11 +229,16 @@ public class LevelConfig {
      * because the bsh scripts are allowed to modify the switch positions
      * (and the key in the map wouldn't update accordingly).
      */
-    private Collection<Switch> switches = new ArrayList<Switch>();
+    private List<Switch> switches = new ArrayList<Switch>();
 
     private Square[][] map = new Square[0][0];
     private Interpreter bsh;
     private int score;
+    
+    /**
+     * Provides property change event services.
+     */
+    private PropertyChangeSupport pcs = new PropertyChangeSupport(this);
     
     /**
      * A snapshot of this configuration which can be restored at a later time.
@@ -240,7 +263,9 @@ public class LevelConfig {
     }
 
     public void setName(String name) {
+        String oldName = this.name;
         this.name = name;
+        pcs.firePropertyChange("name", oldName, name);
     }
     
     /**
@@ -254,7 +279,6 @@ public class LevelConfig {
     public void addRobot(Robot r) {
         if (r == null) throw new NullPointerException("Null robots are not allowed");
         if (r.getId() == null) throw new NullPointerException("Null robot id not allowed");
-        robots.add(r);
         try {
             if (bsh.get(r.getId()) != null) {
                 throw new IllegalArgumentException("This level already has a scripting object with id \""+r.getId()+"\"");
@@ -263,11 +287,13 @@ public class LevelConfig {
         } catch (EvalError e) {
             throw new RuntimeException(e);
         }
+        robots.add(r);
+        pcs.firePropertyChange("robots", null, null);
     }
     
     /**
-     * Sets the size of the map for this level filled with null squares.
-     * If there was a map before, it will be wiped out.
+     * Sets the size of the map for this level, in squares.  The new grid of squares
+     * is initialised to nulls. If there was a map before, it will be wiped out.
      */
     public void setSize(int width, int height) {
         setMap(new Square[width][height]);
@@ -317,14 +343,16 @@ public class LevelConfig {
             }
             bsh.set(s.getId(), s);
             switches.add(s);
+            s.setBshInterpreter(bsh);
+            pcs.firePropertyChange("switches", null, null);
         } catch (EvalError e) {
             throw new RuntimeException(e);
         }
     }
 
     /** Returns an unmodifiable list of this level's switches. */
-    public Collection<Switch> getSwitches() {
-        return Collections.unmodifiableCollection(switches);
+    public List<Switch> getSwitches() {
+        return Collections.unmodifiableList(switches);
     }
 
     /**
@@ -359,10 +387,35 @@ public class LevelConfig {
         return map;
     }
     
+    /**
+     * Increases the score by the given amount.
+     * 
+     * <p>Causes a property change event for the property "score".
+     * 
+     * @param amount The amount to add to the score.  If this value is
+     * negative, the score will decrease by that amount.
+     */
     public void increaseScore(int amount) {
-        score += amount;
+        setScore(score + amount);
     }
     
+    /**
+     * Sets the score for this level to the given value.
+     * 
+     * <p>Causes a property change event for the property "score".
+     */
+    public void setScore(int newScore) {
+        int oldScore = score;
+        this.score = newScore;
+        pcs.firePropertyChange("score", oldScore, newScore);
+    }
+    
+    /**
+     * Returns the score for this level.
+     * 
+     * <p>This is a bound property.  You will get a property change event when
+     * its value changes.
+     */
     public int getScore() {
         return score;
     }
@@ -385,6 +438,15 @@ public class LevelConfig {
         copyState(this, snapshot);
     }
 
+    /**
+     * Copies the value of all public properties of src to dst.  If this results
+     * in changes to any bound properties, the peoperty change events will be
+     * fired.
+     * 
+     * @param src The level config to copy properties from
+     * @param dst The level config to copy properties to.  This object may fire
+     * PropertyChangeEvents as a result of this method call.
+     */
     private static void copyState(LevelConfig src, LevelConfig dst) {
         try {
             dst.initInterpreter();
@@ -396,16 +458,25 @@ public class LevelConfig {
             for (Robot r : src.robots) {
                 dst.addRobot(r); // was dst.addRobot(new Robot(r));
             }
-            dst.score = src.score;
+            dst.setScore(src.score);
 
             // addSwitch() adds the switch to the BSH interpreter
             dst.switches = new ArrayList<Switch>();
             for (Switch s : src.switches) {
-                dst.addSwitch(dst.new Switch(s));
+                dst.addSwitch(new Switch(s));
             }
             // don't modify snapshot, so that resetState() will work multiple times
         } catch (EvalError e) {
             throw new RuntimeException(e);
         }
+    }
+    
+    // Property change listener methods
+    public void addPropertyChangeListener(PropertyChangeListener l) { pcs.addPropertyChangeListener(l); }
+    public void addPropertyChangeListener(String property, PropertyChangeListener l) { pcs.addPropertyChangeListener(property, l); }
+    public void removePropertyChangeListener(PropertyChangeListener l) { pcs.removePropertyChangeListener(l); }
+
+    public Interpreter getBshInterpreter() {
+        return bsh;
     }
 }
