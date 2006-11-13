@@ -1,9 +1,9 @@
 Game Features:
 -Level editor
- -factor out each makeXXXProps.. editor into its own class, and add validate methods
- -make label editor and hook into switch and robot properties
- -make sprite editor and hook into switch and robot properties
+ -make a file filter for project files
  -implement a GUI resource manager (for adding and removing files in the project) and do away with project directories
+ -make an animated sprite creator thing
+ -factor out each makeXXXProps.. editor into its own class, and add validate methods
  -in config files, add a version attribute to top-level element and autobackup old versions
  -effect for the "cursor" box to fade in and out and change colours and stuff
  -put a real spotlight on the currently-selected robot or switch
@@ -40,6 +40,10 @@ Sounds:
 
 Completed:
 -Level Editor:
+ -restrict sprite chooser list to just the sprite files (image and rsf files)
+ -implement a "close" feature that goes back to the welcome menu thing
+ -make sprite editor and hook into switch and robot properties
+ -make label edit stuff for switch and robot properties
  -make it possible to set positions for robots and switches
  -make the map appear centred in the editor/playfield (by tweaking layouts)
  -put a red circle around the currently-selected robot or switch
@@ -56,6 +60,7 @@ Completed:
  -make square configs and sensor configs editable
  -implement the "project" paradigm
  -save and load
+-stop playfield from painting disabled labels
 -user-controllable label positioning for switches and grods (n, ne, e, se, s, sw, w, nw)
 -simpler robot and switch repositioning (via setX/getX and setY/getY)
 -make location vs. position consistent throughout (standardise on position)

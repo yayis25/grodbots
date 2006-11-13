@@ -61,6 +61,7 @@ import javax.swing.event.DocumentListener;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 
+import net.bluecow.robot.Direction;
 import net.bluecow.robot.FileFormatException;
 import net.bluecow.robot.GameConfig;
 import net.bluecow.robot.LevelConfig;
@@ -71,13 +72,25 @@ import net.bluecow.robot.GameConfig.SensorConfig;
 import net.bluecow.robot.GameConfig.SquareConfig;
 import net.bluecow.robot.LevelConfig.Switch;
 import net.bluecow.robot.sprite.Sprite;
+import net.bluecow.robot.sprite.SpriteFileFilter;
 import net.bluecow.robot.sprite.SpriteManager;
 
 public class EditorMain {
 
+    private class CloseProjectAction extends AbstractAction {
+
+        public CloseProjectAction() {
+            super("Close Project");
+            putValue(MNEMONIC_KEY, KeyEvent.VK_C);
+        }
+        
+        public void actionPerformed(ActionEvent e) {
+            closeProject();
+        }
+    }
+    
     private class LoadProjectAction extends AbstractAction {
-        
-        
+
         public LoadProjectAction() {
             super("Open Project...");
             putValue(MNEMONIC_KEY, KeyEvent.VK_O);
@@ -176,6 +189,7 @@ public class EditorMain {
     
     private LoadProjectAction loadProjectAction = new LoadProjectAction();
     private SaveLevelPackAction saveLevelPackAction = new SaveLevelPackAction();
+    private CloseProjectAction closeProjectAction = new CloseProjectAction();
 
     
     private static JDialog makeSensorPropsDialog(final JFrame parent, GameConfig gc, final SensorConfig sc) {
@@ -202,7 +216,7 @@ public class EditorMain {
         gbc.weightx = 0.0;
         gbc.gridwidth = 1;
         gbc.anchor = GridBagConstraints.LINE_END;
-        cp.add(new JLabel("Square Type Name:"), gbc);
+        cp.add(new JLabel("Sensor Type Name:"), gbc);
 
         gbc.weightx = 1.0;
         gbc.gridwidth = GridBagConstraints.REMAINDER;
@@ -233,6 +247,7 @@ public class EditorMain {
             try {
                 Project proj = Project.load(f);
                 RobotUtils.updateRecentFiles(recentProjects, fc.getSelectedFile());
+                recentProjects.put("autoLoadOk", "true");
                 return proj;
             } catch (BackingStoreException ex) {
                 System.out.println("Couldn't update user prefs");
@@ -278,7 +293,7 @@ public class EditorMain {
         }
         sensorTypesList.setSelectedIndices(selectionIndices);
         
-        final JComboBox spritePathField = new JComboBox(new ResourcesComboBoxModel(project));
+        final JComboBox spritePathField = new JComboBox(new ResourcesComboBoxModel(project, new SpriteFileFilter()));
         if (sc.getSprite() != null) {
             spritePathField.setSelectedItem(sc.getSprite().getAttributes().get(Sprite.KEY_HREF));
         }
@@ -393,16 +408,22 @@ public class EditorMain {
      * you want it to be modal. 
      */
     private static JDialog makeRobotPropsDialog(final JFrame parent,
-            final Project project, final LevelConfig level, final Robot robot, final ActionListener okAction) {
+            final Project project, final LevelConfig level, final Robot robot,
+            final ActionListener okAction) {
         final JDialog d = new JDialog(parent, "Switch Properties");
 
         final JTextField idField = new JTextField(robot.getId());
         final JTextField labelField = new JTextField(robot.getLabel());
+        final JCheckBox labelEnabledBox = new JCheckBox("Label Enabled", robot.isLabelEnabled());
+        final JComboBox labelDirectionBox = new JComboBox(Direction.values());
+        labelDirectionBox.setSelectedItem(robot.getLabelDirection());
         final JSpinner xPosition = new JSpinner(new SpinnerNumberModel(robot.getX(), 0.0, level.getWidth(), robot.getStepSize()));
         final JSpinner yPosition = new JSpinner(new SpinnerNumberModel(robot.getY(), 0.0, level.getHeight(), robot.getStepSize()));
-        final JComboBox spritePathField = new JComboBox(new ResourcesComboBoxModel(project));
+        final JComboBox spritePathField = new JComboBox(new ResourcesComboBoxModel(project, new SpriteFileFilter()));
+        final JSpinner spriteScaleSpinner = new JSpinner(new SpinnerNumberModel(1.0, 0.0, 1000.0, 0.01));
         if (robot.getSprite() != null) {
             spritePathField.setSelectedItem(robot.getSprite().getAttributes().get(Sprite.KEY_HREF));
+            spriteScaleSpinner.setValue(robot.getSprite().getScale());
         }
         final JSpinner evalsPerStep = new JSpinner(new SpinnerNumberModel(robot.getEvalsPerStep(), 1, null, 1));
         final JSpinner stepSize = new JSpinner(new SpinnerNumberModel(new Double(robot.getStepSize()), 0.01, null, 0.01));
@@ -413,17 +434,23 @@ public class EditorMain {
                 try {
                     robot.setId(idField.getText());
                     robot.setLabel(labelField.getText());
+                    robot.setLabelDirection((Direction) labelDirectionBox.getSelectedItem());
+                    robot.setLabelEnabled(labelEnabledBox.isSelected());
                     Point2D pos = new Point2D.Double(
                             (Double) xPosition.getValue(),
                             (Double) yPosition.getValue());
                     robot.setPosition(pos);
-                    robot.setSprite(SpriteManager.load(
+                    
+                    Sprite sprite = SpriteManager.load(
                             project.getGameConfig().getResourceLoader(),
-                            (String) spritePathField.getSelectedItem()));
+                            (String) spritePathField.getSelectedItem());
+                    sprite.setScale((Double) spriteScaleSpinner.getValue());
+                    robot.setSprite(sprite);
                     robot.setEvalsPerStep((Integer) evalsPerStep.getValue());
                     robot.setStepSize(((Double) stepSize.getValue()).floatValue());
                     
                     if (okAction != null) {
+                        System.out.println("Performing OK action for robot props dialog");
                         okAction.actionPerformed(e);
                     }
 
@@ -484,12 +511,45 @@ public class EditorMain {
         gbc.gridwidth = 1;
         gbc.fill = GridBagConstraints.NONE;
         gbc.anchor = GridBagConstraints.LINE_END;
+        cp.add(new JLabel(""), gbc);
+
+        gbc.weightx = 0.0;
+        gbc.gridwidth = GridBagConstraints.REMAINDER;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        cp.add(labelEnabledBox, gbc);
+
+        gbc.weightx = 0.0;
+        gbc.gridwidth = 1;
+        gbc.fill = GridBagConstraints.NONE;
+        gbc.anchor = GridBagConstraints.LINE_END;
+        cp.add(new JLabel("Label Direction:"), gbc);
+
+        gbc.weightx = 1.0;
+        gbc.gridwidth = GridBagConstraints.REMAINDER;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        cp.add(labelDirectionBox, gbc);
+
+        gbc.weightx = 0.0;
+        gbc.gridwidth = 1;
+        gbc.fill = GridBagConstraints.NONE;
+        gbc.anchor = GridBagConstraints.LINE_END;
         cp.add(new JLabel("Sprite Path:"), gbc);
 
         gbc.weightx = 1.0;
         gbc.gridwidth = GridBagConstraints.REMAINDER;
         gbc.fill = GridBagConstraints.HORIZONTAL;
         cp.add(spritePathField, gbc);
+
+        gbc.weightx = 0.0;
+        gbc.gridwidth = 1;
+        gbc.fill = GridBagConstraints.NONE;
+        gbc.anchor = GridBagConstraints.LINE_END;
+        cp.add(new JLabel("Sprite Scale:"), gbc);
+
+        gbc.weightx = 1.0;
+        gbc.gridwidth = GridBagConstraints.REMAINDER;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        cp.add(spriteScaleSpinner, gbc);
 
         gbc.weightx = 0.0;
         gbc.gridwidth = 1;
@@ -536,13 +596,18 @@ public class EditorMain {
         final JDialog d = new JDialog(parent, "Switch Properties");
 
         final JTextField idField = new JTextField(sw.getId());
-        final JCheckBox enabledBox = new JCheckBox("Start enabled", sw.isEnabled());
+        final JCheckBox switchEnabledBox = new JCheckBox("Start enabled", sw.isEnabled());
         final JSpinner xPosition = new JSpinner(new SpinnerNumberModel(sw.getX(), 0, level.getWidth(), 1));
         final JSpinner yPosition = new JSpinner(new SpinnerNumberModel(sw.getY(), 0, level.getHeight(), 1));
         final JTextField labelField = new JTextField(sw.getLabel());
-        final JComboBox spritePathField = new JComboBox(new ResourcesComboBoxModel(project));
+        final JCheckBox labelEnabledBox = new JCheckBox("Label Enabled", sw.isLabelEnabled());
+        final JComboBox labelDirectionBox = new JComboBox(Direction.values());
+        labelDirectionBox.setSelectedItem(sw.getLabelDirection());
+        final JComboBox spritePathField = new JComboBox(new ResourcesComboBoxModel(project, new SpriteFileFilter()));
+        final JSpinner spriteScaleSpinner = new JSpinner(new SpinnerNumberModel(1.0, 0.0, 1000.0, 0.01));
         if (sw.getSprite() != null) {
             spritePathField.setSelectedItem(sw.getSprite().getAttributes().get(Sprite.KEY_HREF));
+            spriteScaleSpinner.setValue(sw.getSprite().getScale());
         }
         final JTextArea onEnterArea = new JTextArea(sw.getOnEnter(), 6, 15);
 
@@ -551,15 +616,19 @@ public class EditorMain {
             public void actionPerformed(ActionEvent e) {
                 try {
                     sw.setId(idField.getText());
-                    sw.setEnabled(enabledBox.isSelected());
+                    sw.setEnabled(switchEnabledBox.isSelected());
                     Point pos = new Point();
                     pos.x = (Integer) xPosition.getValue();
                     pos.y = (Integer) yPosition.getValue();
                     sw.setPosition(pos);
                     sw.setLabel(labelField.getText());
-                    sw.setSprite(SpriteManager.load(
+                    sw.setLabelDirection((Direction) labelDirectionBox.getSelectedItem());
+                    sw.setLabelEnabled(labelEnabledBox.isSelected());
+                    Sprite sprite = SpriteManager.load(
                             project.getGameConfig().getResourceLoader(),
-                            (String) spritePathField.getSelectedItem()));
+                            (String) spritePathField.getSelectedItem());
+                    sprite.setScale((Double) spriteScaleSpinner.getValue());
+                    sw.setSprite(sprite);
                     sw.setOnEnter(onEnterArea.getText());
                     
                     if (okAction != null) {
@@ -600,7 +669,7 @@ public class EditorMain {
         gbc.weightx = 1.0;
         gbc.gridwidth = GridBagConstraints.REMAINDER;
         gbc.fill = GridBagConstraints.HORIZONTAL;
-        cp.add(enabledBox, gbc);
+        cp.add(switchEnabledBox, gbc);
 
         gbc.weightx = 0.0;
         gbc.gridwidth = 1;
@@ -633,12 +702,45 @@ public class EditorMain {
         gbc.gridwidth = 1;
         gbc.fill = GridBagConstraints.NONE;
         gbc.anchor = GridBagConstraints.LINE_END;
+        cp.add(new JLabel(""), gbc);
+
+        gbc.weightx = 0.0;
+        gbc.gridwidth = GridBagConstraints.REMAINDER;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        cp.add(labelEnabledBox, gbc);
+
+        gbc.weightx = 0.0;
+        gbc.gridwidth = 1;
+        gbc.fill = GridBagConstraints.NONE;
+        gbc.anchor = GridBagConstraints.LINE_END;
+        cp.add(new JLabel("Label Direction:"), gbc);
+
+        gbc.weightx = 1.0;
+        gbc.gridwidth = GridBagConstraints.REMAINDER;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        cp.add(labelDirectionBox, gbc);
+
+        gbc.weightx = 0.0;
+        gbc.gridwidth = 1;
+        gbc.fill = GridBagConstraints.NONE;
+        gbc.anchor = GridBagConstraints.LINE_END;
         cp.add(new JLabel("Sprite:"), gbc);
 
         gbc.weightx = 1.0;
         gbc.gridwidth = GridBagConstraints.REMAINDER;
         gbc.fill = GridBagConstraints.HORIZONTAL;
         cp.add(spritePathField, gbc);
+
+        gbc.weightx = 0.0;
+        gbc.gridwidth = 1;
+        gbc.fill = GridBagConstraints.NONE;
+        gbc.anchor = GridBagConstraints.LINE_END;
+        cp.add(new JLabel("Sprite Scale:"), gbc);
+
+        gbc.weightx = 1.0;
+        gbc.gridwidth = GridBagConstraints.REMAINDER;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        cp.add(spriteScaleSpinner, gbc);
 
         gbc.weightx = 0.0;
         gbc.gridwidth = 1;
@@ -780,6 +882,7 @@ public class EditorMain {
         mb.add (m = new JMenu("File"));
         m.add(new JMenuItem(loadProjectAction));
         m.add(new JMenuItem(saveLevelPackAction));
+        m.add(new JMenuItem(closeProjectAction));
         m.add(new JMenuItem(exitAction));
         
         frame.setJMenuBar(mb);
@@ -818,6 +921,13 @@ public class EditorMain {
         return project;
     }
 
+    private void closeProject() {
+        frame.setVisible(false);
+        frame.dispose();
+        recentProjects.put("autoLoadOk", "false");
+        presentWelcomeMenu();
+    }
+    
     private void setLevelToEdit(LevelConfig level) {
         if (levelEditPanel != null) {
             frame.remove(levelEditPanel);
@@ -939,7 +1049,11 @@ public class EditorMain {
             public void actionPerformed(ActionEvent e) {
                 final Robot robot = project.createRobot();
                 ActionListener addRobot = new ActionListener() {
-                    public void actionPerformed(ActionEvent e) { level.addRobot(robot); }
+                    public void actionPerformed(ActionEvent e) {
+                        level.addRobot(robot);
+                        editor.addRobot(robot);
+                        robotChooser.setSelectedValue(robot, true);
+                    }
                 };
                 JDialog d = makeRobotPropsDialog(frame, project, level, robot, addRobot);
                 d.setModal(true);
@@ -954,7 +1068,10 @@ public class EditorMain {
             public void actionPerformed(ActionEvent e) {
                 final Switch sw = project.createSwitch();
                 ActionListener addSwitch = new ActionListener() {
-                    public void actionPerformed(ActionEvent e) { level.addSwitch(sw); }
+                    public void actionPerformed(ActionEvent e) {
+                        level.addSwitch(sw);
+                        switchChooser.setSelectedValue(sw, true);
+                    }
                 };
                 JDialog d = makeSwitchPropsDialog(frame, project, level, sw, addSwitch);
                 d.setModal(true);
@@ -1002,9 +1119,8 @@ public class EditorMain {
     }
 
     private static boolean autoloadMostRecentProject() {
-        if (recentProjects.get("0", null) == null) {
-            return false;
-        }
+        if (recentProjects.get("0", null) == null) return false;
+        if (recentProjects.get("autoLoadOk", "false").equals("false")) return false;
         File mostRecentProjectLocation = new File(recentProjects.get("0", null));
         if (mostRecentProjectLocation.isDirectory()) {
             try {
@@ -1025,37 +1141,42 @@ public class EditorMain {
         return false;
     }
 
-    protected static void presentWelcomeMenu() throws IOException {
-        int choice = JOptionPane.showOptionDialog(
-                null, 
-                "Welcome to the Robot Editor.\n" +
-                 "Do you want to open an existing project\n" +
-                 "or start a new one?", "Robot Editor",
-                JOptionPane.YES_NO_CANCEL_OPTION, 
-                JOptionPane.PLAIN_MESSAGE, null, 
-                new String[] {"Quit", "Open Existing", "Create new"},
-                "Create new");
-        System.out.println("Choice: "+choice);
-        
+    protected static void presentWelcomeMenu() {
         Project proj = null;
-        if (choice == 1) {
-            // open existing
-            proj = promptUserForProject();
-        } else if (choice == 2) {
-            // create new
-            String projName = JOptionPane.showInputDialog("What will your project be called?");
-            JFileChooser fc = new JFileChooser();
-            fc.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
-            fc.setDialogTitle("Where do you want to save your project?");
-            int fcChoice = fc.showSaveDialog(null);
-            if (fcChoice == JFileChooser.APPROVE_OPTION) {
-                proj = Project.createNewProject(new File(fc.getSelectedFile(), projName));
+
+        while (proj == null) try {
+            int choice = JOptionPane.showOptionDialog(
+                    null, 
+                    "Welcome to the Robot Editor.\n" +
+                    "Do you want to open an existing project\n" +
+                    "or start a new one?", "Robot Editor",
+                    JOptionPane.YES_NO_CANCEL_OPTION, 
+                    JOptionPane.PLAIN_MESSAGE, null, 
+                    new String[] {"Quit", "Open Existing", "Create new"},
+            "Create new");
+            System.out.println("Choice: "+choice);
+
+            if (choice == 0) {
+                System.exit(0);
+            } else if (choice == 1) {
+                // open existing
+                proj = promptUserForProject();
+            } else if (choice == 2) {
+                // create new
+                String projName = JOptionPane.showInputDialog("What will your project be called?");
+                JFileChooser fc = new JFileChooser();
+                fc.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+                fc.setDialogTitle("Where do you want to save your project?");
+                int fcChoice = fc.showSaveDialog(null);
+                if (fcChoice == JFileChooser.APPROVE_OPTION) {
+                    proj = Project.createNewProject(new File(fc.getSelectedFile(), projName));
+                }
             }
+        } catch (Exception ex) {
+            showException(null, "Couldn't load project!", ex);
         }
         
-        if (proj != null) {
-            new EditorMain(proj);
-        }
+        new EditorMain(proj);
     }
 
 }

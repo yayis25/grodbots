@@ -5,6 +5,7 @@
  */
 package net.bluecow.robot.editor;
 
+import java.io.FilenameFilter;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -18,10 +19,14 @@ public class ResourcesComboBoxModel implements ComboBoxModel {
     
     private String selectedItem;
     
-    ResourcesComboBoxModel(Project proj) {
+    ResourcesComboBoxModel(Project proj, FilenameFilter filter) {
         this.items = new ArrayList<String>();
         items.add(null);
-        items.addAll(proj.getAllResourceNames());
+        for (String item : proj.getAllResourceNames()) {
+            if (filter == null || filter.accept(null, item)) {
+                items.add(item);
+            }
+        }
         this.selectedItem = null;
     }
     
