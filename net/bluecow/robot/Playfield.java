@@ -149,8 +149,18 @@ public class Playfield extends JPanel {
         robots = new ArrayList<RoboStuff>();
         this.level = level;
         for (Robot r : level.getRobots()) {
-            addRobot(r, AlphaComposite.SrcOver);
+            addRobot(r);
         }
+    }
+    
+    /**
+     * Adds a robot which will be rendered using the default
+     * composite (fully opaque).
+     * 
+     * @param robot The robot to add.
+     */
+    public final void addRobot(Robot robot) {
+        addRobot(robot, null);
     }
     
     /**
@@ -214,8 +224,12 @@ public class Playfield extends JPanel {
         Composite backupComposite = g2.getComposite();
         for (RoboStuff rs : robots) {
             Robot robot = rs.getRobot();
-            g2.setComposite(rs.getComposite());
-
+            if (rs.getComposite() != null) {
+                g2.setComposite(rs.getComposite());
+            } else {
+                g2.setComposite(AlphaComposite.SrcOver);
+            }
+            
             Sprite sprite = robot.getSprite();
             Point2D.Float roboPos = robot.getPosition();
             AffineTransform backupXform = g2.getTransform();
@@ -290,11 +304,15 @@ public class Playfield extends JPanel {
         if (labelOpacity > 0.0) {
             for (RoboStuff rs : robots) {
                 Robot robot = rs.getRobot();
-                drawLabel(g2, fm, robot, robot.getPosition());
+                if (robot.isLabelEnabled()) {
+                    drawLabel(g2, fm, robot, robot.getPosition());
+                }
             }
             
             for (Switch s : level.getSwitches()) {
-                drawLabel(g2, fm, s, s.getPosition());
+                if (s.isLabelEnabled()) {
+                    drawLabel(g2, fm, s, s.getPosition());
+                }
             }
         }
         

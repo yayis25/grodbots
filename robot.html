@@ -1,14 +1,114 @@
 <html>
  <head>
-  <title>The Robot Game!</title>
+  <title>Grodbots: The Robot Game!</title>
+  <style type="text/css">
+  body {
+	font-family: verdana;
+	font-size: 9pt;
+	line-height: 3ex;
+	margin-left: 10em;
+  	background-color: white;
+  	text: black;
+  	width: 45em;
+  }
+  h1 {
+  	padding-top: 3ex;
+    font-size: 20pt;
+  }
+  h2 {
+  	font-size: 16pt;
+  	padding-top: 1ex;
+  	margin-left: 2em;
+  }
+  h3 {
+    font-size: 12pt;
+  	padding-top: 0.5ex;
+  	margin-left: 3em;
+  }
+  p {
+  	margin-left: 5em;
+  }
+  table.icon-collection {
+    font-size: 9pt;
+    clear: both;
+    position: static;
+  }
+  table.icon-collection tr td {
+    text-align: center;
+  }
+  </style>
  </head>
  <body>
-  <a href="robot.jar">Download the jar file</a> and subvert the applet security!
-  <p>
-  Check out the state of various <a href="feature_requests.txt">feature requests</a>
-  <p>
+ 
+  <h1>Grodbots!</h1>
+ 
+  
+  <h2>Background</h2>
+  
+  <p>Once upon a time, there was a robot named Grod.  He needed cake (don't
+  we all?), but he just sat there and never went to get it.  Then along came a
+  smart little geek who realised that Grod's circuits were missing!  He had
+  sensors, so he could see the colour of the floor, and he had terminals for
+  activating his motors. All the little geek needed to do was wire up the sensors
+  to the motor terminals in the right way, and Grod could go get the cake for
+  himself!</p>
+
+  <table class="icon-collection" align="center">
+   <tr>
+    <td>
+     <img src="ROBO-INF/images/grod/robot_00.png" width="50" alt="Grod"/>
+    </td>
+    <td>
+     <img src="ROBO-INF/images/robot.png" width="50" alt="Gregory"/>
+    </td>
+    <td>
+     <img src="ROBO-INF/images/cake.png" width="50" alt="Cake"/>
+	</td>
+   </tr>  
+   <tr>
+    <td>
+     Grod
+    </td>
+    <td>
+     Gregory
+    </td>
+    <td>
+     Cake
+	</td>
+   </tr>
+  </table>
+  <p>Actually, Grodbots is a game where you wire up circuits made of logic gates
+  in order to guide little robots around a map.  Usually the ultimate goal is a
+  nice slice of cake, but not always!  There might be some surprises in store.</p>
+  
+  
+  <h2><a name="download">Download</a></h2>
+  
+  <h3>Playing the Game</h3>
+  
+  <p>To play the game, you'll need a Java 5 Runtime Environment (you may already
+  have this), and the robot.jar file.</p>
+  
+  <p><a href="http://www.java.com/">Download Java 5 here</a></p>
+  
+  <p><a href="robot.jar">Download the robot.jar file here</a></p>
+  
+  <h3>Making New Levels</h3>
+  
+  <p>If you want to design your own levels, you need everything from above
+  (the <a href="http://www.java.com/">Java 5 runtime</a> and 
+  <a href="robot.jar">robot.jar</a>), plus the robot_editor.jar file.</p>
+  
+  <p><a href="robot_editor.jar">Download robot_editor.jar here</a></p>
+  
+  
+  <h2>The future?</h2>
+  
+  <p>Check out the state of various <a href="feature_requests.txt">feature requests</a></p>
+
+  <!-- The applet is no good because you can't save and load and stuff or cut and paste
   <applet archive="robot.jar" code="net.bluecow.robot.RobotApplet" width=150 height=80>
    <param name="levelmap" value="default.map">
-  </applet>
+  </applet> -->
  </body>
 </html>

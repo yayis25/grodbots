@@ -30,6 +30,7 @@
 	<target name="jar" depends="compile,copyresources">
 		<unjar src="lib/bsh.jar" dest="build"/>
 		<jar destfile="robot.jar" basedir="build" manifest="robot_jar_manifest" />
+		<jar destfile="robot_editor.jar" manifest="editor_jar_manifest" />
 	</target>
 
 	<target name="viewApplet" depends="jar">
