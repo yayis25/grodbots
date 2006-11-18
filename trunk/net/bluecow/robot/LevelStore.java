@@ -92,6 +92,12 @@ public class LevelStore {
             out.write("  <level name=\""+level.getName()+"\" " +
                              "size-x=\""+level.getWidth()+"\" " +
                              "size-y=\""+level.getHeight()+"\">\n");
+
+            if (level.getDescription() != null && level.getDescription().trim().length() > 0) {
+                out.write("  <description><![CDATA[\n");
+                out.write(level.getDescription());
+                out.write("\n  ]]></description>\n");
+            }
             
             for (Robot r : level.getRobots()) {
                 out.write("    <grod id=\""+r.getId()+"\" " +
@@ -158,6 +164,10 @@ public class LevelStore {
         for (Map.Entry<String, String> ent : sprite.getAttributes().entrySet()) {
             tag.append(" ").append(ent.getKey()).append("=\"").append(ent.getValue()).append("\"");
         }
+        
+        // XXX why does scale have to be special? maybe it can be another attribute
+        tag.append(" scale=\"").append(sprite.getScale()).append("\"");
+        
         tag.append("/>");
         return tag.toString();
     }
@@ -261,7 +271,7 @@ public class LevelStore {
          * The level config we're currently configuring via SAX events.
          */
         private LevelConfig level;
-
+        
         /**
          * The robot we're currently configuring via SAX events.
          */
@@ -477,6 +487,8 @@ public class LevelStore {
                         
                         if (aname.equals("name")) {
                             name = aval;
+                        } else if (aname.equals("description")) {
+                                name = aval;
                         } else if (aname.equals("size-x")) {
                             try {
                                 xSize = Integer.parseInt(aval);
@@ -500,6 +512,15 @@ public class LevelStore {
                     
                     level.setName(name);
                     level.setSize(xSize, ySize);
+                    
+                    // description comes from nested element
+                    
+                } else if (qName.equals("description")) { // XXX: check we're directly inside level element
+                    
+                    if (level == null) {
+                        throw new FileFormatException("Encountered description element while not inside level element", loc.getLineNumber(), line, loc.getColumnNumber());
+                    }
+                    // description text is cdata inside this element
                     
                 } else if (qName.equals("grod")) { // XXX: ensure this is inside a level element
                     
@@ -677,6 +698,13 @@ public class LevelStore {
                         config.addSquareType(squareName, squareChar, !squareAttributes.contains(WALL_FLAG), squareGraphicsFileName, squareSensors);
                     } catch (SpriteLoadException ex) {
                         throw new SAXException("Failed to load a sprite", ex);
+                    }
+                } else if (qName.equals("description")) {
+                    String desc = charData.toString().trim();
+                    if (desc.length() > 0) {
+                        level.setDescription(desc);
+                    } else {
+                        level.setDescription(null);
                     }
                 } else if (qName.equals("grod")) {
                     if (sprite ==  null) throw new FileFormatException("The <grod> element must contain a nested <graphic> element!", loc.getLineNumber(), line, loc.getColumnNumber());

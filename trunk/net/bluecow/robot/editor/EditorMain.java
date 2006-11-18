@@ -33,6 +33,8 @@ import java.util.prefs.Preferences;
 import javax.swing.AbstractAction;
 import javax.swing.Action;
 import javax.swing.BorderFactory;
+import javax.swing.Box;
+import javax.swing.BoxLayout;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
@@ -934,17 +936,56 @@ public class EditorMain {
         }
         levelEditPanel = new JPanel(new BorderLayout(8, 8));
         editor = new LevelEditor(project.getGameConfig(), level);
+
+        final JCheckBox showDescriptionBox = new JCheckBox("Show Level Description", editor.isDescriptionOn());
+        showDescriptionBox.addActionListener(new ActionListener() {
+           public void actionPerformed(ActionEvent e) {
+               editor.setDescriptionOn(showDescriptionBox.isSelected());
+           }
+        });
+        final JCheckBox showLabelsBox = new JCheckBox("Show Labels", editor.isLabellingOn());
+        showLabelsBox.addActionListener(new ActionListener() {
+           public void actionPerformed(ActionEvent e) {
+               editor.setLabellingOn(showLabelsBox.isSelected());
+           }
+        });
+        
         JPanel floaterPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
         floaterPanel.add(editor);
-        levelEditPanel.add(floaterPanel, BorderLayout.CENTER);
         
-        levelEditPanel.add(makeLevelPropsPanel(level), BorderLayout.NORTH);
+        Box editorOptionsPanel = new Box(BoxLayout.Y_AXIS);
+        editorOptionsPanel.add(Box.createGlue());
+        editorOptionsPanel.add(showDescriptionBox);
+        editorOptionsPanel.add(showLabelsBox);
+        editorOptionsPanel.add(Box.createGlue());
+
+        JPanel editorPanel = new JPanel(new BorderLayout(10, 10));
+        editorPanel.add(floaterPanel, BorderLayout.CENTER);
+        editorPanel.add(editorOptionsPanel, BorderLayout.EAST);
+        
+        levelEditPanel.add(makeLevelPropsPanel(level), BorderLayout.CENTER);
+        levelEditPanel.add(editorPanel, BorderLayout.SOUTH);
         
         frame.add(levelEditPanel, BorderLayout.CENTER);
         frame.validate();
     }
     
     private JPanel makeLevelPropsPanel(final LevelConfig level) {
+        
+        final JTextArea descriptionArea = new JTextArea(level.getDescription(), 8, 30);
+        final JTextField levelNameField = new JTextField(level.getName());
+        final DocumentListener updateListener = new DocumentListener() {
+            public void changedUpdate(DocumentEvent e) { update(); }
+            public void insertUpdate(DocumentEvent e) { update(); }
+            public void removeUpdate(DocumentEvent e) { update(); }
+            void update() {
+                level.setName(levelNameField.getText());
+                level.setDescription(descriptionArea.getText());
+            }
+        };
+        levelNameField.getDocument().addDocumentListener(updateListener);
+        descriptionArea.getDocument().addDocumentListener(updateListener);
+
         GridBagConstraints gbc = new GridBagConstraints();
         JPanel p = new JPanel(new GridBagLayout());
         
@@ -959,17 +1000,24 @@ public class EditorMain {
 
         gbc.fill = GridBagConstraints.HORIZONTAL;
         gbc.gridwidth = GridBagConstraints.REMAINDER;
-        final JTextField levelNameField = new JTextField(level.getName());
-        levelNameField.getDocument().addDocumentListener(new DocumentListener() {
-            public void changedUpdate(DocumentEvent e) { update(); }
-            public void insertUpdate(DocumentEvent e) { update(); }
-            public void removeUpdate(DocumentEvent e) { update(); }
-            void update() { level.setName(levelNameField.getText()); }
-        });
         p.add(levelNameField, gbc);
+        
+        gbc.weighty = 0.0;
+        gbc.weightx = 0.0;
+        gbc.gridwidth = 1;
+        gbc.fill = GridBagConstraints.NONE;
+        gbc.anchor = GridBagConstraints.LINE_END;
+        p.add(new JLabel("Description (HTML):"), gbc);
+        
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.gridwidth = GridBagConstraints.REMAINDER;
+        gbc.fill = GridBagConstraints.BOTH;
+        gbc.weighty = 0.5;
+        p.add(new JScrollPane(descriptionArea), gbc);
         
         gbc.gridwidth = 2;
         gbc.weightx = 1.0;
+        gbc.weighty = 0.0;
         gbc.anchor = GridBagConstraints.CENTER;
         gbc.fill = GridBagConstraints.NONE;
         p.add(new JLabel("Robots"), gbc);
@@ -980,7 +1028,7 @@ public class EditorMain {
         final JList switchChooser = new JList(new SwitchListModel(level));
 
         gbc.gridwidth = 2;
-        gbc.weighty = 1.0;
+        gbc.weighty = 0.5;
         gbc.fill = GridBagConstraints.BOTH;
         robotChooser.setCellRenderer(new RobotListRenderer());
         robotChooser.addMouseListener(new MouseAdapter() {
@@ -1042,6 +1090,7 @@ public class EditorMain {
 
         gbc.gridwidth = 2;
         gbc.weightx = 1.0;
+        gbc.weighty = 0.0;
         gbc.anchor = GridBagConstraints.CENTER;
         gbc.fill = GridBagConstraints.NONE;
         final JButton addRobotButton = new JButton("Add Robot");
@@ -1163,14 +1212,21 @@ public class EditorMain {
                 proj = promptUserForProject();
             } else if (choice == 2) {
                 // create new
-                String projName = JOptionPane.showInputDialog("What will your project be called?");
+                String projName = JOptionPane.showInputDialog(
+                        "What will your project be called?");
                 JFileChooser fc = new JFileChooser();
                 fc.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
                 fc.setDialogTitle("Where do you want to save your project?");
                 int fcChoice = fc.showSaveDialog(null);
+                File projDir = new File(fc.getSelectedFile(), projName);
                 if (fcChoice == JFileChooser.APPROVE_OPTION) {
-                    proj = Project.createNewProject(new File(fc.getSelectedFile(), projName));
+                    proj = Project.createNewProject(projDir);
                 }
+                JOptionPane.showMessageDialog(null, 
+                        "Ok, your project has been created!\n" +
+                        "If you want to add to, remove from, or modify its resources\n" +
+                        "(images and sounds), you can find them in the project directory:\n\n" +
+                        new File(projDir, "ROBO-INF").getAbsolutePath());
             }
         } catch (Exception ex) {
             showException(null, "Couldn't load project!", ex);

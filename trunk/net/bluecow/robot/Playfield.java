@@ -12,6 +12,8 @@ import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Area;
 import java.awt.geom.GeneralPath;
@@ -21,6 +23,8 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
+import javax.swing.BorderFactory;
+import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.Timer;
 import javax.swing.event.AncestorEvent;
@@ -76,7 +80,7 @@ public class Playfield extends JPanel {
     private boolean labellingOn = true;
     
     /**
-     * The opacity of a label.  Fades up and down in paint() according to whether
+     * The opacity of a label.  Fades up and down in nextFrame() according to whether
      * or not labellingOn is set.
      */
     private float labelOpacity = 1.0f;
@@ -86,6 +90,24 @@ public class Playfield extends JPanel {
      */
     private float labelFadeStep = 0.1f;
 
+    /**
+     * Controls whether or not the level description will be displayed by fading the opacity
+     * toward zero when false and toward one when true.
+     */
+    private boolean descriptionOn = true;
+
+    /**
+     * The opacity of the level description.  Fades up and down in nextFrame()
+     * according to whether or not labellingOn is set.
+     */
+    private float descriptionOpacity = 1.0f;
+    
+    /**
+     * Controls whether or not a mouse click on this component toggles the
+     * {@link #descriptionOn} flag.
+     */
+    private boolean clickToToggleDescription = true;
+    
     /**
      * The colour that drawLabel() will use to paint the box underneath labels.
      */
@@ -133,6 +155,16 @@ public class Playfield extends JPanel {
         setGame(game);
         setLevel(level);
         setupKeyboardActions();
+        addMouseListener(new MouseAdapter() {
+            boolean descriptionState = isDescriptionOn();
+            @Override
+            public void mousePressed(MouseEvent e) {
+                if (isClickToToggleDescription()) {
+                    descriptionState = !descriptionState;
+                    setDescriptionOn(descriptionState);
+                }
+            }
+        });
     }
 
     public final void setGame(GameConfig game) {
@@ -323,6 +355,31 @@ public class Playfield extends JPanel {
             g2.setColor(Color.RED);
             g2.drawString(winMessage, 15, getHeight()/2-5);
         }
+        
+        if (level.getDescription() != null && descriptionOpacity > 0.0f) {
+            backupComposite = g2.getComposite();
+            g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, descriptionOpacity));
+            Rectangle labelBounds = new Rectangle(
+                    (int) (getWidth() * 0.05), (int) (getHeight() * 0.05),
+                    (int) (getWidth() * 0.9), (int) (getHeight() * 0.9));
+            g2.setColor(new Color(0, 0, 0, 150));
+            g2.fillRoundRect(
+                    labelBounds.x, labelBounds.y,
+                    labelBounds.width, labelBounds.height,
+                    10, 10);
+            
+            JLabel descriptionLabel = new JLabel(level.getDescription());
+            descriptionLabel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+            descriptionLabel.setForeground(Color.WHITE);
+            descriptionLabel.setOpaque(false);
+            descriptionLabel.setBounds(labelBounds);
+            Graphics labelGraphics = g2.create(
+                    labelBounds.x, labelBounds.y,
+                    labelBounds.width, labelBounds.height);
+            descriptionLabel.paint(labelGraphics);
+
+            g2.setComposite(backupComposite);
+        }
     }
 
     /**
@@ -345,6 +402,12 @@ public class Playfield extends JPanel {
             labelOpacity = (float) Math.min(1.0, labelOpacity + labelFadeStep);
         } else {
             labelOpacity = (float) Math.max(0.0, labelOpacity - labelFadeStep);
+        }
+
+        if (descriptionOn) {
+            descriptionOpacity = (float) Math.min(1.0, descriptionOpacity + labelFadeStep);
+        } else {
+            descriptionOpacity = (float) Math.max(0.0, descriptionOpacity - labelFadeStep);
         }
     }
 
@@ -588,4 +651,21 @@ public class Playfield extends JPanel {
     public void setSpotlightRadius(double spotlightRadius) {
         this.spotlightRadius = spotlightRadius;
     }
+
+    public boolean isDescriptionOn() {
+        return descriptionOn;
+    }
+
+    public void setDescriptionOn(boolean v) {
+        this.descriptionOn = v;
+    }
+
+    public boolean isClickToToggleDescription() {
+        return clickToToggleDescription;
+    }
+
+    public void setClickToToggleDescription(boolean clickToToggleDescription) {
+        this.clickToToggleDescription = clickToToggleDescription;
+    }
+    
 }

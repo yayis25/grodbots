@@ -72,6 +72,8 @@ public class LevelEditor extends Playfield {
         super(game, level);
         setPaintingLevelScore(false);
         setPaintingOverallScore(false);
+        setDescriptionOn(false);
+        setClickToToggleDescription(false);
         addMouseListener(mouseAdapter);
         addMouseMotionListener(mouseMotionAdapter);
     }

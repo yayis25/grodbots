@@ -27,7 +27,11 @@
 		</copy>
 	</target>
 
-	<target name="jar" depends="compile,copyresources">
+	<target name="default_resoruces_jar">
+		<jar destfile="${build}/net/bluecow/robot/default_resources.jar" basedir="default_resources"/>
+	</target>
+
+	<target name="jar" depends="compile,copyresources,default_resoruces_jar">
 		<unjar src="lib/bsh.jar" dest="build"/>
 		<jar destfile="robot.jar" basedir="build" manifest="robot_jar_manifest" />
 		<jar destfile="robot_editor.jar" manifest="editor_jar_manifest" />
@@ -39,7 +43,7 @@
 			<arg value="robot.html" />
 		</exec>
 	</target>
-
+	
 	<target name="run" depends="jar">
 		<java jar="robot.jar" fork="true" />
 	</target>
