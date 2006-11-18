@@ -1,0 +1,23 @@
+<?xml version="1.0"?>
+<!--
+<!DOCTYPE rsf PUBLIC "-//Bluecow.net//DTD Robot Sprite Format 1.0//EN"
+   "http://dtd.bluecow.net/robot/rsf-1.0.dtd">
+-->
+<rsf version="1.0">
+	<frame id="normal" href="blacktile.png"/>
+	<frame id="1" href="blacktile_1.png"/>
+	<frame id="2" href="blacktile_2.png"/>
+	<frame id="3" href="blacktile_3.png"/>
+	<frame id="4" href="blacktile_4.png"/>
+	<frame id="5" href="blacktile_5.png"/>
+	<frame id="6" href="blacktile_6.png"/>
+	<sequence>
+	  <step frame="normal" count="30"/>
+	  <step frame="1"/>
+	  <step frame="2"/>
+	  <step frame="3"/>
+	  <step frame="4"/>
+	  <step frame="5"/>
+	  <step frame="6"/>
+	</sequence>
+</rsf>

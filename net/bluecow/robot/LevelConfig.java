@@ -11,7 +11,6 @@ import java.awt.geom.Point2D;
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
@@ -219,7 +218,16 @@ public class LevelConfig {
 
     }
 
+    /**
+     * The level's name. Should be 1-3 words or so.. not too long.
+     */
     private String name;
+    
+    /**
+     * This levels long description, an HTML document.
+     */
+    private String description;
+    
     private List<Robot> robots = new ArrayList<Robot>();
     
     /**
@@ -266,6 +274,14 @@ public class LevelConfig {
         String oldName = this.name;
         this.name = name;
         pcs.firePropertyChange("name", oldName, name);
+    }
+    
+    public String getDescription() {
+        return description;
+    }
+    
+    public void setDescription(String description) {
+        this.description = description;
     }
     
     /**

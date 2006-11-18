@@ -109,7 +109,8 @@ public class RobotUtils {
      * 
      * @param owningComponent The component that should own this dialog.
      * @param title The title for the dialog.
-     * @return A JDialog that is 
+     * @return A JDialog that is either owned by the Frame or Dialog ancestor of
+     * owningComponent, or not owned but set to be alwaysOnTop.
      */
     public static JDialog makeOwnedDialog(Component owningComponent, String title) {
         Window owner = SwingUtilities.getWindowAncestor(owningComponent);

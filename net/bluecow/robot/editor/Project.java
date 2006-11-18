@@ -15,12 +15,14 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.jar.JarEntry;
+import java.util.jar.JarInputStream;
 import java.util.jar.JarOutputStream;
 
 import net.bluecow.robot.GameConfig;
@@ -75,13 +77,32 @@ public class Project {
                     newRoboInfDir.getAbsolutePath());
         }
         
-        Project proj = new Project();
-        proj.dir = dir;
-        proj.gameConfig = new GameConfig(new DirectoryResourceLoader(dir));
-        LevelConfig myLevelConfig = new LevelConfig();
-        myLevelConfig.setName("New Level");
-        myLevelConfig.setSize(15, 15);
-        proj.gameConfig.addLevel(myLevelConfig);
+        // now populate with the default resource collection
+        JarInputStream defaultResources =
+            new JarInputStream(ClassLoader.getSystemResourceAsStream(
+                    "net/bluecow/robot/default_resources.jar"));
+        JarEntry resource;
+        while ( (resource = defaultResources.getNextJarEntry()) != null ) {
+            String path = resource.getName();
+            File resourceFile = new File(dir, path);
+            if (resource.isDirectory()) {
+                System.out.println("Creating resource directory "+resourceFile.getAbsolutePath());
+                resourceFile.mkdir();
+            } else {
+                System.out.println("Creating resource file "+resourceFile.getAbsolutePath());
+                OutputStream out = new FileOutputStream(resourceFile);
+                byte[] buffer = new byte[1024];
+                int len;
+                while ( (len = defaultResources.read(buffer)) != -1 ) {
+                    out.write(buffer, 0, len);
+                }
+                out.flush();
+                out.close();
+            }
+        }
+        defaultResources.close();
+        
+        Project proj = load(dir);
         
         return proj;
     }
@@ -152,9 +173,22 @@ public class Project {
         jout.close();
     }
 
+    /**
+     * Recursive subroutine that puts all files and directories under
+     * basedir into the given jar output stream.
+     * 
+     * @param out An open JarOutputStream.  It will not be closed by this method.
+     * @param baseDir The base location in the file system which will become the
+     * root of the jar's file entries.
+     * @param path The current path, both within the jar and under baseDir.  Path
+     * elements are separated by the forward slash '/' character.
+     * @throws IOException If there is trouble with either the input or output
+     * files.
+     */
     private void recursiveSaveFilesToJar(JarOutputStream out, File baseDir, String path) throws IOException {
         File thisDir = new File(baseDir, path);
         System.out.println("JAR: starting dir "+thisDir);
+        out.putNextEntry(new JarEntry(path + "/")); // XXX not tested yet
         for (String subPath : thisDir.list()) {
             File f = new File(thisDir, subPath);
             System.out.println("     entry "+f);
