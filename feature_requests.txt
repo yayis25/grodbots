@@ -1,13 +1,7 @@
 Game Features:
 -Level editor
- -be able to delete robots
- -be able to delete switches
- -be able to delete levels
- -be able to delete square types
- -be able to delete sensor types
- -make save safer (rename the level map file before overwriting)
  -saving levels should show exceptions when they happen
- -make a save feature that doesn't need to save a level pack
+ ----release----
  -make a file filter for project files
  -implement a GUI resource manager (for adding and removing files in the project) and do away with project directories
  -create a default set of resources that every new project gets
@@ -53,6 +47,17 @@ Completed:
 -have an HTML description for each level that gives hints and stuff (especially useful
  in the tutorial stage)
 -Level Editor:
+ -make save safer (rename the level map file before overwriting)
+ -make a save feature that doesn't need to save a level pack
+ -remove the "teleport gregory" switch from the level in default resources
+ -be able to delete levels
+ -set the square type on a level when it gets selected (otherwise the list has a selected square, but the level won't paint)
+ -fix the addLevelAction!
+ -be able to delete robots
+ -be able to delete switches
+ -be able to delete square types
+ -be able to delete sensor types
+ -fixed off-by-1 in SquareChooserListModel.getElementAt()
  -save sprite sizes and other attribs in map file
  -prepopulate new projects with a starter set of resources
  -restrict sprite chooser list to just the sprite files (image and rsf files)

@@ -106,6 +106,10 @@ public class GameConfig {
             this.sensorTypes = sensorTypes;
         }
 
+        public boolean removeSensorType(SensorConfig sc) {
+            return sensorTypes.remove(sc);
+        }
+        
         public Sprite getSprite() {
             return sprite;
         }
@@ -237,6 +241,31 @@ public class GameConfig {
         pcs.firePropertyChange("squareTypes", null, null);
     }
 
+    /**
+     * Removes the given square type from this game config. Changes all squares
+     * in maps that were using it to null.
+     * 
+     * @param squareConfig The square config to remove.  If such a square config
+     * is not part of this game config, nothing will be affected.
+     */
+    public void removeSquareType(SquareConfig squareConfig) {
+        if (squareTypes.remove(squareConfig.getMapChar()) != null) {
+            for (LevelConfig level : levels) {
+                // XXX this is too tightly coupled to level config.. need listener api for square type add/removes
+                Square[][] map = level.getMap();
+                for (int row = 0; row < map.length; row++) {
+                    for (int col = 0; col < map[row].length; col++) {
+                        if (map[row][col] != null &&
+                                map[row][col].getMapChar() == squareConfig.getMapChar()) {
+                            map[row][col] = null;
+                        }
+                    }
+                }
+            }
+            pcs.firePropertyChange("squareTypes", null, null);
+        }
+    }
+
     public SquareConfig getSquare(char squareChar) {
         return squareTypes.get(squareChar);
     }
@@ -247,6 +276,11 @@ public class GameConfig {
 
     public void addLevel(LevelConfig level) {
         levels.add(level);
+        pcs.firePropertyChange("levels", null, level);
+    }
+
+    public void removeLevel(LevelConfig level) {
+        levels.remove(level);
         pcs.firePropertyChange("levels", null, level);
     }
 
@@ -265,6 +299,20 @@ public class GameConfig {
     public void addSensorType(SensorConfig sc) {
         sensorTypes.put(sc.getId(), sc);
         pcs.firePropertyChange("sensorTypes", null, sensorTypes);
+    }
+
+    /**
+     * Removes the given sensor type from this game.  If there were any square
+     * types that activated this sensor type, they will be altered so they don't
+     * refer to it any more.
+     */
+    public void removeSensorType(SensorConfig sensorConfig) {
+        if (sensorTypes.remove(sensorConfig.getId()) != null) {
+            for (SquareConfig square : squareTypes.values()) {
+                square.removeSensorType(sensorConfig);
+            }
+            pcs.firePropertyChange("sensorTypes", null, null);
+        }
     }
 
     public Object getSensor(String typeName) {

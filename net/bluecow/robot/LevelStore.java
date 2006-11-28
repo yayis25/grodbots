@@ -8,8 +8,12 @@ package net.bluecow.robot;
 import java.awt.Point;
 import java.awt.geom.Point2D;
 import java.io.BufferedInputStream;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -51,7 +55,65 @@ public class LevelStore {
 
     private static boolean debugging = false;
     
-    public static void save(Writer out, GameConfig gc, String encoding) throws IOException {
+    /**
+     * Writes the given Game configuration in the Rocky 4.0 XML format to the
+     * given file.  The actual writing process is done into a temporary file in
+     * the same directory as destFile, and if successful, the temporary file
+     * is renamed to the pathname given for destFile.  Therefore, if an exception
+     * gets thrown, there may be a partially complete new level file in the
+     * same directory as destFile.  In that case, destFile will not have been
+     * affected.
+     * 
+     * @param destFile
+     * @param gc
+     * @param encoding The desired encoding of the output file.  This string will
+     * also be written to the XML declaration.
+     * @throws IOException
+     */
+    public static void save(File destFile, GameConfig gc, String encoding) throws IOException {
+        File destDir = destFile.getParentFile();
+        if (!destDir.exists()) {
+            throw new IOException("Destination directory \""+destDir+"\" does not exist");
+        }
+        File tempFile = new File(destDir, "map_tmp_"+System.currentTimeMillis());
+        Writer out = null;
+        try {
+            out = new BufferedWriter(
+                    new OutputStreamWriter(
+                            new FileOutputStream(tempFile), encoding));
+            save(out, gc, encoding);
+            if (destFile.exists()) {
+                destFile.renameTo(new File(destDir, "map_backup_"+System.currentTimeMillis()));
+            }
+            tempFile.renameTo(destFile);
+        } catch (Exception ex) {
+            throw new IOException(
+                    "Error writing game description XML file.  You can examine the " +
+                    "partially-saved game description in " + tempFile.getAbsolutePath() + " " +
+                    "The original file, if any, has not been affected.");
+        } finally {
+            if (out != null) {
+                out.flush();
+                out.close();
+                out = null;
+            }
+        }
+    }
+
+    /**
+     * Writes the given game configuration as described in
+     * {@link #save(File, GameConfig, String)}, but makes no attempts at safety
+     * (the game config simply gets dumped to the given writer).
+     * 
+     * @param out The writer to write the game config to.
+     * @param gc The game config to save.
+     * @param encoding The character encoding to output in the XML header. Should
+     * match the character encoding of the given writer.  It is important
+     * to get this right, because XML parsers tend to blindly trust whatever the
+     * XML delcaration says.
+     * @throws IOException
+     */
+    private static void save(Writer out, GameConfig gc, String encoding) throws IOException {
         out.write("<?xml version=\"1.0\" encoding=\""+encoding+"\"?>\n");
         out.write("<rocky version=\"4.0\">");
 
@@ -164,10 +226,6 @@ public class LevelStore {
         for (Map.Entry<String, String> ent : sprite.getAttributes().entrySet()) {
             tag.append(" ").append(ent.getKey()).append("=\"").append(ent.getValue()).append("\"");
         }
-        
-        // XXX why does scale have to be special? maybe it can be another attribute
-        tag.append(" scale=\"").append(sprite.getScale()).append("\"");
-        
         tag.append("/>");
         return tag.toString();
     }

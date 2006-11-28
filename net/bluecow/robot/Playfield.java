@@ -196,8 +196,13 @@ public class Playfield extends JPanel {
     }
     
     /**
-     * Adds the given robot to this playfield.  The robot will be drawn with
-     * the specified composite operation.
+     * Adds the given robot to this playfield.  The robot does not have to be
+     * part of the level associated with this playfield (for instance, it could
+     * be a ghost).
+     * 
+     * @param robot The robot to add.
+     * @param drawComposite The robot will be drawn with
+     * this composite operation.  Null means normal compositing.
      */
     public final void addRobot(Robot robot, Composite drawComposite) {
         robots.add(new RoboStuff(robot, drawComposite));
@@ -207,7 +212,7 @@ public class Playfield extends JPanel {
     /**
      * Removes the given robot from this playfield.
      */
-    public final void removeRobot(Robot robot) {
+    public void removeRobot(Robot robot) {
         for (Iterator<RoboStuff> it = robots.iterator(); it.hasNext(); ) {
             if (it.next().getRobot() == robot) {
                 it.remove();

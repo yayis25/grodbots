@@ -19,6 +19,7 @@ import java.awt.geom.Point2D;
 import net.bluecow.robot.GameConfig;
 import net.bluecow.robot.LevelConfig;
 import net.bluecow.robot.Playfield;
+import net.bluecow.robot.Robot;
 import net.bluecow.robot.GameConfig.SquareConfig;
 
 public class LevelEditor extends Playfield {
@@ -105,7 +106,7 @@ public class LevelEditor extends Playfield {
             g2.drawRect(x, y, getSquareWidth(), getSquareWidth());
         }
     }
-
+    
     /**
      * Updates the paintingLocation and paintingLocationDouble variables with the
      * current mouse location, as given by the point p.
