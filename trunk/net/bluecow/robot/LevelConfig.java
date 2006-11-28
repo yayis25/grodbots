@@ -306,7 +306,31 @@ public class LevelConfig {
         robots.add(r);
         pcs.firePropertyChange("robots", null, null);
     }
-    
+
+    /**
+     * Removes the given robot from this level.  If the robot was not
+     * part of this level, has no effect.
+     * <p>
+     * NOTE: when you remove a robot from a level, there might still be
+     * scripts that refer to it.  This method does not attempt to verify
+     * that the scripts still work after the robot is removed.
+     * 
+     * @param robot The robot to remove.
+     * @throws RuntimeException (wrapping an EvalError) if there is an error 
+     * removing the robot's scripting object from the BSH interpreter.
+     * This does not imply that there is any checking of the scripts themselves
+     * (there isn't).
+     */
+    public void removeRobot(Robot r) {
+        try {
+            bsh.unset(r.getId());
+        } catch (EvalError e) {
+            throw new RuntimeException(e);
+        }
+        robots.remove(r);
+        pcs.firePropertyChange("robots", null, null);
+    }
+
     /**
      * Sets the size of the map for this level, in squares.  The new grid of squares
      * is initialised to nulls. If there was a map before, it will be wiped out.
@@ -360,6 +384,21 @@ public class LevelConfig {
             bsh.set(s.getId(), s);
             switches.add(s);
             s.setBshInterpreter(bsh);
+            pcs.firePropertyChange("switches", null, null);
+        } catch (EvalError e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    /**
+     * Removes the given switch from this level and its BSH scripting context.
+     * This operation will break any scripts that referred to the removed switch,
+     * and there will be no warning about that from this method, so be careful!
+     */
+    public void removeSwitch(Switch sw) {
+        try {
+            bsh.unset(sw.getId());
+            switches.remove(sw);
             pcs.firePropertyChange("switches", null, null);
         } catch (EvalError e) {
             throw new RuntimeException(e);

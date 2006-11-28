@@ -28,6 +28,8 @@
 	</target>
 
 	<target name="default_resoruces_jar">
+		<!-- note, for Eclipse to see this jar at runtime, you have to copy it from
+		     the build dir into the source dir -->
 		<jar destfile="${build}/net/bluecow/robot/default_resources.jar" basedir="default_resources"/>
 	</target>
 

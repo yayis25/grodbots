@@ -13,7 +13,6 @@ import java.util.Map;
 
 public abstract class AbstractSprite implements Sprite {
     private Map<String, String> attributes;
-    private double scale = 1.0;
 
     protected AbstractSprite(Map<String, String> attributes) {
         this.attributes = new LinkedHashMap<String, String>(attributes);
@@ -55,11 +54,16 @@ public abstract class AbstractSprite implements Sprite {
     public abstract Image getImage();
     
     public double getScale() {
-        return scale;
+        final String stringScale = getAttributes().get("scale");
+        if (stringScale == null) {
+            return 1.0;
+        } else {
+            return Double.parseDouble(stringScale);
+        }
     }
 
     public void setScale(double scale) {
-        this.scale = scale;
+        getAttributes().put("scale", String.valueOf(scale));
     }
 
     /**

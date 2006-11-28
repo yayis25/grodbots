@@ -7,9 +7,11 @@ package net.bluecow.robot.editor;
 
 import java.awt.BorderLayout;
 import java.awt.Component;
+import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
+import java.awt.GridLayout;
 import java.awt.Insets;
 import java.awt.Point;
 import java.awt.event.ActionEvent;
@@ -79,6 +81,8 @@ import net.bluecow.robot.sprite.SpriteManager;
 
 public class EditorMain {
 
+    public static final Dimension DEFAULT_LEVEL_SIZE = new Dimension(15,10);
+    
     private class CloseProjectAction extends AbstractAction {
 
         public CloseProjectAction() {
@@ -109,8 +113,8 @@ public class EditorMain {
     private class SaveLevelPackAction extends AbstractAction {
         
         public SaveLevelPackAction() {
-            super("Save Level Pack...");
-            putValue(MNEMONIC_KEY, KeyEvent.VK_S);
+            super("Export Level Pack...");
+            putValue(MNEMONIC_KEY, KeyEvent.VK_E);
         }
         
         public void actionPerformed(ActionEvent e) {
@@ -141,6 +145,25 @@ public class EditorMain {
         }
     }
 
+    /**
+     * Just saves the project resources in place.
+     */
+    private class SaveAction extends AbstractAction {
+        
+        public SaveAction() {
+            super("Save");
+            putValue(MNEMONIC_KEY, KeyEvent.VK_S);
+        }
+        
+        public void actionPerformed(ActionEvent e) {
+            try {
+                project.save();
+            } catch (IOException ex) {
+                JOptionPane.showMessageDialog(frame, "Save Failed: "+ex.getMessage());
+            }
+        }
+    }
+
     private Action addSquareTypeAction = new AbstractAction("Add Square Type") {
         public void actionPerformed(ActionEvent e) {
             SquareConfig squareConfig = new GameConfig.SquareConfig();
@@ -148,6 +171,16 @@ public class EditorMain {
             d.setModal(true);
             d.setVisible(true);
             project.getGameConfig().addSquareType(squareConfig);
+        }
+    };
+
+    private Action removeSquareTypeAction = new AbstractAction("Remove Square Type") {
+        public void actionPerformed(ActionEvent e) {
+            final SquareConfig squareConfig = (SquareConfig) squareList.getSelectedValue();
+            final int oldIndex = squareList.getSelectedIndex();
+            project.getGameConfig().removeSquareType(squareConfig);
+            squareList.setSelectedIndex(
+                    Math.min(squareList.getModel().getSize() - 1, oldIndex));
         }
     };
     
@@ -161,12 +194,113 @@ public class EditorMain {
         }
     };
 
+    private Action removeSensorTypeAction = new AbstractAction("Remove Sensor Type") {
+        public void actionPerformed(ActionEvent e) {
+            final SensorConfig sensorConfig = (SensorConfig) sensorTypesList.getSelectedValue();
+            final int oldIndex = sensorTypesList.getSelectedIndex();
+            project.getGameConfig().removeSensorType(sensorConfig);
+            sensorTypesList.setSelectedIndex(
+                    Math.min(sensorTypesList.getModel().getSize() - 1, oldIndex));
+        }
+    };
+
     private Action addLevelAction = new AbstractAction("Add Level") {
         public void actionPerformed(ActionEvent e) {
-            LevelConfig level = new LevelConfig();
-            level.setName("New Level");
-            project.getGameConfig().addLevel(level);
-            levelChooser.setSelectedValue(level, true);
+            final LevelConfig currentLevel = (LevelConfig) levelChooser.getSelectedValue();
+            final LevelConfig newLevel = new LevelConfig();
+            newLevel.setName("New Level " + (1 + levelChooser.getModel().getSize()));
+            if (currentLevel != null) {
+                newLevel.setSize(currentLevel.getWidth(), currentLevel.getHeight());
+            } else {
+                newLevel.setSize(DEFAULT_LEVEL_SIZE.width, DEFAULT_LEVEL_SIZE.height);
+            }
+            project.getGameConfig().addLevel(newLevel);
+            levelChooser.setSelectedValue(newLevel, true);
+        }
+    };
+
+    private Action removeLevelAction = new AbstractAction("Remove Level") {
+        public void actionPerformed(ActionEvent e) {
+            final LevelConfig currentLevel = (LevelConfig) levelChooser.getSelectedValue();
+            final int oldIndex = levelChooser.getSelectedIndex();
+            project.getGameConfig().removeLevel(currentLevel);
+            final int newIndex = Math.min(oldIndex, levelChooser.getModel().getSize()-1);
+            levelChooser.clearSelection();
+            levelChooser.setSelectedIndex(newIndex);
+        }
+    };
+
+    private Action addRobotAction = new AbstractAction("Add Robot") {
+        public void actionPerformed(ActionEvent e) {
+            final Robot robot = project.createRobot();
+            final LevelConfig level = (LevelConfig) levelChooser.getSelectedValue();
+            ActionListener addRobot = new ActionListener() {
+                public void actionPerformed(ActionEvent e) {
+                    level.addRobot(robot);
+                    editor.addRobot(robot);
+                    robotChooser.setSelectedValue(robot, true);
+                }
+            };
+            JDialog d = makeRobotPropsDialog(frame, project, level, robot, addRobot);
+            d.setModal(true);
+            d.setVisible(true);
+        }
+    };
+    
+    private Action removeRobotAction = new AbstractAction("Remove Robot") {
+        public void actionPerformed(ActionEvent e) {
+            final LevelConfig level = (LevelConfig) levelChooser.getSelectedValue();
+            final Robot robot = (Robot) robotChooser.getSelectedValue();
+            final int oldIndex = robotChooser.getSelectedIndex();
+            level.removeRobot(robot);
+            editor.removeRobot(robot); // XXX Playfield doesn't do this automatically
+
+            /*
+             * this is necessary to make the spotlight position update
+             * because the selection index doesn't necessarily change when we
+             * delete a robot, and if it doesn't change, setSelectedIndex()
+             * doesn't fire an event.
+             */ 
+            robotChooser.clearSelection();
+
+            robotChooser.setSelectedIndex(
+                    Math.min(robotChooser.getModel().getSize() - 1, oldIndex));
+        }
+    };
+
+    private Action addSwitchAction = new AbstractAction("Add Switch") {
+        public void actionPerformed(ActionEvent e) {
+            final Switch sw = project.createSwitch();
+            final LevelConfig level = (LevelConfig) levelChooser.getSelectedValue();
+            ActionListener addSwitch = new ActionListener() {
+                public void actionPerformed(ActionEvent e) {
+                    level.addSwitch(sw);
+                    switchChooser.setSelectedValue(sw, true);
+                }
+            };
+            JDialog d = makeSwitchPropsDialog(frame, project, level, sw, addSwitch);
+            d.setModal(true);
+            d.setVisible(true);
+        }
+    };
+    
+    private Action removeSwitchAction = new AbstractAction("Remove Switch") {
+        public void actionPerformed(ActionEvent e) {
+            final LevelConfig level = (LevelConfig) levelChooser.getSelectedValue();
+            final Switch sw = (Switch) switchChooser.getSelectedValue();
+            final int oldIndex = switchChooser.getSelectedIndex();
+            level.removeSwitch(sw);
+
+            /*
+             * this is necessary to make the spotlight position update
+             * because the selection index doesn't necessarily change when we
+             * delete a switch, and if it doesn't change, setSelectedIndex()
+             * doesn't fire an event.
+             */ 
+            switchChooser.clearSelection();
+
+            switchChooser.setSelectedIndex(
+                    Math.min(switchChooser.getModel().getSize() - 1, oldIndex));
         }
     };
 
@@ -186,10 +320,15 @@ public class EditorMain {
     private LevelEditor editor;
     private JList levelChooser;
     private LevelChooserListModel levelChooserListModel;
+    private JList sensorTypesList;
     private SensorTypeListModel sensorTypeListModel;
+    private JList squareList;
     private SquareChooserListModel squareChooserListModel;
+    private JList robotChooser;
+    private JList switchChooser;
     
     private LoadProjectAction loadProjectAction = new LoadProjectAction();
+    private SaveAction saveProjectAction = new SaveAction();
     private SaveLevelPackAction saveLevelPackAction = new SaveLevelPackAction();
     private CloseProjectAction closeProjectAction = new CloseProjectAction();
 
@@ -797,8 +936,8 @@ public class EditorMain {
         });
         levelChooserPanel.add(new JLabel("Levels"), BorderLayout.NORTH);
         levelChooserPanel.add(new JScrollPane(levelChooser), BorderLayout.CENTER);
-        JButton addLevelButton = new JButton(addLevelAction);
-        levelChooserPanel.add(addLevelButton, BorderLayout.SOUTH);
+        JPanel buttonPanel = makeButtonPanel(addLevelAction, removeLevelAction);
+        levelChooserPanel.add(buttonPanel, BorderLayout.SOUTH);
         
         frame.add(levelChooserPanel, BorderLayout.WEST);
         
@@ -808,7 +947,7 @@ public class EditorMain {
         
         JPanel sensorTypesPanel = new JPanel(new BorderLayout());
         sensorTypeListModel = new SensorTypeListModel(myGameConfig);
-        final JList sensorTypesList = new JList(sensorTypeListModel);
+        sensorTypesList = new JList(sensorTypeListModel);
         sensorTypesPanel.add(new JLabel("Sensor Types"), BorderLayout.NORTH);
         sensorTypesPanel.add(new JScrollPane(
                     sensorTypesList,
@@ -828,15 +967,19 @@ public class EditorMain {
                 }
             }
         });
-        sensorTypesPanel.add(new JButton(addSensorTypeAction), BorderLayout.SOUTH);
+        sensorTypesPanel.add(
+                makeButtonPanel(addSensorTypeAction, removeSensorTypeAction),
+                BorderLayout.SOUTH);
         
         squareChooserListModel = new SquareChooserListModel(myGameConfig);
-        final JList squareList = new JList(squareChooserListModel);
+        squareList = new JList(squareChooserListModel);
         squareList.setCellRenderer(new SquareChooserListRenderer());
         squareList.addListSelectionListener(new ListSelectionListener() {
             public void valueChanged(ListSelectionEvent e) {
                 System.out.println("Square List selection changed. squares="+myGameConfig.getSquareTypes());
-                editor.setPaintingSquareType((SquareConfig) squareList.getSelectedValue());
+                if (editor != null) {
+                    editor.setPaintingSquareType((SquareConfig) squareList.getSelectedValue());
+                }
             }
         });
         JPanel squareListPanel = new JPanel(new BorderLayout());
@@ -859,8 +1002,9 @@ public class EditorMain {
                 }
             }
         });
-        squareListPanel.add(new JButton(addSquareTypeAction), BorderLayout.SOUTH);
-        
+        squareListPanel.add(
+                makeButtonPanel(addSquareTypeAction, removeSquareTypeAction),
+                BorderLayout.SOUTH);
         JSplitPane eastPanel = new JSplitPane(JSplitPane.VERTICAL_SPLIT, true);
         eastPanel.setTopComponent(sensorTypesPanel);
         eastPanel.setBottomComponent(squareListPanel);
@@ -874,6 +1018,18 @@ public class EditorMain {
         frame.pack();
         frame.setVisible(true);
     }
+
+    /**
+     * Creates a panel with two buttons in a centered FlowLayout.  The left
+     * action will be in a button on the left, and the right action will
+     * be in a button on the right.
+     */
+    private JPanel makeButtonPanel(Action leftAction, Action rightAction) {
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
+        buttonPanel.add(new JButton(leftAction));
+        buttonPanel.add(new JButton(rightAction));
+        return buttonPanel;
+    }
     
     /**
      * Sets up all the menu bar crap and adds it to the frame.
@@ -883,6 +1039,7 @@ public class EditorMain {
         JMenu m;
         mb.add (m = new JMenu("File"));
         m.add(new JMenuItem(loadProjectAction));
+        m.add(new JMenuItem(saveProjectAction));
         m.add(new JMenuItem(saveLevelPackAction));
         m.add(new JMenuItem(closeProjectAction));
         m.add(new JMenuItem(exitAction));
@@ -934,38 +1091,48 @@ public class EditorMain {
         if (levelEditPanel != null) {
             frame.remove(levelEditPanel);
         }
-        levelEditPanel = new JPanel(new BorderLayout(8, 8));
-        editor = new LevelEditor(project.getGameConfig(), level);
+        if (level == null) {
+            editor = null;
+            levelEditPanel = new JPanel(new GridLayout(1,1));
+            levelEditPanel.add(
+                    new JLabel(
+                            "Please select a level from the list, " +
+                            "or create a new one!"));
+        } else {
+            levelEditPanel = new JPanel(new BorderLayout(8, 8));
+            editor = new LevelEditor(project.getGameConfig(), level);
 
-        final JCheckBox showDescriptionBox = new JCheckBox("Show Level Description", editor.isDescriptionOn());
-        showDescriptionBox.addActionListener(new ActionListener() {
-           public void actionPerformed(ActionEvent e) {
-               editor.setDescriptionOn(showDescriptionBox.isSelected());
-           }
-        });
-        final JCheckBox showLabelsBox = new JCheckBox("Show Labels", editor.isLabellingOn());
-        showLabelsBox.addActionListener(new ActionListener() {
-           public void actionPerformed(ActionEvent e) {
-               editor.setLabellingOn(showLabelsBox.isSelected());
-           }
-        });
-        
-        JPanel floaterPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
-        floaterPanel.add(editor);
-        
-        Box editorOptionsPanel = new Box(BoxLayout.Y_AXIS);
-        editorOptionsPanel.add(Box.createGlue());
-        editorOptionsPanel.add(showDescriptionBox);
-        editorOptionsPanel.add(showLabelsBox);
-        editorOptionsPanel.add(Box.createGlue());
+            final JCheckBox showDescriptionBox = new JCheckBox("Show Level Description", editor.isDescriptionOn());
+            showDescriptionBox.addActionListener(new ActionListener() {
+                public void actionPerformed(ActionEvent e) {
+                    editor.setDescriptionOn(showDescriptionBox.isSelected());
+                }
+            });
+            final JCheckBox showLabelsBox = new JCheckBox("Show Labels", editor.isLabellingOn());
+            showLabelsBox.addActionListener(new ActionListener() {
+                public void actionPerformed(ActionEvent e) {
+                    editor.setLabellingOn(showLabelsBox.isSelected());
+                }
+            });
 
-        JPanel editorPanel = new JPanel(new BorderLayout(10, 10));
-        editorPanel.add(floaterPanel, BorderLayout.CENTER);
-        editorPanel.add(editorOptionsPanel, BorderLayout.EAST);
-        
-        levelEditPanel.add(makeLevelPropsPanel(level), BorderLayout.CENTER);
-        levelEditPanel.add(editorPanel, BorderLayout.SOUTH);
-        
+            JPanel floaterPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
+            floaterPanel.add(editor);
+
+            Box editorOptionsPanel = new Box(BoxLayout.Y_AXIS);
+            editorOptionsPanel.add(Box.createGlue());
+            editorOptionsPanel.add(showDescriptionBox);
+            editorOptionsPanel.add(showLabelsBox);
+            editorOptionsPanel.add(Box.createGlue());
+
+            JPanel editorPanel = new JPanel(new BorderLayout(10, 10));
+            editorPanel.add(floaterPanel, BorderLayout.CENTER);
+            editorPanel.add(editorOptionsPanel, BorderLayout.EAST);
+
+            levelEditPanel.add(makeLevelPropsPanel(level), BorderLayout.CENTER);
+            levelEditPanel.add(editorPanel, BorderLayout.SOUTH);
+            
+            editor.setPaintingSquareType((SquareConfig) squareList.getSelectedValue());
+        }        
         frame.add(levelEditPanel, BorderLayout.CENTER);
         frame.validate();
     }
@@ -1024,8 +1191,8 @@ public class EditorMain {
         gbc.gridwidth = GridBagConstraints.REMAINDER;
         p.add(new JLabel("Switches"), gbc);
         
-        final JList robotChooser = new JList(new RobotListModel(level));
-        final JList switchChooser = new JList(new SwitchListModel(level));
+        robotChooser = new JList(new RobotListModel(level));
+        switchChooser = new JList(new SwitchListModel(level));
 
         gbc.gridwidth = 2;
         gbc.weighty = 0.5;
@@ -1045,6 +1212,7 @@ public class EditorMain {
         });
         robotChooser.addListSelectionListener(new ListSelectionListener() {
             public void valueChanged(ListSelectionEvent e) {
+                System.out.println("robot chooser selection changed: "+e);
                 Robot r = (Robot) robotChooser.getSelectedValue();
                 if (r == null) {
                     editor.setSpotlightLocation(null);
@@ -1093,41 +1261,12 @@ public class EditorMain {
         gbc.weighty = 0.0;
         gbc.anchor = GridBagConstraints.CENTER;
         gbc.fill = GridBagConstraints.NONE;
-        final JButton addRobotButton = new JButton("Add Robot");
-        addRobotButton.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                final Robot robot = project.createRobot();
-                ActionListener addRobot = new ActionListener() {
-                    public void actionPerformed(ActionEvent e) {
-                        level.addRobot(robot);
-                        editor.addRobot(robot);
-                        robotChooser.setSelectedValue(robot, true);
-                    }
-                };
-                JDialog d = makeRobotPropsDialog(frame, project, level, robot, addRobot);
-                d.setModal(true);
-                d.setVisible(true);
-            }
-        });
-        p.add(addRobotButton, gbc);
+        JPanel addRemovePanel = makeButtonPanel(addRobotAction, removeRobotAction);
+        p.add(addRemovePanel, gbc);
         
         gbc.gridwidth = GridBagConstraints.REMAINDER;
-        final JButton addSwitchButton = new JButton("Add Switch");
-        addSwitchButton.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                final Switch sw = project.createSwitch();
-                ActionListener addSwitch = new ActionListener() {
-                    public void actionPerformed(ActionEvent e) {
-                        level.addSwitch(sw);
-                        switchChooser.setSelectedValue(sw, true);
-                    }
-                };
-                JDialog d = makeSwitchPropsDialog(frame, project, level, sw, addSwitch);
-                d.setModal(true);
-                d.setVisible(true);
-            }
-        });
-        p.add(addSwitchButton, gbc);
+        JPanel buttonPanel = makeButtonPanel(addSwitchAction, removeSwitchAction);
+        p.add(buttonPanel, gbc);
 
         return p;
     }

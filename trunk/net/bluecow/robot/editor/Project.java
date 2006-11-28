@@ -9,15 +9,12 @@ import java.awt.Point;
 import java.awt.geom.Point2D;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
-import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.io.OutputStreamWriter;
-import java.io.Writer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -154,23 +151,30 @@ public class Project {
     }
 
     /**
-     * Saves all the resources associated with this project into
+     * Saves this project, then bundles all its resources into
      * a single JAR file.
      * 
      * @param location the file to save into (doesn't have to exist yet)
      * @throws IOException If there are any problems during the save operation
      */
     public void saveLevelPack(File location) throws IOException {
-        String encoding = "utf-8";
-        Writer out = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(new File(dir, LevelStore.DEFAULT_MAP_RESOURCE_PATH)), encoding));
-        LevelStore.save(out, getGameConfig(), encoding);
-        out.close();
-        out = null;
-        
+        save();
         JarOutputStream jout = new JarOutputStream(new BufferedOutputStream(new FileOutputStream(location)));
         recursiveSaveFilesToJar(jout, dir, "");
         jout.flush();
         jout.close();
+    }
+    
+    /**
+     * Saves the files associated with the project under this project's current
+     * directory. To export a single JAR file that contains the whole project,
+     * use {@link #saveLevelPack(File)}.
+     * @throws IOException if there are any problems saving the resources
+     */
+    public void save() throws IOException {
+        String encoding = "utf-8";
+        File destFile = new File(dir, LevelStore.DEFAULT_MAP_RESOURCE_PATH);
+        LevelStore.save(destFile, getGameConfig(), encoding);
     }
 
     /**
@@ -188,7 +192,7 @@ public class Project {
     private void recursiveSaveFilesToJar(JarOutputStream out, File baseDir, String path) throws IOException {
         File thisDir = new File(baseDir, path);
         System.out.println("JAR: starting dir "+thisDir);
-        out.putNextEntry(new JarEntry(path + "/")); // XXX not tested yet
+        out.putNextEntry(new JarEntry(path + "/"));
         for (String subPath : thisDir.list()) {
             File f = new File(thisDir, subPath);
             System.out.println("     entry "+f);

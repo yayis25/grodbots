@@ -54,7 +54,7 @@ public class SquareChooserListModel extends AbstractListModel {
         // of list item removals before other listeners have been notified,
         // and those listeners might ask the JList for the selected item, which
         // will cause out-of-bounds access to this list.
-        if (index < 0 || index > squares.size()) {
+        if (index < 0 || index >= squares.size()) {
             return null;
         } else {
             return squares.get(index);
