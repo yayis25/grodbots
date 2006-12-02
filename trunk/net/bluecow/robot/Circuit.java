@@ -204,6 +204,14 @@ public class Circuit {
         return Collections.unmodifiableMap(gateAllowances);
     }
 
+    /**
+     * Adds a gate allowance for the given gate type, or updates the
+     * existing allowance to the new value if there was already
+     * an allowance for the given gate type in this circuit.
+     * 
+     * @param gateClass The gate type to create or update the allowance for.
+     * @param count The allowance for the given type of gate in this circuit.
+     */
     public void addGateAllowance(Class<? extends Gate> gateClass, int count) {
         if (locked) throw new LockedCircuitException();
         gateAllowances.put(gateClass, count);

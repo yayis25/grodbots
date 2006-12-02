@@ -87,15 +87,24 @@ public class LevelStore {
             }
             tempFile.renameTo(destFile);
         } catch (Exception ex) {
+            ex.printStackTrace();
             throw new IOException(
-                    "Error writing game description XML file.  You can examine the " +
-                    "partially-saved game description in " + tempFile.getAbsolutePath() + " " +
-                    "The original file, if any, has not been affected.");
+                    "Error writing game description XML file.\n\n" +
+                    "Exception type: " + ex.getClass().getName() + "\n" +
+                    "Exception message: " + ex.getMessage() + "\n\n" +
+                    "You can examine the partially-saved game description in\n" +
+                    tempFile.getAbsolutePath());
         } finally {
             if (out != null) {
-                out.flush();
-                out.close();
-                out = null;
+                try {
+                    out.flush();
+                    out.close();
+                    out = null;
+                } catch (IOException ex) {
+                    // have to squish this one to preserve possible exceptions thrown in the try block
+                    System.err.println("Error flushing and closing output file. Suppressing exception:");
+                    ex.printStackTrace();
+                }
             }
         }
     }
@@ -149,7 +158,7 @@ public class LevelStore {
         }
 
         out.write("\n");
-
+        
         for (LevelConfig level : gc.getLevels()) {
             out.write("  <level name=\""+level.getName()+"\" " +
                              "size-x=\""+level.getWidth()+"\" " +
