@@ -16,10 +16,10 @@ import net.bluecow.robot.LevelConfig;
 
 public class LevelChooserListModel extends AbstractListModel {
 
-    private GameConfig gameConfig;
+    private final GameConfig gameConfig;
 
     public LevelChooserListModel(GameConfig gc) {
-        setGame(gc);
+        this.gameConfig = gc;
         gameConfig.addPropertyChangeListener("levels", new PropertyChangeListener() {
             public void propertyChange(PropertyChangeEvent evt) {
                 fireContentsChanged(LevelChooserListModel.this, 0, gameConfig.getLevels().size());
@@ -57,9 +57,5 @@ public class LevelChooserListModel extends AbstractListModel {
 
     public int getSize() {
         return gameConfig.getLevels().size();
-    }
-
-    public void setGame(GameConfig gc) {
-        this.gameConfig = gc;
     }
 }

@@ -15,7 +15,7 @@ import javax.swing.event.ListDataListener;
 
 public class ResourcesComboBoxModel implements ComboBoxModel {
 
-    private List<String> items;
+    private final List<String> items;
     
     private String selectedItem;
     

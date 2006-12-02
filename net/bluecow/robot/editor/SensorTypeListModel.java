@@ -32,14 +32,17 @@ public class SensorTypeListModel extends AbstractListModel {
 
     }
 
-    private GameConfigListener listener = new GameConfigListener();
+    private final GameConfigListener listener = new GameConfigListener();
     
-    private GameConfig gameConfig;
+    private final GameConfig gameConfig;
 
-    private List<SensorConfig> sensorTypes;
+    private final List<SensorConfig> sensorTypes;
     
     public SensorTypeListModel(GameConfig gameConfig) {
-        setGame(gameConfig);
+        this.gameConfig = gameConfig;
+        sensorTypes = new ArrayList<SensorConfig>();
+        sensorTypes.addAll(gameConfig.getSensorTypes());
+        gameConfig.addPropertyChangeListener("sensorTypes", listener);
     }
     
     public Object getElementAt(int index) {
@@ -48,17 +51,6 @@ public class SensorTypeListModel extends AbstractListModel {
 
     public int getSize() {
         return sensorTypes.size();
-    }
-    
-    public void setGame(GameConfig gameConfig) {
-        if (this.gameConfig != null) {
-            this.gameConfig.removePropertyChangeListener(listener);
-        }
-        this.gameConfig = gameConfig;
-        sensorTypes = new ArrayList<SensorConfig>();
-        sensorTypes.addAll(gameConfig.getSensorTypes());
-        gameConfig.addPropertyChangeListener("sensorTypes", listener);
-        fireContentsChanged(this, 0, getSize());
     }
 
 }

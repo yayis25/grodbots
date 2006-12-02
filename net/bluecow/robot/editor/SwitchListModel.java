@@ -16,7 +16,7 @@ import net.bluecow.robot.LevelConfig.Switch;
 
 public class SwitchListModel extends AbstractListModel {
 
-    private LevelConfig level;
+    private final LevelConfig level;
     
     public SwitchListModel(LevelConfig levelConfig) {
         this.level = levelConfig;

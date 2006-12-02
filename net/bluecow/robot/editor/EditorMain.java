@@ -28,7 +28,9 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.io.Writer;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.prefs.BackingStoreException;
 import java.util.prefs.Preferences;
 
@@ -72,9 +74,11 @@ import net.bluecow.robot.LevelConfig;
 import net.bluecow.robot.Playfield;
 import net.bluecow.robot.Robot;
 import net.bluecow.robot.RobotUtils;
+import net.bluecow.robot.GameConfig.GateConfig;
 import net.bluecow.robot.GameConfig.SensorConfig;
 import net.bluecow.robot.GameConfig.SquareConfig;
 import net.bluecow.robot.LevelConfig.Switch;
+import net.bluecow.robot.gate.Gate;
 import net.bluecow.robot.sprite.Sprite;
 import net.bluecow.robot.sprite.SpriteFileFilter;
 import net.bluecow.robot.sprite.SpriteManager;
@@ -92,6 +96,7 @@ public class EditorMain {
         
         public void actionPerformed(ActionEvent e) {
             closeProject();
+            presentWelcomeMenu();
         }
     }
     
@@ -105,7 +110,8 @@ public class EditorMain {
         public void actionPerformed(ActionEvent e) {
             Project proj = promptUserForProject();
             if (proj != null) {
-                setProject(proj);
+                closeProject();
+                new EditorMain(proj);
             }
         }
     }
@@ -381,7 +387,14 @@ public class EditorMain {
         JFileChooser fc = new JFileChooser();
         fc.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
         fc.setDialogTitle("Choose a Robot Project Directory");
-        fc.setCurrentDirectory(new File(recentProjects.get("0", System.getProperty("user.home"))));
+        File recentProject = new File(recentProjects.get("0", null));
+        if (recentProject == null) {
+            recentProject = new File(System.getProperty("user.home"));
+        } else if (recentProject.isDirectory()) {
+            // for project directories, we want to default the dialog to the parent dir
+            recentProject = recentProject.getParentFile();
+        }
+        fc.setCurrentDirectory(recentProject);
         int choice = fc.showOpenDialog(null);
         if (choice == JFileChooser.APPROVE_OPTION) {
             File f = fc.getSelectedFile();
@@ -549,8 +562,12 @@ public class EditorMain {
      * you want it to be modal. 
      */
     private static JDialog makeRobotPropsDialog(final JFrame parent,
-            final Project project, final LevelConfig level, final Robot robot,
+            final Project project,
+            final LevelConfig level, final Robot robot,
             final ActionListener okAction) {
+        
+        final GameConfig gameConfig = project.getGameConfig();
+        
         final JDialog d = new JDialog(parent, "Switch Properties");
 
         final JTextField idField = new JTextField(robot.getId());
@@ -569,6 +586,17 @@ public class EditorMain {
         final JSpinner evalsPerStep = new JSpinner(new SpinnerNumberModel(robot.getEvalsPerStep(), 1, null, 1));
         final JSpinner stepSize = new JSpinner(new SpinnerNumberModel(new Double(robot.getStepSize()), 0.01, null, 0.01));
         
+        final Map<Class<? extends Gate>, Integer> gateAllowances = robot.getCircuit().getGateAllowances();
+        final Map<GateConfig, JSpinner> gateAllowanceSpinnerList =
+            new LinkedHashMap<GateConfig, JSpinner>();
+        for (GateConfig gateConfig : gameConfig.getGateTypes()) {
+            final Integer currentAllowance = gateAllowances.get(gateConfig.getGateClass());
+            gateAllowanceSpinnerList.put(
+                    gateConfig,
+                    new JSpinner(new SpinnerNumberModel(
+                            currentAllowance == null ? 0 : currentAllowance.intValue(), 0, 100, 1)));
+        }
+        
         final JButton okButton = new JButton("OK");
         okButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
@@ -583,12 +611,19 @@ public class EditorMain {
                     robot.setPosition(pos);
                     
                     Sprite sprite = SpriteManager.load(
-                            project.getGameConfig().getResourceLoader(),
+                            gameConfig.getResourceLoader(),
                             (String) spritePathField.getSelectedItem());
                     sprite.setScale((Double) spriteScaleSpinner.getValue());
                     robot.setSprite(sprite);
                     robot.setEvalsPerStep((Integer) evalsPerStep.getValue());
                     robot.setStepSize(((Double) stepSize.getValue()).floatValue());
+                    
+                    for (Map.Entry<GateConfig, JSpinner> entry : gateAllowanceSpinnerList.entrySet()) {
+                        final GateConfig gateConfig = entry.getKey();
+                        final JSpinner spinner = entry.getValue();
+                        int allowance = ((Integer) spinner.getValue()).intValue();
+                        robot.getCircuit().addGateAllowance(gateConfig.getGateClass(), allowance);
+                    }
                     
                     if (okAction != null) {
                         System.out.println("Performing OK action for robot props dialog");
@@ -714,6 +749,22 @@ public class EditorMain {
         gbc.fill = GridBagConstraints.HORIZONTAL;
         cp.add(stepSize, gbc);
 
+        for (Map.Entry<GateConfig, JSpinner> entry : gateAllowanceSpinnerList.entrySet()) {
+            final GateConfig gateConfig = entry.getKey();
+            final JSpinner spinner = entry.getValue();
+            
+            gbc.weightx = 0.0;
+            gbc.gridwidth = 1;
+            gbc.fill = GridBagConstraints.NONE;
+            gbc.anchor = GridBagConstraints.LINE_END;
+            cp.add(new JLabel("Number of " + gateConfig.getName() + " gates:"), gbc);
+
+            gbc.weightx = 1.0;
+            gbc.gridwidth = GridBagConstraints.REMAINDER;
+            gbc.fill = GridBagConstraints.HORIZONTAL;
+            cp.add(spinner, gbc);
+        }
+        
         gbc.gridwidth = GridBagConstraints.REMAINDER;
         gbc.fill = GridBagConstraints.NONE;
         cp.add(okButton, gbc);
@@ -910,6 +961,8 @@ public class EditorMain {
     
     
     public EditorMain(Project project) {
+        this.project = project;
+        
         frame = new JFrame("Robot Level Editor");
         frame.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
         frame.addWindowListener(new WindowAdapter() {
@@ -1013,7 +1066,7 @@ public class EditorMain {
         
         setupMenu();
         
-        setProject(project);
+        levelChooser.setSelectedIndex(0);
         
         frame.pack();
         frame.setVisible(true);
@@ -1057,9 +1110,22 @@ public class EditorMain {
     };
 
     /**
+     * Returns the project that this editor is working with.
+     */
+    private Project getProject() {
+        return project;
+    }
+
+    /**
      * Presents an "are you sure?" dialog and exits the application if the user
      * responds affirmitavely.
-     *
+     * <p>
+     * This method differs from {@link #closeProject()} in the following ways:
+     * <ul>
+     *  <li>It does not disable auto-loading the current project next time the editor starts
+     *  <li>The message in the dialog is more appropriate to quitting the whole application
+     *  <li>This method can terminate the JVM; closeProject() will redisplay the welcome menu
+     * </ul>
      */
     public void confirmExit() {
         int choice = JOptionPane.showConfirmDialog(frame, "Do you really want to quit?", "Quit the level editor", JOptionPane.YES_NO_OPTION);
@@ -1068,25 +1134,40 @@ public class EditorMain {
         }
     }
     
-    private void setProject(Project proj) {
-        this.project = proj;
-        sensorTypeListModel.setGame(proj.getGameConfig());
-        squareChooserListModel.setGame(proj.getGameConfig());
-        levelChooserListModel.setGame(proj.getGameConfig());
-        levelChooser.setSelectedIndex(0);
-    }
-    
-    private Project getProject() {
-        return project;
-    }
-
-    private void closeProject() {
-        frame.setVisible(false);
+    /**
+     * After prompting the user to confirm they really want to close the 
+     * project, shuts down this editor with respect to the current project.
+     * When it returns true, this method will have released any and all system
+     * resources associated with the current editor instance, including the
+     * Window object.  This method does not terminate the JVM.
+     * <p>
+     * See also {@link #confirmExit()}.
+     * 
+     * @return true if the user wants to close the project (and therefore the
+     *         frame has been disposed); false otherwise.
+     */
+    private boolean closeProject() {
+        int choice = JOptionPane.showOptionDialog(
+                frame,
+                "Really close the current project?\n" +
+                "You will lose any unsaved changes.",
+                "Close project", 0, JOptionPane.QUESTION_MESSAGE, null,
+                new String[] {"Close", "Keep Working"}, "Close");
+        if (choice != 0) return false;
+        
         frame.dispose();
         recentProjects.put("autoLoadOk", "false");
-        presentWelcomeMenu();
+        return true;
     }
     
+    /**
+     * Uninstalls the old levelEditPanel and level editor, and replaces them either
+     * with new ones that are set up for editing the given level, or a simple message
+     * panel if given <tt>null</tt> instead of a level.
+     * 
+     * @param level The level to set up an editor GUI for, or null to uninstall
+     * the current editor GUI and repalce it with a placeholder panel.
+     */
     private void setLevelToEdit(LevelConfig level) {
         if (levelEditPanel != null) {
             frame.remove(levelEditPanel);
@@ -1137,6 +1218,13 @@ public class EditorMain {
         frame.validate();
     }
     
+    /**
+     * Creates a panel for editing non-nested level properties (this
+     * is only name and description at the moment).
+     * 
+     * @param level The level to create a property editor for.  Must not
+     * be <tt>null</tt>.
+     */
     private JPanel makeLevelPropsPanel(final LevelConfig level) {
         
         final JTextArea descriptionArea = new JTextArea(level.getDescription(), 8, 30);
@@ -1287,7 +1375,9 @@ public class EditorMain {
     }
     
     /**
-     * @param args
+     * Starts the level editor application.
+     * 
+     * @param args The command-line arguments are ignored
      */
     public static void main(String[] args) {
         SwingUtilities.invokeLater(new Runnable() {
@@ -1306,6 +1396,22 @@ public class EditorMain {
         });
     }
 
+    /**
+     * Checks for a "most recently opened project" file in the Java preferences
+     * node associated with this program.  If there is a most-recent project,
+     * and autoload isn't disabled (also controlled by a preference), then this
+     * method attempts to load it into a new editor instance.
+     * <p>
+     * This method catches all possible exceptions thrown by the attempt to load
+     * the most recent project and start the editor.  Although they are logged to
+     * the console (System.err), they are not propagated to the caller.  This design
+     * decision was made because the typical (only?) use case for this method is
+     * simply to make a best effort to autoload, and fall back on prompting the
+     * user if the autoload fails.
+     * 
+     * @return true if loading the project and launching the editor was successful;
+     * false if the project couldn't be loaded for any reason.
+     */
     private static boolean autoloadMostRecentProject() {
         if (recentProjects.get("0", null) == null) return false;
         if (recentProjects.get("autoLoadOk", "false").equals("false")) return false;
@@ -1322,13 +1428,21 @@ public class EditorMain {
                 ex.printStackTrace();
             }
         } else {
-            System.out.println("autoloadMostRecentProject():");
-            System.out.println("  Most recent project location '"+
+            System.err.println("autoloadMostRecentProject():");
+            System.err.println("  Most recent project location '"+
                         mostRecentProjectLocation.getPath()+"' isn't a directory. Giving up.");
         }
         return false;
     }
 
+    /**
+     * Presents a dialog which gives the user a choice: create a new project,
+     * open an existing one, or quit.  This would be a good way to launch
+     * the application from another Java program, except for one caveat.
+     * <p>
+     * Caveat: The quit option currently calls System.exit().  You might want
+     * to change that before calling this method from within your program.
+     */
     protected static void presentWelcomeMenu() {
         Project proj = null;
 

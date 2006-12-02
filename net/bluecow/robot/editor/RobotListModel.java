@@ -16,7 +16,7 @@ import net.bluecow.robot.Robot;
 
 public class RobotListModel extends AbstractListModel {
 
-    private LevelConfig level;
+    private final LevelConfig level;
     
     public RobotListModel(LevelConfig level) {
         this.level = level;
