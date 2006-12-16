@@ -38,10 +38,10 @@ public class AnimatedSprite extends AbstractSprite {
             try {
 //              System.out.printf("URI: %s, localName: %s, qName: %s, attributes: %s\n", uri, localName, qName, attributes);
                 if (qName.equals("rsf")) {
-                    System.out.println("RSF version "+attributes.getValue("version"));
+//                    System.out.println("RSF version "+attributes.getValue("version"));
                 } else if (qName.equals("frame")) {
                     String imagePath = basePath + attributes.getValue("href");
-                    ImageIcon icon = new ImageIcon(resourceLoader.getResourceBytes(imagePath));
+                    ImageIcon icon = new ImageIcon(getResourceLoader().getResourceBytes(imagePath));
                     size.width = Math.max(size.width, icon.getIconWidth());
                     size.height = Math.max(size.height, icon.getIconHeight());
                     frames.put(attributes.getValue("id"), icon);
@@ -78,8 +78,6 @@ public class AnimatedSprite extends AbstractSprite {
     private Dimension size = new Dimension(0,0);
     private List<ImageIcon> sequence = new ArrayList<ImageIcon>();
     private int curSeqNum = 0;
-
-    private ResourceLoader resourceLoader;
     
     /**
      * Creates an animated sprite object configured by parsing an RSF file.
@@ -103,8 +101,7 @@ public class AnimatedSprite extends AbstractSprite {
                           String rsfPath,
                           Map<String, String> attribs)
     throws ParserConfigurationException, SAXException, IOException {
-        super(attribs);
-        this.resourceLoader = resourceLoader;
+        super(resourceLoader, attribs);
         if (rsfPath.lastIndexOf('/') >= 0) {
             basePath = rsfPath.substring(0, rsfPath.lastIndexOf('/') + 1);
         } else {

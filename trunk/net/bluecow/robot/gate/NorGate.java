@@ -28,6 +28,12 @@ public class NorGate extends AbstractOrGate {
         }
     }
 
+    public NorGate createDisconnectedCopy() {
+        final NorGate newGate = new NorGate(getInputs().length);
+        newGate.copyFrom(this);
+        return newGate;
+    }
+
     public void evaluateInput() {
         boolean orValue = false;
         for (Gate.Input inp : getInputs()) {

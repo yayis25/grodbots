@@ -91,7 +91,8 @@ public class Circuit {
      */
     private List<ChangeListener> changeListeners = new ArrayList<ChangeListener>();
 
-    public Circuit(Gate inputs, Collection<? extends Gate> outputs, Collection<GateConfig> gateConfigs, Dimension defaultGateSize) {
+    public Circuit(Gate inputs, Collection<? extends Gate> outputs,
+            Collection<GateConfig> gateConfigs, Dimension defaultGateSize) {
         gates = new HashSet<Gate>();
         inputsGate = inputs;
         gates.add(inputsGate);
@@ -109,6 +110,77 @@ public class Circuit {
         for (GateConfig gc : gateConfigs) {
             this.gateConfigs.put(gc.getGateClass(), gc);
         }
+    }
+    
+    /**
+     * Copy constructor.  Makes an independant copy of the given circuit,
+     * duplicating all mutable instance variables.  Does not duplicate
+     * the listener lists, so listeners on the source instance will not
+     * automatically receive events from this duplicate instance.
+     * <p>
+     * Since this constructor is meant to aid in creating a duplicate
+     * robot with its own independant circuit, the inputs and outputs 
+     * gates have to be supplied. This constructor will duplicate all
+     * gates in the source circuit except the inputs and outputs, and
+     * will automatically connect the gates to the supplied inputs and
+     * outputs where necessary.
+     * 
+     * @param src The circuit to copy
+     * @param inputs The gate that this circuit outputs to
+     * @param outputs The list of gates that provide input to this circuit. These
+     * have to correspond with (be in the same order as) the outputs list in
+     * the source circuit.
+     */
+    public Circuit(Circuit src, Gate inputs, Collection<? extends Gate> outputs) {
+        this.gateAllowances = new HashMap<Class<? extends Gate>, Integer>(src.gateAllowances);
+        this.gateConfigs = new HashMap<Class<Gate>, GateConfig>(src.gateConfigs);
+        this.gates = new HashSet<Gate>();
+        this.inputsGate = inputs;
+        this.locked = src.locked;
+        this.outputs = new ArrayList<Gate>(outputs);
+        
+        Map<Gate, Gate> oldNew = new HashMap<Gate, Gate>();
+        // first duplicate all gates, mapping originals to their duplicates
+        for (Gate srcGate : src.gates) {
+            System.out.println("Duplicating source gate: "+srcGate);
+            if (srcGate == src.inputsGate) {
+                System.out.println("  It's the input!");
+                gates.add(inputsGate);
+                oldNew.put(srcGate, inputsGate);
+            } else if (src.outputs.contains(srcGate)) {
+                // assuming our outputs are in same order as src's outputs
+                int idx = src.outputs.indexOf(srcGate);
+                System.out.println("  It's output number "+idx);
+                Gate gate = this.outputs.get(idx);
+                gates.add(gate);
+                oldNew.put(srcGate, gate);
+            } else {
+                System.out.println("  It's a regular gate");
+                Gate newGate = srcGate.createDisconnectedCopy();
+                gates.add(newGate);
+                oldNew.put(srcGate, newGate);
+            }
+        }
+        
+        // now rewire the circuit so each gate connection points to the
+        // corresponding duplicate instance
+        for (Gate srcGate : src.gates) {
+            Gate newGate = oldNew.get(srcGate);
+            Gate.Input[] srcInputs = srcGate.getInputs();
+            for (int i = 0; i < srcInputs.length; i++) {
+                Gate.Input srcInput = srcInputs[i];
+                Gate srcConnectFrom = srcInput.getConnectedGate();
+                Gate newConnectFrom = oldNew.get(srcConnectFrom);
+                newGate.getInputs()[i].connect(newConnectFrom);
+            }
+        }
+        
+        // now populate the permanentGates list
+        for (Gate srcGate : src.permanentGates) {
+            permanentGates.add(oldNew.get(srcGate));
+        }
+        
+        System.out.println("Gate allowances after copy: "+gateAllowances);
     }
     
     /**

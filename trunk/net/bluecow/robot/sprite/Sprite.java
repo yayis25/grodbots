@@ -27,6 +27,12 @@ public interface Sprite {
     public static final String KEY_HREF = "href";
     
     /**
+     * Sprites are cloneable.  Their clones will work independently
+     * of their originals, but might not copy the actual image resources.
+     */
+    public Sprite clone();
+    
+    /**
      * Returns the attribute map that was passed to the SpriteManager in
      * order to create this sprite object.  Passing this map back to the
      * SpriteManager would result in the creation of an identically-configured

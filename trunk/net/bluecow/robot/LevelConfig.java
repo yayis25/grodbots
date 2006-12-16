@@ -59,18 +59,28 @@ public class LevelConfig {
          * as the given switch.
          */
         public Switch(Switch copyMe) {
+            copyFrom(copyMe);
+            this.bsh = copyMe.bsh;  // this might not be a good idea.. maybe get it from copyMe's level, or leave null
+        }
+
+        /**
+         * Copies all properties of the switch except the bsh interpreter
+         * (which should probably belong to the level anyway).
+         * 
+         * @param copyMe The Switch whose properties to copy to this one.
+         */
+        public final void copyFrom(Switch copyMe) {
             this.position = new Point(copyMe.position);
             this.id = copyMe.id;
             this.sprite = copyMe.sprite;
             this.onEnter = copyMe.onEnter;
             this.onExit = copyMe.onExit;
-            this.bsh = copyMe.bsh;  // this might not be a good idea.. maybe get it from copyMe's level, or leave null
             this.enabled = copyMe.enabled;
             this.label = copyMe.label;
             this.labelEnabled = copyMe.labelEnabled;
             this.labelDirection = copyMe.labelDirection;
         }
-
+        
         /**
          * Invokes this switch's onEnter script.  You should call this every
          * time a robot enters the square occupied by this switch.
@@ -253,6 +263,9 @@ public class LevelConfig {
      */
     private LevelConfig snapshot;
     
+    /**
+     * Normal constructor.  Creates a LevelConfig with default settings.
+     */
     public LevelConfig() {
         try {
             initInterpreter();
@@ -260,7 +273,16 @@ public class LevelConfig {
             throw new RuntimeException("Couldn't add level config to bsh context");
         }
     }
-
+    
+    /**
+     * Copy Constructor.  Creates a LevelConfig that is a copy of the given
+     * LevelConfig.
+     */
+    public LevelConfig(LevelConfig copyMe) {
+        this();
+        copyState(copyMe, this);
+    }
+    
     private void initInterpreter() throws EvalError {
         bsh = new Interpreter();
         bsh.set("level", this);
@@ -505,13 +527,31 @@ public class LevelConfig {
     private static void copyState(LevelConfig src, LevelConfig dst) {
         try {
             dst.initInterpreter();
-            dst.setMap(src.map.clone()); // Square objects are immutable, so they can be shared
+            
+            final Square[][] srcMap = src.getMap();
+            Square[][] map = new Square[srcMap.length][srcMap[0].length];
+            for (int x = 0; x < map.length; x++) {
+                for (int y = 0; y < map[0].length; y++) {
+
+                    /* Square objects are immutable, so they can be shared */
+                    map[x][y] = srcMap[x][y];
+                }
+            }
+            dst.setMap(map);
+            
             dst.setName(src.name);
             
             // need to use addRobot() for each robot to get them into the bsh interpreter
             dst.robots = new ArrayList<Robot>();
             for (Robot r : src.robots) {
-                dst.addRobot(r); // was dst.addRobot(new Robot(r));
+                // creating the new robot here may negatively impact scripting
+                // behaviour during gameplay. it was changed at some point in
+                // the past to specifically not create the copy. However, the copy
+                // may have not worked in the past because circuits weren't being
+                // duplicated properly (needs investigation)
+                final Robot robotCopy = new Robot(r, dst);
+                dst.addRobot(robotCopy);
+                
             }
             dst.setScore(src.score);
 

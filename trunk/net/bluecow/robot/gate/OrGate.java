@@ -22,7 +22,13 @@ public class OrGate extends AbstractOrGate {
 		}
 	}
 	
-	public void evaluateInput() {
+    public OrGate createDisconnectedCopy() {
+        final OrGate newGate = new OrGate(getInputs().length);
+        newGate.copyFrom(this);
+        return newGate;
+    }
+
+    public void evaluateInput() {
 		boolean state = false;
 		Gate.Input[] inputs = getInputs();
 		for (int i = 0; i < inputs.length; i++) {

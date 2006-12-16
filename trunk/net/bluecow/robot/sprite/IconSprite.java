@@ -19,7 +19,7 @@ public class IconSprite extends AbstractSprite {
     public IconSprite(
             ResourceLoader resourceLoader, String imagePath,
             Map<String, String> attribs) throws IOException {
-        super(attribs);
+        super(resourceLoader, attribs);
         icon = new ImageIcon(resourceLoader.getResourceBytes(imagePath));
     }
     

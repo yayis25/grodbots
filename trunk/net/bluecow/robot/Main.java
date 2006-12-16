@@ -329,7 +329,8 @@ public class Main {
                 in = new FileInputStream(f);
                 List<Robot> ghosts = new ArrayList<Robot>();
                 for (Robot robot : robots) {
-                    ghosts.add(new Robot(robot));
+                    throw new RuntimeException("ghosts need their own private level config! this is not implemented yet!");
+                    // ghosts.add(new Robot(robot, null));  //FIXME need to create a whole new level for the set of ghosts
                 }
                 CircuitStore.load(in, ghosts);
                 for (Robot ghost : ghosts) {

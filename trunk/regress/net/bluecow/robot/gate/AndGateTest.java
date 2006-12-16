@@ -5,6 +5,7 @@
  */
 package net.bluecow.robot.gate;
 
+import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.Point;
 import java.awt.Rectangle;
@@ -96,6 +97,30 @@ public class AndGateTest extends TestCase {
 
         public void setOutputStickLength(int v) {
             // no gui
+        }
+
+        public Gate createDisconnectedCopy() {
+            throw new UnsupportedOperationException("Not implemented");
+        }
+
+        public Color getActiveColor() {
+            return null;
+        }
+
+        public int getCircleSize() {
+            return 0;
+        }
+
+        public Color getHilightColor() {
+            return null;
+        }
+
+        public Color getNormalColor() {
+            return null;
+        }
+
+        public boolean isDrawingTerminations() {
+            return false;
         }
     };
     

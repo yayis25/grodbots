@@ -373,7 +373,10 @@ public class Playfield extends JPanel {
                     labelBounds.width, labelBounds.height,
                     10, 10);
             
-            JLabel descriptionLabel = new JLabel(level.getDescription());
+            String htmlDescription =
+                "<html><h1>"+level.getName()+"</h1>" +
+                "<p>"+level.getDescription();
+            JLabel descriptionLabel = new JLabel(htmlDescription);
             descriptionLabel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
             descriptionLabel.setForeground(Color.WHITE);
             descriptionLabel.setOpaque(false);

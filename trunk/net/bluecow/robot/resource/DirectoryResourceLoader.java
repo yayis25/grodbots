@@ -39,7 +39,6 @@ public class DirectoryResourceLoader extends ResourceLoader {
         if (!resourceFile.canRead()) {
             throw new IOException("Resource file '"+resourceFile.getAbsolutePath()+"' exists but is not readable");
         }
-        System.out.println("Resource file '"+resourceFile.getAbsolutePath()+"' exists and is readable");
         return new FileInputStream(resourceFile);
     }
 

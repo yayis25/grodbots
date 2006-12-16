@@ -19,7 +19,7 @@ public class AndGate extends AbstractAndGate {
 	public AndGate() {
 		this(2);
 	}
-	
+
 	/**
 	 * Creates a new AND gate with the specified number of inputs.
 	 * 
@@ -33,6 +33,12 @@ public class AndGate extends AbstractAndGate {
 		}
 	}
 	
+    public AndGate createDisconnectedCopy() {
+        final AndGate gate = new AndGate(getInputs().length);
+        gate.copyFrom(this);
+        return gate;
+    }
+
 	public void evaluateInput() {
 		boolean state = true;
 		Gate.Input[] inputs = getInputs();
