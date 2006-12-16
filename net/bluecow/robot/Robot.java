@@ -3,8 +3,8 @@ package net.bluecow.robot;
 import java.awt.Dimension;
 import java.awt.Graphics2D;
 import java.awt.Point;
+import java.awt.Rectangle;
 import java.awt.geom.Point2D;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -77,7 +77,30 @@ public class Robot implements Labelable {
      * value returned by {@link #getIconHeading()}.
      */
     private double prevHeading;
+    private static final Dimension DEFAULT_GATE_SIZE = new Dimension(22,20);
 	
+    /**
+     * Creates a new robot, initialising its properties to those given
+     * in the argument list.
+     * <p>
+     * Warning: This constructor does not cover all robot properties!
+     * In fact, it should probably not exist because it's a bit of
+     * a red herring in that regard.
+     * 
+     * @param id The robot's scripting ID
+     * @param name The robot's name (this is its player-visible label)
+     * @param level The level the robot lives in
+     * @param sensorList The types of sensors this robot has
+     * @param gateConfigs The types of gates this robot can use
+     * @param sprite This robot's graphical representation
+     * @param startPosition The initial location of this robot in the
+     *      level's playfield. (0,0) is top left.
+     * @param stepSize The distance this robot travels in one step
+     *      (expressed as a number of playfield suqares)
+     * @param circuit The circuit that governs this robot's behaviour
+     * @param evalsPerStep The number of circuit evaluations this robot
+     *      will perform before taking one step
+     */
     public Robot(String id, String name, LevelConfig level, List<SensorConfig> sensorList,
             Collection<GateConfig> gateConfigs,
             Sprite sprite, Point2D.Float startPosition, float stepSize,
@@ -96,9 +119,12 @@ public class Robot implements Labelable {
             outputs.put(sensor, new RobotSensorOutput(sensor));
         }
         
-        this.circuit = new Circuit(robotInputsGate, outputs.values(), gateConfigs, new Dimension(22,20));
+        this.circuit = new Circuit(
+                robotInputsGate, outputs.values(),
+                gateConfigs, DEFAULT_GATE_SIZE);
         if (circuit != null) {
-            for (Map.Entry<Class<? extends Gate>, Integer> allowance: circuit.getGateAllowances().entrySet()) {
+            for (Map.Entry<Class<? extends Gate>, Integer> allowance :
+                   circuit.getGateAllowances().entrySet()) {
                 this.circuit.addGateAllowance(allowance.getKey(), allowance.getValue());
             }
         }
@@ -107,25 +133,54 @@ public class Robot implements Labelable {
     /**
      * Copy constructor.  Makes an independant copy of the given robot, also
      * duplicating any objects owned by the source robot which are mutable.
-     * 
-     * <p>Note that the level config is more like a parent pointer, so it's not
-     * cloned (that would be a bit awkward).
+     * <p>
+     * Note that the level config is more like a parent pointer, so it's not
+     * duplicated (that would be a bit awkward).
      * 
      * @param src The robot to copy.
      */
-    public Robot(Robot src) {
-        this(src.id, 
-                src.labelText,
-                src.level,
-                new ArrayList<SensorConfig>(src.outputs.keySet()),
-                new ArrayList<GateConfig>(src.circuit.getGateConfigs().values()),
-                src.sprite,
-                src.startPosition,
-                src.stepSize,
-                src.getCircuit(),
-                src.evalsPerStep);
+    public Robot(Robot src, LevelConfig targetLevel) {
+        copyFrom(src, targetLevel);
     }
-	
+    
+    /**
+     * Makes this robot an independant copy of the given robot, duplicating any
+     * objects owned by the source robot which are mutable.
+     * <p>
+     * The level that this robot belongs to will not be changed: Copying
+     * a robot updates all its properties to the source robot, but does not
+     * move it into the same level as the source robot.
+     * 
+     * @param src The robot to copy.
+     */
+    public final void copyFrom(Robot src, LevelConfig targetLevel) {
+        this.level = targetLevel;
+        this.id = src.id;
+        this.labelText = src.labelText;
+        this.sprite = (src.sprite == null ? null : src.sprite.clone());
+        this.startPosition = new Point2D.Float(
+                (float) src.startPosition.getX(),
+                (float) src.startPosition.getY());
+        this.position = new Point2D.Float(
+                (float) src.position.getX(),
+                (float) src.position.getY());
+        this.stepSize = src.stepSize;
+        this.evalsPerStep = src.evalsPerStep;
+        this.labelDirection = src.labelDirection;
+        this.labelEnabled = src.labelEnabled;
+        this.movingDirection = src.movingDirection;
+        this.movingFrame = src.movingFrame;
+        this.prevHeading = src.prevHeading;
+        
+        outputs = new LinkedHashMap<SensorConfig, RobotSensorOutput>();
+        for (Map.Entry<SensorConfig, RobotSensorOutput> entry : src.outputs.entrySet()) {
+            SensorConfig sensor = entry.getKey();
+            outputs.put(sensor, new RobotSensorOutput(sensor));
+        }
+        
+        this.circuit = new Circuit(src.circuit, robotInputsGate, outputs.values());
+    }
+    
     public void move() {
         int direction = 0;
 	    if (upInput.getState() == true) {
@@ -203,8 +258,14 @@ public class Robot implements Labelable {
 	 */
 	class RobotSensorOutput extends AbstractGate {
 
-		public RobotSensorOutput(SensorConfig config) {
+		private static final int SENSOR_OUTPUT_GATE_HEIGHT = 15;
+
+        public RobotSensorOutput(SensorConfig config) {
             super(config.getId());
+            
+            // init width to same size as output stick. position and height will
+            // be taken care of by the circuit's layout.
+            setBounds(new Rectangle(0, 0, getOutputStickLength(), SENSOR_OUTPUT_GATE_HEIGHT));
 		}
 
 		/** Sets the state of this output.  Only methods in Robot should call this. */
@@ -236,6 +297,14 @@ public class Robot implements Labelable {
         @Override
         public void drawBody(Graphics2D g2) {
             // empty body
+        }
+
+        /**
+         * This method is not implemented, since RobotSensorOutputs are
+         * necessarily tied to a particular robot in a 1:1 relationship.
+         */
+        public Gate createDisconnectedCopy() {
+            throw new UnsupportedOperationException("Can't copy robot sensor outputs");
         }
 
 	}
@@ -371,6 +440,14 @@ public class Robot implements Labelable {
             // empty body
         }
 
+        /**
+         * This method is not implemented, since Robot Inputs are
+         * tied to a particular robot in a 1:1 relationship.
+         */
+        public Gate createDisconnectedCopy() {
+            throw new UnsupportedOperationException("Can't copy robot sensor outputs");
+        }
+
 	}
 
 	// ACCESSORS and MUTATORS
@@ -405,6 +482,10 @@ public class Robot implements Labelable {
         }
         prevHeading = theta;
         return theta;
+    }
+
+    public LevelConfig getLevel() {
+        return level;
     }
     
     public String getLabel() {

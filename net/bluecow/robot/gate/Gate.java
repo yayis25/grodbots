@@ -1,5 +1,6 @@
 package net.bluecow.robot.gate;
 
+import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.Point;
 import java.awt.Rectangle;
@@ -35,6 +36,12 @@ public interface Gate {
      * current input values.
      */
     public void reset();
+    
+    /**
+     * Creates a copy of this gate with the same behaviour and number of inputs,
+     * but no input or output connections.
+     */
+    public Gate createDisconnectedCopy();
 
     /**
      * The input interface represents an input to a gate.  A gate will
@@ -145,4 +152,9 @@ public interface Gate {
     public void setInputStickLength(int v);
     public int getOutputStickLength();
     public void setOutputStickLength(int v);
+    public Color getActiveColor();
+    public int getCircleSize();
+    public boolean isDrawingTerminations();
+    public Color getHilightColor();
+    public Color getNormalColor();
 }

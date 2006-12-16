@@ -11,17 +11,53 @@ import java.awt.geom.AffineTransform;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+import net.bluecow.robot.resource.ResourceLoader;
+
 public abstract class AbstractSprite implements Sprite {
+    
+    /**
+     * The resource loader that this sprite's resources came from.
+     * It is required for supporting the generic clone() method.
+     */
+    private final ResourceLoader resourceLoader;
+    
+    /**
+     * The set of attributes this sprite was created with.  The reason
+     * the attributes are carried in this way is that it needs to be
+     * possible to save an arbitrary sprite implementation in LevelStore.save().
+     * Without this map, save() would require special knowledge of every sprite
+     * implementation.
+     */
     private Map<String, String> attributes;
 
-    protected AbstractSprite(Map<String, String> attributes) {
+    protected AbstractSprite(ResourceLoader resourceLoader, Map<String, String> attributes) {
+        this.resourceLoader = resourceLoader;
         this.attributes = new LinkedHashMap<String, String>(attributes);
     }
 
+    /**
+     * Generic clone implementation.  Simply creates a new sprite by calling
+     * SpriteManager.load() with this sprite's resource loader and attribute
+     * map.
+     */
+    public Sprite clone() {
+        try {
+            return SpriteManager.load(resourceLoader, getAttributes());
+        } catch (SpriteLoadException ex) {
+            throw new RuntimeException(ex);
+        }
+    }
+    
+    /**
+     * See {@link #attributes}.
+     */
     public Map<String, String> getAttributes() {
         return attributes;
     }
 
+    /**
+     * See {@link #attributes}.
+     */
     public void setAttributes(Map<String, String> attributes) {
         this.attributes = attributes;
     }
@@ -72,5 +108,12 @@ public abstract class AbstractSprite implements Sprite {
      */
     public void nextFrame() {
         // nothing to do
+    }
+
+    /**
+     * See {@link #resourceLoader}.
+     */
+    public ResourceLoader getResourceLoader() {
+        return resourceLoader;
     }
 }

@@ -43,6 +43,22 @@ public abstract class AbstractGate implements Gate {
 	protected AbstractGate(String label) {
 		this.label = label;
 	}
+    
+    /**
+     * Copies all the properties from the given source gate to
+     * this one, except the inputs array.  This gate's inputs
+     * will remain untouched.
+     */
+    public void copyFrom(Gate src) {
+        setActiveColor(src.getActiveColor());
+        setBounds(src.getBounds());
+        setCircleSize(src.getCircleSize());
+        setDrawingTerminations(src.isDrawingTerminations());
+        setHilightColor(src.getHilightColor());
+        setInputStickLength(src.getInputStickLength());
+        setNormalColor(src.getNormalColor());
+        setOutputStickLength(src.getOutputStickLength());
+    }
 
 	/**
 	 * The Input class represents a single input to its enclosing gate instance.
@@ -340,8 +356,16 @@ public abstract class AbstractGate implements Gate {
         circleSize = i;
     }
     
+    public int getCircleSize() {
+        return circleSize;
+    }
+    
     public void setDrawingTerminations(boolean v) {
         drawingTerminations = v;
+    }
+    
+    public boolean isDrawingTerminations() {
+        return drawingTerminations;
     }
     
     /**
@@ -355,6 +379,11 @@ public abstract class AbstractGate implements Gate {
     protected abstract boolean isOutputInverted();
     
     public Rectangle getBounds() {
+        if (bounds == null) {
+            throw new IllegalStateException(
+                    "null bounds for "+this+
+                    " ("+getClass().getName()+"@"+System.identityHashCode(this)+")");
+        }
         return new Rectangle(bounds);
     }
     

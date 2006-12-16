@@ -41,7 +41,6 @@ public abstract class ResourceLoader {
     public abstract InputStream getResourceAsStream(String resourceName) throws IOException;
     
     public byte[] getResourceBytes(String resourceName) throws IOException {
-        System.out.println("Reading resource bytes for '"+resourceName+"'...");
         List<Byte> bytes = new ArrayList<Byte>();
         InputStream in = new BufferedInputStream(getResourceAsStream(resourceName));
         int ch;
@@ -53,7 +52,6 @@ public abstract class ResourceLoader {
         for (int i = 0; i < byteArray.length; i++) {
             byteArray[i] = bytes.get(i);
         }
-        System.out.println(""+byteArray.length+" bytes read.");
         return byteArray;
     }
 }

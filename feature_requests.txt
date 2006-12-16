@@ -1,11 +1,14 @@
 Game Features:
+-ensure game play still works now that LevelConfig.copyState() creates fully independent copies (including robots and their circuits)
+  probably a good first thing to try if it's not working would be to put the BSH interpreter in the level and have the switches and robots always reference it via the level pointer
+  Problems:
+   -after playing the level once, teleport stops working
+   -when coming back to the level after having left it, the circuits are gone
 -Level editor
- -be able to copy a level
- -Default settings for new robots and switches (maybe copying a level is enough?)
- -show the level title as the HTML header so the description string only has to be
-  the body, and doesn't have to have the initial <html> and <p> tags (but it can still
-  contain html markup).
+ -make sure robots get duplicated when copying a whole level
  ----release----
+ -accelerators for close, quit, save, export level pack
+ -change add/remove/duplicate buttons to be small icons instead of text
  -make a file filter for project files
  -implement a GUI resource manager (for adding and removing files in the project) and do away with project directories
  -make an animated sprite creator thing
@@ -13,6 +16,7 @@ Game Features:
  -in config files, add a version attribute to top-level element and autobackup old versions
  -effect for the "cursor" box to fade in and out and change colours and stuff
  -put a real spotlight on the currently-selected robot or switch
+-make ghosts work again (each set of ghosts need their own level config)
 -make an effects API for switch scripts: int getNumFrames() and void doFrame(int).
 -create a set of real levels for learning the game
 -Batteries
@@ -50,6 +54,12 @@ Completed:
 -have an HTML description for each level that gives hints and stuff (especially useful
  in the tutorial stage)
 -Level Editor:
+ -make it possible to copy robots and switches from same or other levels
+ -line wrap the level description textarea
+ -show the level title as the HTML header so the description string only has to be
+  the body, and doesn't have to have the initial <html> and <p> tags (but it can still
+  contain html markup).
+ -be able to copy a level
  -gate allowances on robot editor
  -when recent "file" is actually a project directory, use the parent directory as the recent dir, not the project dir itself
  -saving levels should show exceptions when they happen

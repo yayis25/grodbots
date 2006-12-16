@@ -25,6 +25,12 @@ public class NotGate extends AbstractGate {
         inputs[0] = new DefaultInput();
     }
 
+    public NotGate createDisconnectedCopy() {
+        final NotGate newGate = new NotGate();
+        newGate.copyFrom(this);
+        return newGate;
+    }
+
     /**
      * Calculates the logical complement of the current input state.
      */

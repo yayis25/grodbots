@@ -53,6 +53,7 @@ import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+import javax.swing.JPopupMenu;
 import javax.swing.JScrollPane;
 import javax.swing.JSpinner;
 import javax.swing.JSplitPane;
@@ -236,10 +237,25 @@ public class EditorMain {
         }
     };
 
+    private Action copyLevelAction = new AbstractAction("Copy Level") {
+        public void actionPerformed(ActionEvent e) {
+            final LevelConfig currentLevel = (LevelConfig) levelChooser.getSelectedValue();
+            if (currentLevel == null) {
+                JOptionPane.showMessageDialog(frame, "You have to select a level to copy it");
+                return;
+            }
+            final LevelConfig newLevel = new LevelConfig(currentLevel);
+            newLevel.setName(currentLevel.getName()+" Copy");
+            project.getGameConfig().addLevel(newLevel);
+            levelChooser.clearSelection();
+            levelChooser.setSelectedIndex(levelChooser.getModel().getSize()-1);
+        }
+    };
+
     private Action addRobotAction = new AbstractAction("Add Robot") {
         public void actionPerformed(ActionEvent e) {
-            final Robot robot = project.createRobot();
             final LevelConfig level = (LevelConfig) levelChooser.getSelectedValue();
+            final Robot robot = project.createRobot(level);
             ActionListener addRobot = new ActionListener() {
                 public void actionPerformed(ActionEvent e) {
                     level.addRobot(robot);
@@ -570,33 +586,59 @@ public class EditorMain {
         
         final JDialog d = new JDialog(parent, "Switch Properties");
 
-        final JTextField idField = new JTextField(robot.getId());
-        final JTextField labelField = new JTextField(robot.getLabel());
-        final JCheckBox labelEnabledBox = new JCheckBox("Label Enabled", robot.isLabelEnabled());
+        final JTextField idField = new JTextField();
+        final JTextField labelField = new JTextField();
+        final JCheckBox labelEnabledBox = new JCheckBox("Label Enabled");
         final JComboBox labelDirectionBox = new JComboBox(Direction.values());
-        labelDirectionBox.setSelectedItem(robot.getLabelDirection());
-        final JSpinner xPosition = new JSpinner(new SpinnerNumberModel(robot.getX(), 0.0, level.getWidth(), robot.getStepSize()));
-        final JSpinner yPosition = new JSpinner(new SpinnerNumberModel(robot.getY(), 0.0, level.getHeight(), robot.getStepSize()));
+        final JSpinner xPosition = new JSpinner(new SpinnerNumberModel(0.0, 0.0, level.getWidth(), robot.getStepSize()));
+        final JSpinner yPosition = new JSpinner(new SpinnerNumberModel(0.0, 0.0, level.getHeight(), robot.getStepSize()));
         final JComboBox spritePathField = new JComboBox(new ResourcesComboBoxModel(project, new SpriteFileFilter()));
         final JSpinner spriteScaleSpinner = new JSpinner(new SpinnerNumberModel(1.0, 0.0, 1000.0, 0.01));
-        if (robot.getSprite() != null) {
-            spritePathField.setSelectedItem(robot.getSprite().getAttributes().get(Sprite.KEY_HREF));
-            spriteScaleSpinner.setValue(robot.getSprite().getScale());
-        }
-        final JSpinner evalsPerStep = new JSpinner(new SpinnerNumberModel(robot.getEvalsPerStep(), 1, null, 1));
-        final JSpinner stepSize = new JSpinner(new SpinnerNumberModel(new Double(robot.getStepSize()), 0.01, null, 0.01));
+        final JSpinner evalsPerStep = new JSpinner(new SpinnerNumberModel(1, 1, null, 1));
+        final JSpinner stepSize = new JSpinner(new SpinnerNumberModel(0.1, 0.01, null, 0.01));
         
-        final Map<Class<? extends Gate>, Integer> gateAllowances = robot.getCircuit().getGateAllowances();
         final Map<GateConfig, JSpinner> gateAllowanceSpinnerList =
             new LinkedHashMap<GateConfig, JSpinner>();
         for (GateConfig gateConfig : gameConfig.getGateTypes()) {
-            final Integer currentAllowance = gateAllowances.get(gateConfig.getGateClass());
             gateAllowanceSpinnerList.put(
                     gateConfig,
-                    new JSpinner(new SpinnerNumberModel(
-                            currentAllowance == null ? 0 : currentAllowance.intValue(), 0, 100, 1)));
+                    new JSpinner(new SpinnerNumberModel(0, 0, 100, 1)));
         }
         
+        final Runnable uiUpdater = new Runnable() {
+            public void run() {
+                idField.setText(robot.getId());
+                labelField.setText(robot.getLabel());
+                labelEnabledBox.setSelected(robot.isLabelEnabled());
+                labelDirectionBox.setSelectedItem(robot.getLabelDirection());
+                xPosition.setValue(robot.getX());
+                yPosition.setValue(robot.getY());
+                if (robot.getSprite() != null) {
+                    spritePathField.setSelectedItem(robot.getSprite().getAttributes().get(Sprite.KEY_HREF));
+                    spriteScaleSpinner.setValue(robot.getSprite().getScale());
+                }
+                evalsPerStep.setValue(robot.getEvalsPerStep());
+                stepSize.setValue(new Double(robot.getStepSize()));
+
+                Map<Class<? extends Gate>, Integer> gateAllowances = robot.getCircuit().getGateAllowances();
+                for (Map.Entry<GateConfig, JSpinner> entry : gateAllowanceSpinnerList.entrySet()) {
+                    GateConfig gateConfig = entry.getKey();
+                    JSpinner spinner = entry.getValue();
+                    final Integer currentAllowance = gateAllowances.get(gateConfig.getGateClass());
+                    spinner.setValue(currentAllowance == null ? 0 : currentAllowance.intValue());
+                }
+            }
+        };
+        uiUpdater.run();
+        
+        final JButton copyRobotButton = new JButton("Copy existing >");
+        copyRobotButton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                JPopupMenu menu = makeRobotChooserPopup(project.getGameConfig(), robot, uiUpdater);
+                menu.show(copyRobotButton, 10, 10);
+            }
+        });
+
         final JButton okButton = new JButton("OK");
         okButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
@@ -765,7 +807,14 @@ public class EditorMain {
             cp.add(spinner, gbc);
         }
         
+        gbc.weightx = 0.0;
+        gbc.gridwidth = 1;
+        gbc.fill = GridBagConstraints.NONE;
+        gbc.anchor = GridBagConstraints.LINE_START;
+        cp.add(copyRobotButton, gbc);
+
         gbc.gridwidth = GridBagConstraints.REMAINDER;
+        gbc.anchor = GridBagConstraints.LINE_END;
         gbc.fill = GridBagConstraints.NONE;
         cp.add(okButton, gbc);
 
@@ -787,22 +836,46 @@ public class EditorMain {
             final ActionListener okAction) {
         final JDialog d = new JDialog(parent, "Switch Properties");
 
-        final JTextField idField = new JTextField(sw.getId());
-        final JCheckBox switchEnabledBox = new JCheckBox("Start enabled", sw.isEnabled());
-        final JSpinner xPosition = new JSpinner(new SpinnerNumberModel(sw.getX(), 0, level.getWidth(), 1));
-        final JSpinner yPosition = new JSpinner(new SpinnerNumberModel(sw.getY(), 0, level.getHeight(), 1));
-        final JTextField labelField = new JTextField(sw.getLabel());
-        final JCheckBox labelEnabledBox = new JCheckBox("Label Enabled", sw.isLabelEnabled());
+        final JTextField idField = new JTextField();
+        final JCheckBox switchEnabledBox = new JCheckBox("Start enabled");
+        final JSpinner xPosition = new JSpinner();
+        final JSpinner yPosition = new JSpinner();
+        final JTextField labelField = new JTextField();
+        final JCheckBox labelEnabledBox = new JCheckBox("Label Enabled");
         final JComboBox labelDirectionBox = new JComboBox(Direction.values());
-        labelDirectionBox.setSelectedItem(sw.getLabelDirection());
         final JComboBox spritePathField = new JComboBox(new ResourcesComboBoxModel(project, new SpriteFileFilter()));
         final JSpinner spriteScaleSpinner = new JSpinner(new SpinnerNumberModel(1.0, 0.0, 1000.0, 0.01));
-        if (sw.getSprite() != null) {
-            spritePathField.setSelectedItem(sw.getSprite().getAttributes().get(Sprite.KEY_HREF));
-            spriteScaleSpinner.setValue(sw.getSprite().getScale());
-        }
-        final JTextArea onEnterArea = new JTextArea(sw.getOnEnter(), 6, 15);
+        final JTextArea onEnterArea = new JTextArea(6, 15);
 
+        // a simple Runnable that updates all the swing components to the current switch properties
+        final Runnable uiUpdater = new Runnable() {
+            public void run() {
+                idField.setText(sw.getId());
+                switchEnabledBox.setSelected(sw.isEnabled());
+                xPosition.setModel(new SpinnerNumberModel(sw.getX(), 0, level.getWidth(), 1));
+                yPosition.setModel(new SpinnerNumberModel(sw.getY(), 0, level.getHeight(), 1));
+                labelField.setText(sw.getLabel());
+                labelEnabledBox.setSelected(sw.isLabelEnabled());
+                labelDirectionBox.setSelectedItem(sw.getLabelDirection());
+                if (sw.getSprite() != null) {
+                    spritePathField.setSelectedItem(sw.getSprite().getAttributes().get(Sprite.KEY_HREF));
+                    spriteScaleSpinner.setValue(sw.getSprite().getScale());
+                } else {
+                    spritePathField.setSelectedItem(null);
+                    spriteScaleSpinner.setValue(new Double(1.0));
+                }
+                onEnterArea.setText(sw.getOnEnter());
+            }
+        };
+        uiUpdater.run();  // fill in the initial values from the switch
+        
+        final JButton copySwitchButton = new JButton("Copy existing >");
+        copySwitchButton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                JPopupMenu menu = makeSwitchChooserPopup(project.getGameConfig(), sw, uiUpdater);
+                menu.show(copySwitchButton, 10, 10);
+            }
+        });
         final JButton okButton = new JButton("OK");
         okButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
@@ -945,7 +1018,14 @@ public class EditorMain {
         gbc.fill = GridBagConstraints.HORIZONTAL;
         cp.add(new JScrollPane(onEnterArea), gbc);
 
+        gbc.weightx = 0.0;
+        gbc.gridwidth = 1;
+        gbc.fill = GridBagConstraints.NONE;
+        gbc.anchor = GridBagConstraints.LINE_START;
+        cp.add(copySwitchButton, gbc);
+
         gbc.gridwidth = GridBagConstraints.REMAINDER;
+        gbc.anchor = GridBagConstraints.LINE_END;
         gbc.fill = GridBagConstraints.NONE;
         cp.add(okButton, gbc);
         
@@ -958,8 +1038,54 @@ public class EditorMain {
         return d;
     }
     
-    
-    
+    private static JPopupMenu makeRobotChooserPopup(
+            GameConfig game,
+            final Robot robot,
+            final Runnable runAfterSelection) {
+        JPopupMenu menu = new JPopupMenu();
+        for (LevelConfig level : game.getLevels()) {
+            JMenu item = new JMenu(level.getName());
+            menu.add(item);
+            for (Robot levelRobot : level.getRobots()) {
+                final Robot flr = levelRobot;
+                Action a = new AbstractAction(flr.getId()+" ("+flr.getLabel()+")") {
+                    public void actionPerformed(ActionEvent e) {
+                        robot.copyFrom(flr, robot.getLevel());
+                        if (runAfterSelection != null) {
+                            runAfterSelection.run();
+                        }
+                    }
+                };
+                item.add(new JMenuItem(a));
+            }
+        }
+        return menu;
+    }
+
+    private static JPopupMenu makeSwitchChooserPopup(
+            GameConfig game,
+            final Switch sw,
+            final Runnable runAfterSelection) {
+        JPopupMenu menu = new JPopupMenu();
+        for (LevelConfig level : game.getLevels()) {
+            JMenu item = new JMenu(level.getName());
+            menu.add(item);
+            for (Switch levelSwitch : level.getSwitches()) {
+                final Switch fls = levelSwitch;
+                Action a = new AbstractAction(fls.getId()+" ("+fls.getLabel()+")") {
+                    public void actionPerformed(ActionEvent e) {
+                        sw.copyFrom(fls);
+                        if (runAfterSelection != null) {
+                            runAfterSelection.run();
+                        }
+                    }
+                };
+                item.add(new JMenuItem(a));
+            }
+        }
+        return menu;
+    }
+
     public EditorMain(Project project) {
         this.project = project;
         
@@ -989,7 +1115,7 @@ public class EditorMain {
         });
         levelChooserPanel.add(new JLabel("Levels"), BorderLayout.NORTH);
         levelChooserPanel.add(new JScrollPane(levelChooser), BorderLayout.CENTER);
-        JPanel buttonPanel = makeButtonPanel(addLevelAction, removeLevelAction);
+        JPanel buttonPanel = makeButtonPanel(addLevelAction, removeLevelAction, copyLevelAction);
         levelChooserPanel.add(buttonPanel, BorderLayout.SOUTH);
         
         frame.add(levelChooserPanel, BorderLayout.WEST);
@@ -1073,14 +1199,15 @@ public class EditorMain {
     }
 
     /**
-     * Creates a panel with two buttons in a centered FlowLayout.  The left
-     * action will be in a button on the left, and the right action will
-     * be in a button on the right.
+     * Creates a panel with any number of buttons in a centered FlowLayout. The
+     * first action will be in a button on the left, and subsequent actions will
+     * be to the right of it.
      */
-    private JPanel makeButtonPanel(Action leftAction, Action rightAction) {
+    private JPanel makeButtonPanel(Action ... actions) {
         JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
-        buttonPanel.add(new JButton(leftAction));
-        buttonPanel.add(new JButton(rightAction));
+        for (Action action : actions) {
+            buttonPanel.add(new JButton(action));
+        }
         return buttonPanel;
     }
     
@@ -1228,6 +1355,8 @@ public class EditorMain {
     private JPanel makeLevelPropsPanel(final LevelConfig level) {
         
         final JTextArea descriptionArea = new JTextArea(level.getDescription(), 8, 30);
+        descriptionArea.setLineWrap(true);
+        descriptionArea.setWrapStyleWord(true);
         final JTextField levelNameField = new JTextField(level.getName());
         final DocumentListener updateListener = new DocumentListener() {
             public void changedUpdate(DocumentEvent e) { update(); }

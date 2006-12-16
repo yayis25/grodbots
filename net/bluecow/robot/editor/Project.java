@@ -224,8 +224,8 @@ public class Project {
      * 
      * @return the new robot instance.
      */
-    public Robot createRobot() {
-        Robot r = new Robot(defaultRobot);
+    public Robot createRobot(LevelConfig targetLevel) {
+        Robot r = new Robot(defaultRobot, targetLevel);
         return r;
     }
     

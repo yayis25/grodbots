@@ -28,6 +28,12 @@ public class NandGate extends AbstractAndGate {
         }
     }
 
+    public NandGate createDisconnectedCopy() {
+        final NandGate newGate = new NandGate(getInputs().length);
+        newGate.copyFrom(this);
+        return newGate;
+    }
+
     public void evaluateInput() {
         boolean andValue = true;
         for (Gate.Input inp : getInputs()) {
