@@ -1,11 +1,6 @@
 Game Features:
--ensure game play still works now that LevelConfig.copyState() creates fully independent copies (including robots and their circuits)
-  probably a good first thing to try if it's not working would be to put the BSH interpreter in the level and have the switches and robots always reference it via the level pointer
-  Problems:
-   -after playing the level once, teleport stops working
-   -when coming back to the level after having left it, the circuits are gone
+-pause the game loop before changing the current level (otherwise, the animation doubles in speed)
 -Level editor
- -make sure robots get duplicated when copying a whole level
  ----release----
  -accelerators for close, quit, save, export level pack
  -change add/remove/duplicate buttons to be small icons instead of text
@@ -51,9 +46,12 @@ Sounds:
 -little ditties for the beginning of each level (maybe this would be better suited to the MIDI sequencer api)
 
 Completed:
+-ensure game play still works now that LevelConfig.copyState() creates fully independent copies (including robots and their circuits)
+  -solution: made the full independence optional in LevelConfig.copyState().
 -have an HTML description for each level that gives hints and stuff (especially useful
  in the tutorial stage)
 -Level Editor:
+ -make sure robots get duplicated when copying a whole level
  -make it possible to copy robots and switches from same or other levels
  -line wrap the level description textarea
  -show the level title as the HTML header so the description string only has to be

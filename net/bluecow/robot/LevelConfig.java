@@ -34,38 +34,37 @@ public class LevelConfig {
      * when a robot enters or leaves a square.
      */
     public static class Switch implements Labelable {
+        private LevelConfig level;
         private Point position;
         private String id;
         private Sprite sprite;
         private String onEnter;
         private String onExit;
-        private Interpreter bsh; // XXX this might not work (maybe the switch should have a level reference and get the interpreter as needed)
         private boolean enabled = true;
         private String label;
         private boolean labelEnabled;
         private Direction labelDirection = Direction.EAST;
         
-        public Switch(Point position, String id, String label, Sprite sprite, String onEnter, Interpreter bshContext) {
+        public Switch(Point position, String id, String label, Sprite sprite, String onEnter) {
             this.position = new Point(position);
             this.id = id;
             this.label = label;
             this.sprite = sprite;
             this.onEnter = onEnter;
-            this.bsh = bshContext;
         }
         
         /**
          * Copy constructor.  Creates a switch instance with all the same properties
-         * as the given switch.
+         * as the given switch.  The new copy will not be part of any particular level,
+         * and its level reference will be null.
          */
         public Switch(Switch copyMe) {
             copyFrom(copyMe);
-            this.bsh = copyMe.bsh;  // this might not be a good idea.. maybe get it from copyMe's level, or leave null
         }
 
         /**
-         * Copies all properties of the switch except the bsh interpreter
-         * (which should probably belong to the level anyway).
+         * Copies all properties of the switch except the level reference,
+         * which is left alone.
          * 
          * @param copyMe The Switch whose properties to copy to this one.
          */
@@ -89,11 +88,23 @@ public class LevelConfig {
          * @throws EvalError if there is a scripting error
          */
         public void onEnter(Robot robot) throws EvalError {
+            if (level == null) {
+                throw new IllegalStateException(
+                        "Can't evaluate switch onEnter: Switch is not attached to a level.");
+            }
             if (onEnter == null) return;
             if (!enabled) return;
+
+            Interpreter bsh = level.getBshInterpreter();
             bsh.set("robot", robot);
+            System.out.println("Dump of scripting variables:");
             for (String name : bsh.getNameSpace().getVariableNames()) {
                 System.out.println("  "+name+": "+bsh.get(name));;
+            }
+            System.out.println("Dump of actual objects:");
+            System.out.println("  level: "+level);
+            for (Robot r : level.getRobots()) {
+                System.out.println("  "+r.getId()+": "+r);
             }
             bsh.eval(onEnter);
             bsh.set("robot", null);
@@ -107,21 +118,19 @@ public class LevelConfig {
          * @throws EvalError if there is a scripting error
          */
         public void onExit(Robot robot) throws EvalError {
+            if (level == null) {
+                throw new IllegalStateException(
+                        "Can't evaluate switch onExit: Switch is not attached to a level.");
+            }
             if (onExit == null) return;
             if (!enabled) return;
+
+            Interpreter bsh = level.getBshInterpreter();
             bsh.set("robot", robot);
             bsh.eval(onExit);
             bsh.set("robot", null);
         }
 
-        public void setBshInterpreter(Interpreter bshInterpreter) {
-            this.bsh = bshInterpreter;
-        }
-        
-        public Interpreter getBshInterpreter() {
-            return bsh;
-        }
-        
         /**
          * Returns a copy of the point that determines this switch's position.
          */
@@ -234,7 +243,9 @@ public class LevelConfig {
     private String name;
     
     /**
-     * This levels long description, an HTML document.
+     * This level's long description, in HTML markup.  This string will
+     * be put into the body of an HTML document, so you don't have to
+     * provide the &lt;html&gt;, &lt;head&gt; and &lt;body&gt; tags.
      */
     private String description;
     
@@ -280,7 +291,7 @@ public class LevelConfig {
      */
     public LevelConfig(LevelConfig copyMe) {
         this();
-        copyState(copyMe, this);
+        copyState(copyMe, this, true);
     }
     
     private void initInterpreter() throws EvalError {
@@ -398,6 +409,13 @@ public class LevelConfig {
         return getSquare((int) position.x, (int) position.y);
     }
 
+    /**
+     * Adds the given switch to this level's list of switches and its BSH
+     * scripting context.  Also updates the switch's level reference to point
+     * to this level.
+     * 
+     * @param s
+     */
     public void addSwitch(Switch s) {
         try {
             if (bsh.get(s.getId()) != null) {
@@ -405,7 +423,7 @@ public class LevelConfig {
             }
             bsh.set(s.getId(), s);
             switches.add(s);
-            s.setBshInterpreter(bsh);
+            s.level = this;
             pcs.firePropertyChange("switches", null, null);
         } catch (EvalError e) {
             throw new RuntimeException(e);
@@ -502,7 +520,7 @@ public class LevelConfig {
      */
     public void resetState() {
         if (snapshot == null) throw new IllegalStateException("No snapshot has been made yet.");
-        copyState(snapshot, this);
+        copyState(snapshot, this, false);
     }
     
     /**
@@ -512,19 +530,22 @@ public class LevelConfig {
      */
     public void snapshotState() {
         snapshot = new LevelConfig();
-        copyState(this, snapshot);
+        copyState(this, snapshot, false);
     }
 
     /**
      * Copies the value of all public properties of src to dst.  If this results
-     * in changes to any bound properties, the peoperty change events will be
+     * in changes to any bound properties, the property change events will be
      * fired.
      * 
      * @param src The level config to copy properties from
      * @param dst The level config to copy properties to.  This object may fire
      * PropertyChangeEvents as a result of this method call.
+     * @param fullyIndependant If true, all mutable properties will be duplicated.
+     * This is the correct behaviour for the copy constructor.  Otherwise, robots
+     * and switches will not be duplicated. This is the correct case for resetState().
      */
-    private static void copyState(LevelConfig src, LevelConfig dst) {
+    private static void copyState(LevelConfig src, LevelConfig dst, boolean fullyIndependant) {
         try {
             dst.initInterpreter();
             
@@ -539,28 +560,33 @@ public class LevelConfig {
             }
             dst.setMap(map);
             
-            dst.setName(src.name);
+            dst.setName(src.getName());
+            dst.setDescription(src.getDescription());
             
             // need to use addRobot() for each robot to get them into the bsh interpreter
             dst.robots = new ArrayList<Robot>();
             for (Robot r : src.robots) {
-                // creating the new robot here may negatively impact scripting
-                // behaviour during gameplay. it was changed at some point in
-                // the past to specifically not create the copy. However, the copy
-                // may have not worked in the past because circuits weren't being
-                // duplicated properly (needs investigation)
-                final Robot robotCopy = new Robot(r, dst);
-                dst.addRobot(robotCopy);
-                
+                Robot robotToAdd;
+                if (fullyIndependant) {
+                    robotToAdd = new Robot(r, dst);
+                } else {
+                    robotToAdd = r;
+                }
+                dst.addRobot(robotToAdd);
             }
             dst.setScore(src.score);
 
             // addSwitch() adds the switch to the BSH interpreter
             dst.switches = new ArrayList<Switch>();
             for (Switch s : src.switches) {
-                dst.addSwitch(new Switch(s));
+                Switch switchToAdd;
+                if (fullyIndependant) {
+                    switchToAdd = new Switch(s);
+                } else {
+                    switchToAdd = s;
+                }
+                dst.addSwitch(switchToAdd);
             }
-            // don't modify snapshot, so that resetState() will work multiple times
         } catch (EvalError e) {
             throw new RuntimeException(e);
         }
