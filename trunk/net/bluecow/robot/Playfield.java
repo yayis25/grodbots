@@ -280,6 +280,8 @@ public class Playfield extends JPanel {
             g2.transform(iconXform);
             sprite.paint(g2, 0, 0);
             g2.setTransform(backupXform);
+            
+            g2.drawString("Robot "+Integer.toHexString(System.identityHashCode(robot)), (squareWidth * roboPos.x), (squareWidth * roboPos.y));
         }
         g2.setComposite(backupComposite);
         

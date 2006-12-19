@@ -257,6 +257,7 @@ public class GameLoop implements Runnable {
         for (Robot robot : robots) {
             robot.resetState();
         }
+        playfield.setLevel(level);
         playfield.setFrameCount(null);
         playfield.setAsyncRepaint(true);
     }

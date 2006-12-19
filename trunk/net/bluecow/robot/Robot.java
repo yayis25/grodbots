@@ -562,6 +562,7 @@ public class Robot implements Labelable {
      * type conversions are not done implicitly).
      */
     public void setX(double x) {
+        System.out.println(toString()+" set x="+x+" (was "+position.x+")");
         position.x = (float) x;
     }
 

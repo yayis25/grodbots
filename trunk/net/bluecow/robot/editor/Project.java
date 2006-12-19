@@ -52,7 +52,7 @@ public class Project {
             new Point2D.Float(0.5f, 0.5f), 0.1f, null, 1);
     
     private Switch defaultSwitch = new LevelConfig.Switch(
-            new Point(1, 1), "new_switch", "", null, null, null);
+            new Point(1, 1), "new_switch", "", null, null);
     
     /**
      * Creates a new project with a default empty level.  This operation creates
