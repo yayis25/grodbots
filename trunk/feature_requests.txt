@@ -1,5 +1,8 @@
 Game Features:
--pause the game loop before changing the current level (otherwise, the animation doubles in speed)
+-Make real game UI:
+ -fix score/frame count so it doesn't overlap map
+ -get rid of level spinner
+ -go to the next level when you win
 -Level editor
  ----release----
  -accelerators for close, quit, save, export level pack
@@ -46,11 +49,14 @@ Sounds:
 -little ditties for the beginning of each level (maybe this would be better suited to the MIDI sequencer api)
 
 Completed:
+-pause the game loop before changing the current level (otherwise, the animation doubles in speed)
 -ensure game play still works now that LevelConfig.copyState() creates fully independent copies (including robots and their circuits)
   -solution: made the full independence optional in LevelConfig.copyState().
 -have an HTML description for each level that gives hints and stuff (especially useful
  in the tutorial stage)
 -Level Editor:
+ -make level chooser a combo box and move it above level props dialog
+ -change "add xxx" and "remove xxx" buttons to just "+" and "-" with original labels as tooltips
  -make sure robots get duplicated when copying a whole level
  -make it possible to copy robots and switches from same or other levels
  -line wrap the level description textarea

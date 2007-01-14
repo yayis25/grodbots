@@ -10,13 +10,19 @@ import java.beans.PropertyChangeListener;
 import java.util.List;
 
 import javax.swing.AbstractListModel;
+import javax.swing.ComboBoxModel;
 
 import net.bluecow.robot.GameConfig;
 import net.bluecow.robot.LevelConfig;
 
-public class LevelChooserListModel extends AbstractListModel {
+public class LevelChooserListModel extends AbstractListModel implements ComboBoxModel {
 
     private final GameConfig gameConfig;
+
+    /**
+     * The currently-selected level.
+     */
+    private LevelConfig selectedItem;
 
     public LevelChooserListModel(GameConfig gc) {
         this.gameConfig = gc;
@@ -57,5 +63,13 @@ public class LevelChooserListModel extends AbstractListModel {
 
     public int getSize() {
         return gameConfig.getLevels().size();
+    }
+
+    public LevelConfig getSelectedItem() {
+        return selectedItem;
+    }
+
+    public void setSelectedItem(Object anItem) {
+        selectedItem = (LevelConfig) anItem;
     }
 }

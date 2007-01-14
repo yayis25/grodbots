@@ -21,6 +21,7 @@ public class DialogCancelAction extends AbstractAction {
     private Window window;
 
     public DialogCancelAction(Window w) {
+        super("Cancel");
         this.window = w;
     }
 
