@@ -16,7 +16,13 @@ public class LevelChooserListRenderer extends DefaultListCellRenderer {
     @Override
     public Component getListCellRendererComponent(JList list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
         LevelConfig level = (LevelConfig) value;
-        super.getListCellRendererComponent(list, level.getName(), index, isSelected, cellHasFocus);
+        String label;
+        if (level != null) {
+            label = level.getName();
+        } else {
+            label = "(This game no levels!)";
+        }
+        super.getListCellRendererComponent(list, label, index, isSelected, cellHasFocus);
         return this;
     }
 }

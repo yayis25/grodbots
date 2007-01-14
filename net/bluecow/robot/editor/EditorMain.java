@@ -33,12 +33,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.prefs.BackingStoreException;
 import java.util.prefs.Preferences;
+import java.util.regex.Pattern;
 
 import javax.swing.AbstractAction;
 import javax.swing.Action;
 import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
+import javax.swing.Icon;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
@@ -87,6 +89,8 @@ import net.bluecow.robot.sprite.SpriteManager;
 public class EditorMain {
 
     public static final Dimension DEFAULT_LEVEL_SIZE = new Dimension(15,10);
+
+    private static final String BSH_ID_REGEX = "[A-Za-z_][A-Za-z0-9_]*";
     
     private class CloseProjectAction extends AbstractAction {
 
@@ -211,9 +215,9 @@ public class EditorMain {
         }
     };
 
-    private Action addLevelAction = new AbstractAction("Add Level") {
+    private Action addLevelAction = new AbstractAction("Add") {
         public void actionPerformed(ActionEvent e) {
-            final LevelConfig currentLevel = (LevelConfig) levelChooser.getSelectedValue();
+            final LevelConfig currentLevel = (LevelConfig) levelChooser.getSelectedItem();
             final LevelConfig newLevel = new LevelConfig();
             newLevel.setName("New Level " + (1 + levelChooser.getModel().getSize()));
             if (currentLevel != null) {
@@ -222,24 +226,24 @@ public class EditorMain {
                 newLevel.setSize(DEFAULT_LEVEL_SIZE.width, DEFAULT_LEVEL_SIZE.height);
             }
             project.getGameConfig().addLevel(newLevel);
-            levelChooser.setSelectedValue(newLevel, true);
+            levelChooser.setSelectedItem(newLevel);
         }
     };
 
-    private Action removeLevelAction = new AbstractAction("Remove Level") {
+    private Action removeLevelAction = new AbstractAction("Remove") {
         public void actionPerformed(ActionEvent e) {
-            final LevelConfig currentLevel = (LevelConfig) levelChooser.getSelectedValue();
+            final LevelConfig currentLevel = (LevelConfig) levelChooser.getSelectedItem();
             final int oldIndex = levelChooser.getSelectedIndex();
             project.getGameConfig().removeLevel(currentLevel);
             final int newIndex = Math.min(oldIndex, levelChooser.getModel().getSize()-1);
-            levelChooser.clearSelection();
+            levelChooser.setSelectedItem(null);
             levelChooser.setSelectedIndex(newIndex);
         }
     };
 
-    private Action copyLevelAction = new AbstractAction("Copy Level") {
+    private Action copyLevelAction = new AbstractAction("Duplicate") {
         public void actionPerformed(ActionEvent e) {
-            final LevelConfig currentLevel = (LevelConfig) levelChooser.getSelectedValue();
+            final LevelConfig currentLevel = (LevelConfig) levelChooser.getSelectedItem();
             if (currentLevel == null) {
                 JOptionPane.showMessageDialog(frame, "You have to select a level to copy it");
                 return;
@@ -247,14 +251,14 @@ public class EditorMain {
             final LevelConfig newLevel = new LevelConfig(currentLevel);
             newLevel.setName(currentLevel.getName()+" Copy");
             project.getGameConfig().addLevel(newLevel);
-            levelChooser.clearSelection();
+            levelChooser.setSelectedItem(null);
             levelChooser.setSelectedIndex(levelChooser.getModel().getSize()-1);
         }
     };
 
     private Action addRobotAction = new AbstractAction("Add Robot") {
         public void actionPerformed(ActionEvent e) {
-            final LevelConfig level = (LevelConfig) levelChooser.getSelectedValue();
+            final LevelConfig level = (LevelConfig) levelChooser.getSelectedItem();
             final Robot robot = project.createRobot(level);
             ActionListener addRobot = new ActionListener() {
                 public void actionPerformed(ActionEvent e) {
@@ -271,7 +275,7 @@ public class EditorMain {
     
     private Action removeRobotAction = new AbstractAction("Remove Robot") {
         public void actionPerformed(ActionEvent e) {
-            final LevelConfig level = (LevelConfig) levelChooser.getSelectedValue();
+            final LevelConfig level = (LevelConfig) levelChooser.getSelectedItem();
             final Robot robot = (Robot) robotChooser.getSelectedValue();
             final int oldIndex = robotChooser.getSelectedIndex();
             level.removeRobot(robot);
@@ -293,7 +297,7 @@ public class EditorMain {
     private Action addSwitchAction = new AbstractAction("Add Switch") {
         public void actionPerformed(ActionEvent e) {
             final Switch sw = project.createSwitch();
-            final LevelConfig level = (LevelConfig) levelChooser.getSelectedValue();
+            final LevelConfig level = (LevelConfig) levelChooser.getSelectedItem();
             ActionListener addSwitch = new ActionListener() {
                 public void actionPerformed(ActionEvent e) {
                     level.addSwitch(sw);
@@ -308,7 +312,7 @@ public class EditorMain {
     
     private Action removeSwitchAction = new AbstractAction("Remove Switch") {
         public void actionPerformed(ActionEvent e) {
-            final LevelConfig level = (LevelConfig) levelChooser.getSelectedValue();
+            final LevelConfig level = (LevelConfig) levelChooser.getSelectedItem();
             final Switch sw = (Switch) switchChooser.getSelectedValue();
             final int oldIndex = switchChooser.getSelectedIndex();
             level.removeSwitch(sw);
@@ -338,9 +342,9 @@ public class EditorMain {
     private Project project;
 
     private JFrame frame;
-    private JPanel levelEditPanel;
+    private JComponent levelEditPanel;
     private LevelEditor editor;
-    private JList levelChooser;
+    private JComboBox levelChooser;
     private LevelChooserListModel levelChooserListModel;
     private JList sensorTypesList;
     private SensorTypeListModel sensorTypeListModel;
@@ -348,6 +352,9 @@ public class EditorMain {
     private SquareChooserListModel squareChooserListModel;
     private JList robotChooser;
     private JList switchChooser;
+    
+    private Icon addItemIcon = new AddRemoveIcon(AddRemoveIcon.Type.ADD);
+    private Icon removeItemIcon = new AddRemoveIcon(AddRemoveIcon.Type.REMOVE);
     
     private LoadProjectAction loadProjectAction = new LoadProjectAction();
     private SaveAction saveProjectAction = new SaveAction();
@@ -568,7 +575,7 @@ public class EditorMain {
      * @param project The project that the robot ultimately belongs to
      * @param robot The robot to edit
      * @param okAction An action to perform after the OK button has been
-     * presses and robot's properties have been updated.  This action will
+     * pressed and robot's properties have been updated.  This action will
      * only be invoked if the user OK's the dialog; it will not be invoked
      * (and the robot properties will not be modified) if the user cancels
      * the dialog.  Also, you can safely pass in <tt>null</tt> for this
@@ -584,7 +591,7 @@ public class EditorMain {
         
         final GameConfig gameConfig = project.getGameConfig();
         
-        final JDialog d = new JDialog(parent, "Switch Properties");
+        final JDialog d = new JDialog(parent, "Robot Properties");
 
         final JTextField idField = new JTextField();
         final JTextField labelField = new JTextField();
@@ -639,17 +646,43 @@ public class EditorMain {
             }
         });
 
+        final JButton cancelButton = new JButton(new DialogCancelAction(d));
         final JButton okButton = new JButton("OK");
         okButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
+                Point2D pos = new Point2D.Double(
+                        (Double) xPosition.getValue(),
+                        (Double) yPosition.getValue());
+
+                List<String> msgs = new ArrayList<String>();
+                if (!Pattern.matches(BSH_ID_REGEX, idField.getText())) {
+                    msgs.add("Robot ID must be a valid Java identifier " +
+                            "(letter or underscore followed by zero or more " +
+                            "letters, numbers, or underscores)");
+                }
+                if (pos.getX() < 0.0 || pos.getX() > level.getWidth()
+                        || pos.getY() < 0.0 || pos.getY() > level.getHeight()) {
+                    msgs.add("Position has to be within the current map dimensions" +
+                            " (the map is currently "+level.getWidth()+"x"+level.getHeight()+")");
+                }
+                if (spritePathField.getSelectedItem() == null) {
+                    msgs.add("You have to choose a sprite for your robot");
+                }
+                if (!msgs.isEmpty()) {
+                    StringBuilder message = new StringBuilder();
+                    message.append("Your input has errors.  Fix them.");
+                    for (String msg : msgs) {
+                        message.append("\n -").append(msg);
+                    }
+                    message.append("\n");
+                    JOptionPane.showMessageDialog(d, message, "I'm sorry, Dave...", JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
                 try {
                     robot.setId(idField.getText());
                     robot.setLabel(labelField.getText());
                     robot.setLabelDirection((Direction) labelDirectionBox.getSelectedItem());
                     robot.setLabelEnabled(labelEnabledBox.isSelected());
-                    Point2D pos = new Point2D.Double(
-                            (Double) xPosition.getValue(),
-                            (Double) yPosition.getValue());
                     robot.setPosition(pos);
                     
                     Sprite sprite = SpriteManager.load(
@@ -673,7 +706,14 @@ public class EditorMain {
                     }
 
                 } catch (Exception ex) {
-                    showException(parent, "Couldn't update Robot properties", ex);
+                    String message;
+                    if (ex.getMessage() != null) {
+                        message = ex.getMessage();
+                    } else {
+                        message = "Couldn't update Robot properties";
+                    }
+                    showException(parent, message, ex);
+                    return;
                 }
                 
                 d.setVisible(false);
@@ -813,6 +853,10 @@ public class EditorMain {
         gbc.anchor = GridBagConstraints.LINE_START;
         cp.add(copyRobotButton, gbc);
 
+        // XXX not ideal layout
+        gbc.anchor = GridBagConstraints.LINE_END;
+        cp.add(cancelButton, gbc);
+        
         gbc.gridwidth = GridBagConstraints.REMAINDER;
         gbc.anchor = GridBagConstraints.LINE_END;
         gbc.fill = GridBagConstraints.NONE;
@@ -1102,23 +1146,22 @@ public class EditorMain {
         frame.getContentPane().setLayout(new BorderLayout(8, 8));
         ((JComponent) frame.getContentPane()).setBorder(BorderFactory.createEmptyBorder(6, 6, 6, 6));
         
-        JPanel levelChooserPanel = new JPanel(new BorderLayout());
+        JPanel levelChooserPanel = new JPanel(new FlowLayout());
         levelChooserListModel = new LevelChooserListModel(myGameConfig);
-        levelChooser = new JList(levelChooserListModel);
-        levelChooser.setCellRenderer(new LevelChooserListRenderer());
-        levelChooser.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-        levelChooser.addListSelectionListener(new ListSelectionListener() {
-            public void valueChanged(ListSelectionEvent e) {
-                LevelConfig level = (LevelConfig) levelChooser.getSelectedValue();
+        levelChooser = new JComboBox(levelChooserListModel);
+        levelChooser.setRenderer(new LevelChooserListRenderer());
+        levelChooser.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                LevelConfig level = (LevelConfig) levelChooser.getSelectedItem();
                 setLevelToEdit(level);
             }
         });
-        levelChooserPanel.add(new JLabel("Levels"), BorderLayout.NORTH);
-        levelChooserPanel.add(new JScrollPane(levelChooser), BorderLayout.CENTER);
+        levelChooserPanel.add(new JLabel("Level:"));
+        levelChooserPanel.add(levelChooser);
         JPanel buttonPanel = makeButtonPanel(addLevelAction, removeLevelAction, copyLevelAction);
-        levelChooserPanel.add(buttonPanel, BorderLayout.SOUTH);
+        levelChooserPanel.add(buttonPanel);
         
-        frame.add(levelChooserPanel, BorderLayout.WEST);
+        frame.add(levelChooserPanel, BorderLayout.NORTH);
         
         levelEditPanel = new JPanel();
         levelEditPanel.add(new JLabel("To edit a level, select it from the list on the left-hand side."));
@@ -1147,7 +1190,7 @@ public class EditorMain {
             }
         });
         sensorTypesPanel.add(
-                makeButtonPanel(addSensorTypeAction, removeSensorTypeAction),
+                makeAddRemoveButtonPanel(addSensorTypeAction, removeSensorTypeAction),
                 BorderLayout.SOUTH);
         
         squareChooserListModel = new SquareChooserListModel(myGameConfig);
@@ -1182,7 +1225,7 @@ public class EditorMain {
             }
         });
         squareListPanel.add(
-                makeButtonPanel(addSquareTypeAction, removeSquareTypeAction),
+                makeAddRemoveButtonPanel(addSquareTypeAction, removeSquareTypeAction),
                 BorderLayout.SOUTH);
         JSplitPane eastPanel = new JSplitPane(JSplitPane.VERTICAL_SPLIT, true);
         eastPanel.setTopComponent(sensorTypesPanel);
@@ -1211,6 +1254,35 @@ public class EditorMain {
         return buttonPanel;
     }
     
+    /**
+     * Makes an iTunes-style add/remove button set.
+     * 
+     * @param addAction The action to perform when the add button is pressed
+     * @param removeAction The action to perform when the remove button is pressed
+     * @return A panel with two fixed-size buttons in it, left aligned with
+     * no gap between them.  The add button has the addItemIcon on it (a "+" symbol
+     * by default); the remove button has the remvoeItemIcon on it (a "-" symbol by
+     * default). 
+     */
+    private JPanel makeAddRemoveButtonPanel(Action addAction, Action removeAction) {
+        Dimension buttonSize = new Dimension(22,22);  // largest size for square-cornered OS X buttons
+        
+        JButton add = new JButton(addAction);
+        add.setPreferredSize(buttonSize);
+        add.setText(null);
+        add.setIcon(addItemIcon);
+        
+        JButton remove = new JButton(removeAction);
+        remove.setPreferredSize(buttonSize);
+        remove.setText(null);
+        remove.setIcon(removeItemIcon);
+        
+        JPanel p = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
+        p.add(add);
+        p.add(remove);
+        
+        return p;
+    }
     /**
      * Sets up all the menu bar crap and adds it to the frame.
      */
@@ -1307,7 +1379,9 @@ public class EditorMain {
                             "Please select a level from the list, " +
                             "or create a new one!"));
         } else {
-            levelEditPanel = new JPanel(new BorderLayout(8, 8));
+            JSplitPane splitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT);
+            splitPane.setContinuousLayout(true);
+            levelEditPanel = splitPane;
             editor = new LevelEditor(project.getGameConfig(), level);
 
             final JCheckBox showDescriptionBox = new JCheckBox("Show Level Description", editor.isDescriptionOn());
@@ -1336,8 +1410,8 @@ public class EditorMain {
             editorPanel.add(floaterPanel, BorderLayout.CENTER);
             editorPanel.add(editorOptionsPanel, BorderLayout.EAST);
 
-            levelEditPanel.add(makeLevelPropsPanel(level), BorderLayout.CENTER);
-            levelEditPanel.add(editorPanel, BorderLayout.SOUTH);
+            splitPane.setTopComponent(makeLevelPropsPanel(level));
+            splitPane.setBottomComponent(editorPanel);
             
             editor.setPaintingSquareType((SquareConfig) squareList.getSelectedValue());
         }        
@@ -1476,13 +1550,13 @@ public class EditorMain {
         gbc.gridwidth = 2;
         gbc.weightx = 1.0;
         gbc.weighty = 0.0;
-        gbc.anchor = GridBagConstraints.CENTER;
-        gbc.fill = GridBagConstraints.NONE;
-        JPanel addRemovePanel = makeButtonPanel(addRobotAction, removeRobotAction);
+        gbc.anchor = GridBagConstraints.LINE_START;
+        gbc.fill = GridBagConstraints.BOTH;
+        JPanel addRemovePanel = makeAddRemoveButtonPanel(addRobotAction, removeRobotAction);
         p.add(addRemovePanel, gbc);
         
         gbc.gridwidth = GridBagConstraints.REMAINDER;
-        JPanel buttonPanel = makeButtonPanel(addSwitchAction, removeSwitchAction);
+        JPanel buttonPanel = makeAddRemoveButtonPanel(addSwitchAction, removeSwitchAction);
         p.add(buttonPanel, gbc);
 
         return p;
