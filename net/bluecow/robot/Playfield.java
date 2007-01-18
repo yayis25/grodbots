@@ -19,6 +19,8 @@ import java.awt.geom.Area;
 import java.awt.geom.GeneralPath;
 import java.awt.geom.Point2D;
 import java.awt.geom.RoundRectangle2D;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -183,6 +185,13 @@ public class Playfield extends JPanel {
         for (Robot r : level.getRobots()) {
             addRobot(r);
         }
+        level.addPropertyChangeListener("map", new PropertyChangeListener() {
+            public void propertyChange(PropertyChangeEvent evt) {
+                if (evt.getSource() == Playfield.this.level) {
+                    revalidate();
+                }
+            }
+        });
     }
     
     /**
@@ -280,8 +289,6 @@ public class Playfield extends JPanel {
             g2.transform(iconXform);
             sprite.paint(g2, 0, 0);
             g2.setTransform(backupXform);
-            
-            g2.drawString("Robot "+Integer.toHexString(System.identityHashCode(robot)), (squareWidth * roboPos.x), (squareWidth * roboPos.y));
         }
         g2.setComposite(backupComposite);
         

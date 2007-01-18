@@ -65,6 +65,7 @@ import javax.swing.KeyStroke;
 import javax.swing.ListSelectionModel;
 import javax.swing.SpinnerNumberModel;
 import javax.swing.SwingUtilities;
+import javax.swing.event.ChangeListener;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.event.ListSelectionEvent;
@@ -410,10 +411,8 @@ public class EditorMain {
         JFileChooser fc = new JFileChooser();
         fc.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
         fc.setDialogTitle("Choose a Robot Project Directory");
-        File recentProject = new File(recentProjects.get("0", null));
-        if (recentProject == null) {
-            recentProject = new File(System.getProperty("user.home"));
-        } else if (recentProject.isDirectory()) {
+        File recentProject = new File(recentProjects.get("0", System.getProperty("user.home")));
+        if (recentProject.isDirectory()) {
             // for project directories, we want to default the dialog to the parent dir
             recentProject = recentProject.getParentFile();
         }
@@ -1413,6 +1412,10 @@ public class EditorMain {
             splitPane.setTopComponent(makeLevelPropsPanel(level));
             splitPane.setBottomComponent(editorPanel);
             
+            System.out.println("level props panel pref size: "+splitPane.getTopComponent().getPreferredSize());
+            System.out.println("editor panel pref size: "+splitPane.getBottomComponent().getPreferredSize());
+            splitPane.setDividerLocation(splitPane.getTopComponent().getPreferredSize().height);
+            
             editor.setPaintingSquareType((SquareConfig) squareList.getSelectedValue());
         }        
         frame.add(levelEditPanel, BorderLayout.CENTER);
@@ -1444,6 +1447,18 @@ public class EditorMain {
         levelNameField.getDocument().addDocumentListener(updateListener);
         descriptionArea.getDocument().addDocumentListener(updateListener);
 
+        final JSpinner widthSpinner = new JSpinner(new SpinnerNumberModel(level.getWidth(), 1, 100, 1));
+        final JSpinner heightSpinner = new JSpinner(new SpinnerNumberModel(level.getHeight(), 1, 100, 1));
+        final ChangeListener spinnerListener = new ChangeListener() {
+            public void stateChanged(javax.swing.event.ChangeEvent e) {
+                int width = ((Integer) widthSpinner.getValue()).intValue();
+                int height = ((Integer) heightSpinner.getValue()).intValue();
+                level.setSize(width, height);
+            }
+        };
+        widthSpinner.addChangeListener(spinnerListener);
+        heightSpinner.addChangeListener(spinnerListener);
+        
         GridBagConstraints gbc = new GridBagConstraints();
         JPanel p = new JPanel(new GridBagLayout());
         
@@ -1465,6 +1480,25 @@ public class EditorMain {
         gbc.gridwidth = 1;
         gbc.fill = GridBagConstraints.NONE;
         gbc.anchor = GridBagConstraints.LINE_END;
+        p.add(new JLabel("Size (width, height):"), gbc);
+
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.gridwidth = 1;
+        gbc.weighty = 0.0;
+        gbc.weightx = 0.5;
+        p.add(widthSpinner, gbc);
+
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.gridwidth = GridBagConstraints.REMAINDER;
+        gbc.weighty = 0.0;
+        gbc.weightx = 0.5;
+        p.add(heightSpinner, gbc);
+
+        gbc.weighty = 0.5;
+        gbc.weightx = 0.0;
+        gbc.gridwidth = 1;
+        gbc.fill = GridBagConstraints.NONE;
+        gbc.anchor = GridBagConstraints.LINE_END;
         p.add(new JLabel("Description (HTML):"), gbc);
         
         gbc.fill = GridBagConstraints.HORIZONTAL;
@@ -1473,7 +1507,15 @@ public class EditorMain {
         gbc.weighty = 0.5;
         p.add(new JScrollPane(descriptionArea), gbc);
         
-        gbc.gridwidth = 2;
+        // filler (next 3 rows don't have left-hand labels)
+        gbc.gridwidth = 1;
+        gbc.gridheight = 3;
+        gbc.weightx = 0.0;
+        gbc.weighty = 0.0;
+        p.add(new JPanel(), gbc);
+
+        gbc.gridwidth = 1;
+        gbc.gridheight = 1;
         gbc.weightx = 1.0;
         gbc.weighty = 0.0;
         gbc.anchor = GridBagConstraints.CENTER;
@@ -1484,8 +1526,8 @@ public class EditorMain {
         
         robotChooser = new JList(new RobotListModel(level));
         switchChooser = new JList(new SwitchListModel(level));
-
-        gbc.gridwidth = 2;
+        
+        gbc.gridwidth = 1;
         gbc.weighty = 0.5;
         gbc.fill = GridBagConstraints.BOTH;
         robotChooser.setCellRenderer(new RobotListRenderer());

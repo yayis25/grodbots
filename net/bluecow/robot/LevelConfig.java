@@ -369,16 +369,25 @@ public class LevelConfig {
      * is initialised to nulls. If there was a map before, it will be wiped out.
      */
     public void setSize(int width, int height) {
-        setMap(new Square[width][height]);
+        Square[][] oldMap = map;
+        Square[][] newMap = new Square[width][height];
+        for (int y = 0; y < oldMap.length && y < newMap.length; y++) {
+            for (int x = 0; x < oldMap[0].length && x < newMap[0].length; x++) {
+                newMap[y][x] = oldMap[y][x];
+            }
+        }
+        setMap(newMap);
     }
     
     public void setMap(Square[][] map) {
+        final Square[][] oldMap = this.map;
         this.map = map;
         try {
             bsh.set("map", map);
         } catch (EvalError e) {
             throw new RuntimeException(e);
         }
+        pcs.firePropertyChange("map", oldMap, map);
     }
     
     public int getWidth() {

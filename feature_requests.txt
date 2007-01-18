@@ -2,8 +2,10 @@ Game Features:
 -Make real game UI:
  -fix score/frame count so it doesn't overlap map
  -get rid of level spinner
- -go to the next level when you win
+ -button for going to the next level when you win
 -Level editor
+ -level edit panel is too squished
+ -preview mode for playing the current level without running the game
  ----release----
  -accelerators for close, quit, save, export level pack
  -change add/remove/duplicate buttons to be small icons instead of text
@@ -55,6 +57,8 @@ Completed:
 -have an HTML description for each level that gives hints and stuff (especially useful
  in the tutorial stage)
 -Level Editor:
+ -controls for resizing the map
+ -fix NPE in promptUserForProject when there are no recent projects
  -make level chooser a combo box and move it above level props dialog
  -change "add xxx" and "remove xxx" buttons to just "+" and "-" with original labels as tooltips
  -make sure robots get duplicated when copying a whole level
