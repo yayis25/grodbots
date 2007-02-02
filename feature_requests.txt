@@ -3,6 +3,7 @@ Game Features:
  -fix score/frame count so it doesn't overlap map
  -get rid of level spinner
  -button for going to the next level when you win
+ -make ghosts work again (each set of ghosts need their own level config)
 -Level editor
  -level edit panel is too squished
  -preview mode for playing the current level without running the game
@@ -16,7 +17,6 @@ Game Features:
  -in config files, add a version attribute to top-level element and autobackup old versions
  -effect for the "cursor" box to fade in and out and change colours and stuff
  -put a real spotlight on the currently-selected robot or switch
--make ghosts work again (each set of ghosts need their own level config)
 -make an effects API for switch scripts: int getNumFrames() and void doFrame(int).
 -create a set of real levels for learning the game
 -Batteries
@@ -51,6 +51,7 @@ Sounds:
 -little ditties for the beginning of each level (maybe this would be better suited to the MIDI sequencer api)
 
 Completed:
+-better error message when a resource within a ZIP is missing (display the FileNotFoundException's message)
 -pause the game loop before changing the current level (otherwise, the animation doubles in speed)
 -ensure game play still works now that LevelConfig.copyState() creates fully independent copies (including robots and their circuits)
   -solution: made the full independence optional in LevelConfig.copyState().
