@@ -110,15 +110,26 @@ public class Main {
 
         private final JButton step;
 
+        private final JButton nextLevel;
+        
         private GameStateHandler(
                 GameLoop loop, JButton start, JButton reset,
-                Map<Robot,CircuitEditor> robots, JButton step) {
+                Map<Robot,CircuitEditor> robots, JButton step,
+                JButton nextLevel) {
             super();
             this.loop = loop;
             this.start = start;
             this.reset = reset;
             this.robots = robots;
             this.step = step;
+            this.nextLevel = nextLevel;
+            
+            start.addActionListener(this);
+            step.addActionListener(this);
+            reset.addActionListener(this);
+            nextLevel.addActionListener(this);
+
+            nextLevel.setEnabled(false);
         }
 
         public void actionPerformed(ActionEvent e) {
@@ -133,6 +144,17 @@ public class Main {
                 setState(GameState.STEP);
             } else if (source == reset) {
                 setState(GameState.RESET);
+            } else if (source == nextLevel) {
+                if (levelNumber+1 < config.getLevels().size()) {
+                    setLevel(++levelNumber);
+                } else {
+                    JOptionPane.showMessageDialog(playfield, "There are no more levels.", "A message for you", JOptionPane.INFORMATION_MESSAGE);
+                    JOptionPane.showConfirmDialog(playfield, "What, were you expecting some fanfare?", "Inquiry", JOptionPane.YES_NO_OPTION);
+                    JOptionPane.showOptionDialog(playfield, "Well, there are no more levels. I guess that means you won.", "Retort", 0, 0, null, new String[] {"Yay", "Drat"}, "Drat");
+                }
+            } else {
+                throw new UnsupportedOperationException(
+                        "Game State Handler received unexpected actionevent from "+source);
             }
         }
 
@@ -190,11 +212,12 @@ public class Main {
             } else if (newState == GameState.WON) {
                 state = newState;
                 lockEditors(true);
-                playfield.setWinMessage("¡¡CAKE!! ¿You Win?");
+                playfield.setWinMessage("You Win!");
                 sm.play("win");
                 start.setText("Restart");
                 step.setText("Restep");
                 reset.setText("Reset");
+                nextLevel.setEnabled(true);
                 playfield.setLabellingOn(false);
             }
         }
@@ -232,13 +255,13 @@ public class Main {
             } catch (IOException ex) {
                 JOptionPane.showMessageDialog(playfieldFrame, "Save Failed: "+ex.getMessage());
             } catch (BackingStoreException ex) {
-                System.out.println("Couldn't update user prefs");
+                System.err.println("Couldn't update user prefs");
                 ex.printStackTrace();
             } finally {
                 try {
                     if (out != null) out.close();
                 } catch (IOException e1) {
-                    System.out.println("Bad luck.. couldn't close output file!");
+                    System.err.println("Bad luck.. couldn't close output file!");
                     e1.printStackTrace();
                 }
             }
@@ -423,10 +446,6 @@ public class Main {
                 ex.printStackTrace();
             } catch (FileFormatException ex) {
                 RobotUtils.showFileFormatException(ex);
-            } catch (FileNotFoundException ex) {
-                ex.printStackTrace();
-                JOptionPane.showMessageDialog(null,
-                        "Could not find file '"+f.getPath()+"'");
             } catch (IOException ex) {
                 ex.printStackTrace();
                 JOptionPane.showMessageDialog(
@@ -470,6 +489,13 @@ public class Main {
     private int levelNumber;
 
     private SoundManager sm;
+
+    private GameStateHandler gameStateHandler;
+
+    /**
+     * A debug menu for choosing which level to play.
+     */
+    private JMenu levelChooserMenu;
 
     public static void main(String[] args) {
         final Main main = new Main();
@@ -515,9 +541,12 @@ public class Main {
         menu.add(item = new RecentFilesMenu("Open Recent Ghost", loadGhostAction, RobotUtils.getPrefs().node("recentGhostFiles")));
         item.setMnemonic(KeyEvent.VK_R);
 
+        // note, debug menu gets created later
+        levelChooserMenu = new JMenu("Level");
+        
         try {
             ResourceLoader builtInResourceLoader = new SystemResourceLoader();
-            config = LevelStore.loadLevels(builtInResourceLoader);
+            loadGameConfig(builtInResourceLoader);
             
             sm = new SoundManager(builtInResourceLoader);
             
@@ -550,10 +579,22 @@ public class Main {
                        +"A stack trace is available on the Java Console.",
                     "Startup Error", JOptionPane.ERROR_MESSAGE, null);
         }
-        
+
+        if (System.getProperty("net.bluecow.robot.DEBUG") != null) {
+            mb.add(menu = new JMenu("Debug"));
+            menu.setMnemonic(KeyEvent.VK_D);
+            menu.add(levelChooserMenu);
+        }
+    }
+
+    private void loadGameConfig(ResourceLoader builtInResourceLoader) throws IOException {
+        config = LevelStore.loadLevels(builtInResourceLoader);
     }
 
     void setLevel(int newLevelNum) {
+        if (gameStateHandler != null) {
+            gameStateHandler.setState(GameState.RESET);
+        }
         for (Window w : windowsToClose) {
             w.dispose();
         }
@@ -593,13 +634,10 @@ public class Main {
         final JButton startButton = new JButton("Start");
         final JButton stepButton = new JButton("Step");
         final JButton resetButton = new JButton("Reset");
+        final JButton nextLevelButton = new JButton("Next Level");
 
-        final GameStateHandler gameStateHandler = new GameStateHandler(
-                gameLoop, startButton, resetButton, robots, stepButton);
-
-        startButton.addActionListener(gameStateHandler);
-        stepButton.addActionListener(gameStateHandler);
-        resetButton.addActionListener(gameStateHandler);
+        gameStateHandler = new GameStateHandler(
+                        gameLoop, startButton, resetButton, robots, stepButton, nextLevelButton);
         
         final JButton saveCircuitButton = new JButton();
         saveCircuitButton.setAction(saveCircuitAction);
@@ -644,6 +682,7 @@ public class Main {
         topButtonPanel.add(startButton);
         topButtonPanel.add(stepButton);
         topButtonPanel.add(resetButton);
+        topButtonPanel.add(nextLevelButton);
         
         JPanel bottomButtonPanel = new JPanel(new FlowLayout());
         bottomButtonPanel.add(loadCircuitButton);
