@@ -149,6 +149,11 @@ public class Playfield extends JPanel {
     private boolean paintingLevelScore = true;
     
     /**
+     * The amount of space the header bar takes up (for the score display).
+     */
+    private int headerHeight;
+    
+    /**
      * Creates a new playfield with the specified map.
      * 
      * @param map The map.
@@ -167,6 +172,11 @@ public class Playfield extends JPanel {
                 }
             }
         });
+        
+        setBackground(Color.BLACK);
+        
+        // double the font height because the height on its own isn't enough (?)
+        headerHeight = getFont().getSize() * 2;
     }
 
     public final void setGame(GameConfig game) {
@@ -239,6 +249,26 @@ public class Playfield extends JPanel {
         g.setColor(getBackground());
         g.fillRect(0, 0, getWidth(), getHeight());
         Graphics2D g2 = (Graphics2D) g.create();
+        FontMetrics fm = getFontMetrics(getFont());
+        
+        if (paintingOverallScore) {
+            String score = String.format("Overall Score: %06d", game.getScore());
+            int x = getWidth() / 2;
+            int y = fm.getHeight();
+            g2.setColor(Color.WHITE);
+            g2.drawString(score, x, y);
+        }
+
+        if (paintingLevelScore) {
+            String levelScore = String.format("This Level's Score: %06d", level.getScore());
+            int x = 0;
+            int y = fm.getHeight();
+            g2.setColor(Color.WHITE);
+            g2.drawString(levelScore, x, y);
+        }
+
+        g2.translate(0, headerHeight);
+        
         Square[][] squares = level.getMap();
         for (int i = 0; i < squares.length; i++) {
             for (int j = 0; j < squares[0].length; j++) {
@@ -310,7 +340,6 @@ public class Playfield extends JPanel {
                     (int) (spotlightRadius*squareWidth*2));
         }
         
-        FontMetrics fm = getFontMetrics(getFont());
         if (frameCount != null) {
             String fc = String.format("%4d", frameCount);
             int width = fm.stringWidth(fc);
@@ -321,30 +350,6 @@ public class Playfield extends JPanel {
             g2.fillRect(x, y, width, height);
             g2.setColor(Color.WHITE);
             g2.drawString(fc, x, y + height - fm.getDescent());
-        }
-
-        if (paintingOverallScore) {
-            String score = String.format("Overall Score: %4d", game.getScore());
-            int width = fm.stringWidth(score);
-            int height = fm.getHeight();
-            int x = getWidth() - width - 3;
-            int y = 3 + height;
-            g2.setColor(Color.BLACK);
-            g2.fillRect(x, y, width, height);
-            g2.setColor(Color.WHITE);
-            g2.drawString(score, x, y + height - fm.getDescent());
-        }        
-
-        if (paintingLevelScore) {
-            String levelScore = String.format("%s Score: %4d", level.getName(), level.getScore());
-            int width = fm.stringWidth(levelScore);
-            int height = fm.getHeight();
-            int x = getWidth() - width - 3;
-            int y = 3 + height*2;
-            g2.setColor(Color.BLACK);
-            g2.fillRect(x, y, width, height);
-            g2.setColor(Color.WHITE);
-            g2.drawString(levelScore, x, y + height - fm.getDescent());
         }
 
         if (labelOpacity > 0.0) {
@@ -537,7 +542,7 @@ public class Playfield extends JPanel {
     
     public Dimension getPreferredSize() {
         return new Dimension(level.getWidth() * getSquareWidth(),
-                			 level.getHeight() * getSquareWidth());
+                			 level.getHeight() * getSquareWidth() + headerHeight);
     }
     
     // ACCESSORS AND MUTATORS
@@ -685,4 +690,11 @@ public class Playfield extends JPanel {
         this.clickToToggleDescription = clickToToggleDescription;
     }
     
+    public void setHeaderHeight(int headerHeight) {
+        this.headerHeight = headerHeight;
+    }
+    
+    public int getHeaderHeight() {
+        return headerHeight;
+    }
 }
