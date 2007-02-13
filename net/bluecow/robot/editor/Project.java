@@ -32,6 +32,8 @@ import net.bluecow.robot.resource.ResourceLoader;
 
 public class Project {
 
+    private static final boolean debugOn = false;
+    
     /**
      * The location of this project in the file system.
      */
@@ -83,10 +85,10 @@ public class Project {
             String path = resource.getName();
             File resourceFile = new File(dir, path);
             if (resource.isDirectory()) {
-                System.out.println("Creating resource directory "+resourceFile.getAbsolutePath());
+                debug("Creating resource directory "+resourceFile.getAbsolutePath());
                 resourceFile.mkdir();
             } else {
-                System.out.println("Creating resource file "+resourceFile.getAbsolutePath());
+                debug("Creating resource file "+resourceFile.getAbsolutePath());
                 OutputStream out = new FileOutputStream(resourceFile);
                 byte[] buffer = new byte[1024];
                 int len;
@@ -191,11 +193,11 @@ public class Project {
      */
     private void recursiveSaveFilesToJar(JarOutputStream out, File baseDir, String path) throws IOException {
         File thisDir = new File(baseDir, path);
-        System.out.println("JAR: starting dir "+thisDir);
+        debug("JAR: starting dir "+thisDir);
         out.putNextEntry(new JarEntry(path + "/"));
         for (String subPath : thisDir.list()) {
             File f = new File(thisDir, subPath);
-            System.out.println("     entry "+f);
+            debug("     entry "+f);
             if (f.isDirectory()) {
                 String newPath;
                 if (path.length() == 0) {
@@ -206,7 +208,7 @@ public class Project {
                 recursiveSaveFilesToJar(out, baseDir, newPath);
             } else {
                 InputStream in = new BufferedInputStream(new FileInputStream(f));
-                System.out.println("     adding to jar "+path + "/" + subPath);
+                debug("     adding to jar "+path + "/" + subPath);
                 out.putNextEntry(new JarEntry(path + "/" + subPath));
                 byte[] buf = new byte[4096];
                 int count;
@@ -231,5 +233,9 @@ public class Project {
     
     public Switch createSwitch() {
         return new LevelConfig.Switch(defaultSwitch);
+    }
+    
+    private static void debug(String msg) {
+        if (debugOn) System.out.println(msg);
     }
 }
