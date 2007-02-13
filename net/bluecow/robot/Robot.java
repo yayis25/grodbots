@@ -488,6 +488,10 @@ public class Robot implements Labelable {
         return level;
     }
     
+    public void setLevel(LevelConfig config) {
+        this.level = config;
+    }
+
     public String getLabel() {
         return labelText;
     }
