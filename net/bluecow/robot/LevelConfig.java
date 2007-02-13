@@ -29,6 +29,8 @@ import bsh.Interpreter;
  */
 public class LevelConfig {
     
+    private static final boolean debugOn = false;
+    
     /**
      * The Switch class represents an effect that can happen to a level
      * when a robot enters or leaves a square.
@@ -97,14 +99,17 @@ public class LevelConfig {
 
             Interpreter bsh = level.getBshInterpreter();
             bsh.set("robot", robot);
-            System.out.println("Dump of scripting variables:");
-            for (String name : bsh.getNameSpace().getVariableNames()) {
-                System.out.println("  "+name+": "+bsh.get(name));;
-            }
-            System.out.println("Dump of actual objects:");
-            System.out.println("  level: "+level);
-            for (Robot r : level.getRobots()) {
-                System.out.println("  "+r.getId()+": "+r);
+            
+            if (debugOn) {
+                System.out.printf("Dump of scripting variables: (bsh=0x%x, interpreter=0x%x)\n", System.identityHashCode(bsh), System.identityHashCode(bsh.getNameSpace()));
+                for (String name : bsh.getNameSpace().getVariableNames()) {
+                    System.out.println("  "+name+": "+bsh.get(name));;
+                }
+                System.out.println("Dump of actual objects:");
+                System.out.println("  level: "+level);
+                for (Robot r : level.getRobots()) {
+                    System.out.println("  "+r.getId()+": "+r);
+                }
             }
             bsh.eval(onEnter);
             bsh.set("robot", null);
@@ -296,6 +301,7 @@ public class LevelConfig {
     
     private void initInterpreter() throws EvalError {
         bsh = new Interpreter();
+        System.out.printf("Created new BSH interpreter 0x%x (namespace 0x%x, level 0x%x)\n", System.identityHashCode(bsh), System.identityHashCode(bsh.getNameSpace()), System.identityHashCode(LevelConfig.this));
         bsh.set("level", this);
     }
     
@@ -330,6 +336,7 @@ public class LevelConfig {
         if (r.getId() == null) throw new NullPointerException("Null robot id not allowed");
         try {
             if (bsh.get(r.getId()) != null) {
+                System.out.println("Found duplicate object in LevelConfig.addRobot(): old="+bsh.get(r.getId())+" new="+r);
                 throw new IllegalArgumentException("This level already has a scripting object with id \""+r.getId()+"\"");
             }
             bsh.set(r.getId(), r);
@@ -337,6 +344,7 @@ public class LevelConfig {
             throw new RuntimeException(e);
         }
         robots.add(r);
+        r.setLevel(this);
         pcs.firePropertyChange("robots", null, null);
     }
 

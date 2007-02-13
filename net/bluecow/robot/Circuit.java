@@ -34,6 +34,8 @@ import net.bluecow.robot.gate.Gate;
  */
 public class Circuit {
 
+    private static final boolean debugOn = false;
+    
     /**
      * Determines whether or not this circuit does not allow structural
      * modifications. Structural modifications include adding and removing
@@ -142,20 +144,20 @@ public class Circuit {
         Map<Gate, Gate> oldNew = new HashMap<Gate, Gate>();
         // first duplicate all gates, mapping originals to their duplicates
         for (Gate srcGate : src.gates) {
-            System.out.println("Duplicating source gate: "+srcGate);
+            debug("Duplicating source gate: "+srcGate);
             if (srcGate == src.inputsGate) {
-                System.out.println("  It's the input!");
+                debug("  It's the input!");
                 gates.add(inputsGate);
                 oldNew.put(srcGate, inputsGate);
             } else if (src.outputs.contains(srcGate)) {
                 // assuming our outputs are in same order as src's outputs
                 int idx = src.outputs.indexOf(srcGate);
-                System.out.println("  It's output number "+idx);
+                debug("  It's output number "+idx);
                 Gate gate = this.outputs.get(idx);
                 gates.add(gate);
                 oldNew.put(srcGate, gate);
             } else {
-                System.out.println("  It's a regular gate");
+                debug("  It's a regular gate");
                 Gate newGate = srcGate.createDisconnectedCopy();
                 gates.add(newGate);
                 oldNew.put(srcGate, newGate);
@@ -180,7 +182,7 @@ public class Circuit {
             permanentGates.add(oldNew.get(srcGate));
         }
         
-        System.out.println("Gate allowances after copy: "+gateAllowances);
+        debug("Gate allowances after copy: "+gateAllowances);
     }
     
     /**
@@ -376,7 +378,7 @@ public class Circuit {
      */
     public void setLocked(boolean v) {
         if (locked != v) {
-            System.out.println("Changing locked to "+v);
+            debug("Changing locked to "+v);
             locked = v;
             fireChangeEvent();
         }
@@ -386,4 +388,7 @@ public class Circuit {
         return locked;
     }
 
+    private static void debug(String msg) {
+        if (debugOn) System.out.println(msg);
+    }
 }
