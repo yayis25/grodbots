@@ -82,6 +82,9 @@ public class LevelStore {
                     new OutputStreamWriter(
                             new FileOutputStream(tempFile), encoding));
             save(out, gc, encoding);
+            out.flush();
+            out.close();
+            out = null;
             if (destFile.exists()) {
                 destFile.renameTo(new File(destDir, "map_backup_"+System.currentTimeMillis()));
             }
