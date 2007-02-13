@@ -700,7 +700,6 @@ public class EditorMain {
                     }
                     
                     if (okAction != null) {
-                        System.out.println("Performing OK action for robot props dialog");
                         okAction.actionPerformed(e);
                     }
 
@@ -1178,10 +1177,8 @@ public class EditorMain {
         sensorTypesList.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
-                System.out.println("Click");
                 if (e.getClickCount() == 2 && SwingUtilities.isLeftMouseButton(e)) {
                     GameConfig.SensorConfig sc = (SensorConfig) sensorTypesList.getSelectedValue();
-                    System.out.println("Double Click (selectedValue="+sc+")");
                     if (sc != null) {
                         makeSensorPropsDialog(frame, getProject().getGameConfig(), sc).setVisible(true);
                     }
@@ -1197,7 +1194,6 @@ public class EditorMain {
         squareList.setCellRenderer(new SquareChooserListRenderer());
         squareList.addListSelectionListener(new ListSelectionListener() {
             public void valueChanged(ListSelectionEvent e) {
-                System.out.println("Square List selection changed. squares="+myGameConfig.getSquareTypes());
                 if (editor != null) {
                     editor.setPaintingSquareType((SquareConfig) squareList.getSelectedValue());
                 }
@@ -1213,10 +1209,8 @@ public class EditorMain {
         squareList.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
-                System.out.println("Click");
                 if (e.getClickCount() == 2 && SwingUtilities.isLeftMouseButton(e)) {
                     GameConfig.SquareConfig sc = (SquareConfig) squareList.getSelectedValue();
-                    System.out.println("Double Click (selectedValue="+sc+")");
                     if (sc != null) {
                         makeSquarePropsDialog(frame, getProject(), sc).setVisible(true);
                     }
@@ -1545,7 +1539,6 @@ public class EditorMain {
         });
         robotChooser.addListSelectionListener(new ListSelectionListener() {
             public void valueChanged(ListSelectionEvent e) {
-                System.out.println("robot chooser selection changed: "+e);
                 Robot r = (Robot) robotChooser.getSelectedValue();
                 if (r == null) {
                     editor.setSpotlightLocation(null);
@@ -1701,7 +1694,6 @@ public class EditorMain {
                     JOptionPane.PLAIN_MESSAGE, null, 
                     new String[] {"Quit", "Open Existing", "Create new"},
             "Create new");
-            System.out.println("Choice: "+choice);
 
             if (choice == 0) {
                 System.exit(0);
