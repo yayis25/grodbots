@@ -5,6 +5,7 @@
  */
 package net.bluecow.robot;
 
+import java.awt.AlphaComposite;
 import java.awt.geom.Point2D;
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
@@ -29,7 +30,16 @@ public class GameLoop implements Runnable {
     
     private Playfield playfield;
     
+    /**
+     * The current level that the user is playing.
+     */
     private LevelConfig level;
+    
+    /**
+     * LevelConfigs that contain ghost robots and switches.  They need to be
+     * reset when the real level is reset.
+     */
+    private List<LevelConfig> ghostLevels = new ArrayList<LevelConfig>();
     
     /**
      * Set this to true to abort the current game.
@@ -86,7 +96,7 @@ public class GameLoop implements Runnable {
     public final void addRobot(Robot robot) {
         robots.add(robot);
     }
-
+    
     /**
      * Removes the given robot from this game loop.
      */
@@ -94,6 +104,26 @@ public class GameLoop implements Runnable {
         robots.remove(robot);
     }
 
+    /**
+     * Adds a ghost level to this game loop which will behave properly when
+     * the loop has been reset.
+     * 
+     * <p>XXX there should be a way to remove a ghost level
+     */
+    public void addGhostLevel(LevelConfig l) {
+        ghostLevels.add(l);
+        for (Robot r : l.getRobots()) {
+            addRobot(r); // long-term, it might be better to keep these separate from the real ones
+        }
+        addGhostsToPlayfield(l);
+    }
+    
+    private void addGhostsToPlayfield(LevelConfig l) {
+        for (Robot r : l.getRobots()) {
+            playfield.addRobot(r, AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.5f));
+        }
+    }
+    
     public void run() {
         synchronized (this) {
             if (running) {
@@ -143,11 +173,20 @@ public class GameLoop implements Runnable {
                     // should this loop be in the robot's circuit instead?
                     robot.getCircuit().evaluateOnce();
                 }
+                
                 Point2D.Float oldPos = robot.getPosition();
                 robot.move();
+                
                 if (!isSameSquare(oldPos, robot.getPosition())) {
-                    Switch exitingSwitch = level.getSwitch(oldPos);
-                    Switch enteringSwitch = level.getSwitch(robot.getPosition());
+                    
+                    /*
+                     * This has to be the robot's level (as opposed to the 
+                     * level in this game loop) for ghosts to work properly
+                     */
+                    LevelConfig l = robot.getLevel();
+                    
+                    Switch exitingSwitch = l.getSwitch(oldPos);
+                    Switch enteringSwitch = l.getSwitch(robot.getPosition());
                     try {
                         if (exitingSwitch != null) exitingSwitch.onExit(robot);
                         if (enteringSwitch != null) enteringSwitch.onEnter(robot);
@@ -185,6 +224,7 @@ public class GameLoop implements Runnable {
         return (Math.floor(p1.x) == Math.floor(p2.x)) &&
                (Math.floor(p1.y) == Math.floor(p2.y));
     }
+    
     /**
      * Tells whether or not the game loop is currently running.  This is a bound
      * property; to recieve change notifications, register a property change listener
@@ -242,7 +282,8 @@ public class GameLoop implements Runnable {
     }
     
     /**
-     * Resets this game loop, its robot, and the circuit editor to their initial states.
+     * Resets this game loop, its levelconfig and robots, the ghost levels
+     * and their robots, and the playfield to their initial states.
      * 
      * @throws IllegalStateException if you call this method when the game loop
      * is running
@@ -254,12 +295,23 @@ public class GameLoop implements Runnable {
         setGoalReached(false);
         loopCount = 0;
         level.resetState();
+        
+        for (LevelConfig ghostLevel : ghostLevels) {
+            ghostLevel.resetState();
+        }
+
+        // this list includes the ghost robots (subject to change in the future)
         for (Robot robot : robots) {
             robot.resetState();
         }
+        
         playfield.setLevel(level);
         playfield.setFrameCount(null);
         playfield.setAsyncRepaint(true);
+        
+        for (LevelConfig ghostLevel : ghostLevels) {
+            addGhostsToPlayfield(ghostLevel);
+        }
     }
 
     

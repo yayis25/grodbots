@@ -5,7 +5,6 @@
  */
 package net.bluecow.robot;
 
-import java.awt.AlphaComposite;
 import java.awt.BorderLayout;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
@@ -23,7 +22,6 @@ import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -350,17 +348,33 @@ public class Main {
                     f = fc.getSelectedFile();
                 }
                 in = new FileInputStream(f);
+                LevelConfig ghostLevel = new LevelConfig(config.getLevels().get(levelNumber));
+                
+                /*
+                 * remove existing robots.. should have a method in LevelConfig for creating this
+                 * type of copy. 
+                 */
+                for (Robot robot : new ArrayList<Robot>(ghostLevel.getRobots())) {
+                    ghostLevel.removeRobot(robot);
+                }
+                
                 List<Robot> ghosts = new ArrayList<Robot>();
                 for (Robot robot : robots) {
-                    throw new RuntimeException("ghosts need their own private level config! this is not implemented yet!");
-                    // ghosts.add(new Robot(robot, null));  //FIXME need to create a whole new level for the set of ghosts
+                    Robot ghost = new Robot(robot, ghostLevel);
+                    ghosts.add(ghost);
+                    ghostLevel.addRobot(ghost);
                 }
                 CircuitStore.load(in, ghosts);
                 for (Robot ghost : ghosts) {
+                    if (ghost.getLevel() != ghostLevel) {
+                        throw new IllegalStateException("Ghost's level is not the ghostLevel");
+                    }
+                    if (!ghostLevel.getRobots().contains(ghost)) {
+                        throw new IllegalStateException("ghostLevel doesn't contain ghost "+ghost);
+                    }
                     CircuitEditor ghostCE = new CircuitEditor(ghost.getCircuit(), sm);
-                    gameLoop.addRobot(ghost);
-                    playfield.addRobot(ghost, AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.5f));
-                    JFrame ghostFrame = new JFrame("Ghost from "+f.getName());
+                    ghost.getCircuit().setLocked(true);
+                    JFrame ghostFrame = new JFrame("Ghost of "+ghost.getLabel()+" from "+f.getName());
                     ghostFrame.addWindowListener(new BuffyTheGhostKiller(ghost));
                     ghostFrame.setContentPane(ghostCE);
                     ghostFrame.pack();
@@ -368,7 +382,12 @@ public class Main {
                     ghostFrame.setVisible(true);
                     windowsToClose.add(ghostFrame);
                 }
+                
+                ghostLevel.snapshotState();
+                gameLoop.addGhostLevel(ghostLevel);
+                
                 RobotUtils.updateRecentFiles(recentFiles, f);
+                
             } catch (FileFormatException ex) {
                 RobotUtils.showFileFormatException(ex);
             } catch (BackingStoreException ex) {
@@ -439,7 +458,7 @@ public class Main {
                 }
                 RobotUtils.updateRecentFiles(recentFiles, f);
                 ResourceLoader resourceLoader = new ZipFileResourceLoader(f);
-                config = LevelStore.loadLevels(resourceLoader);
+                loadGameConfig(resourceLoader);
                 setLevel(0);
             } catch (BackingStoreException ex) {
                 System.out.println("Couldn't update user prefs");
@@ -587,6 +606,13 @@ public class Main {
         }
     }
 
+    /**
+     * Reads in a new game config, replacing the currently-loaded one with
+     * the one in the given ResourceLoader.
+     * 
+     * @param builtInResourceLoader
+     * @throws IOException
+     */
     private void loadGameConfig(ResourceLoader builtInResourceLoader) throws IOException {
         config = LevelStore.loadLevels(builtInResourceLoader);
     }
