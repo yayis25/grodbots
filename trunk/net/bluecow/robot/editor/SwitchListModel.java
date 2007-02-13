@@ -23,7 +23,6 @@ public class SwitchListModel extends AbstractListModel {
         level.addPropertyChangeListener("switches", new PropertyChangeListener() {
             public void propertyChange(PropertyChangeEvent evt) {
                 List<Switch> switches = level.getSwitches();
-                System.out.println("Level switches changed! size="+switches.size());
                 fireContentsChanged(SwitchListModel.this, 0, switches.size());
             }
         });
