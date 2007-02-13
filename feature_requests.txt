@@ -1,9 +1,9 @@
 Game Features:
+-create a set of tutorial levels for learning the game
 -Make real game UI:
- -fix score/frame count so it doesn't overlap map
- -get rid of level spinner
- -button for going to the next level when you win
- -make ghosts work again (each set of ghosts need their own level config)
+ -constrain level spinner so you can't go to levels you haven't finished
+ -something special for having completed every level (totals?)
+ -ensure the overall score doesn't reset when going to the next level
 -Level editor
  -level edit panel is too squished
  -preview mode for playing the current level without running the game
@@ -17,8 +17,9 @@ Game Features:
  -in config files, add a version attribute to top-level element and autobackup old versions
  -effect for the "cursor" box to fade in and out and change colours and stuff
  -put a real spotlight on the currently-selected robot or switch
+-be able to save all circuits in the entire game into one file, and load it back later
 -make an effects API for switch scripts: int getNumFrames() and void doFrame(int).
--create a set of real levels for learning the game
+-bonus points for left-over gates
 -Batteries
 -Radio Communication between robots
 -init sound manager sound set from config file
@@ -51,6 +52,13 @@ Sounds:
 -little ditties for the beginning of each level (maybe this would be better suited to the MIDI sequencer api)
 
 Completed:
+-about 7 tutorial levels.. all should be easy to complete if you understand the game
+-fix bug with saving level pack on Windows (default.map isn't included)  -- attempted fix; not tested
+-fix score so it doesn't overlap map
+-button for going to the next level when you win
+-make ghosts work again (each set of ghosts need their own level config)
+-ensure ghost circuit editors are always locked
+-ensure ghosts remain in playfield after reset
 -better error message when a resource within a ZIP is missing (display the FileNotFoundException's message)
 -pause the game loop before changing the current level (otherwise, the animation doubles in speed)
 -ensure game play still works now that LevelConfig.copyState() creates fully independent copies (including robots and their circuits)
