@@ -186,7 +186,7 @@ public class CircuitEditor extends JPanel {
         
         public boolean contains(Point p) {
             boolean contains = bounds.contains(p);
-            System.out.println("Toolbox "+bounds+" contains "+p+"? "+contains);
+            // System.out.println("Toolbox "+bounds+" contains "+p+"? "+contains);
             return contains;
         }
         
