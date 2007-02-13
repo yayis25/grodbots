@@ -1,218 +1,288 @@
 <?xml version="1.0" encoding="utf-8"?>
 <rocky version="4.0">
+  <sensor type="Red" />
+  <sensor type="Green" />
+  <sensor type="Blue" />
 
- <sensor type="Red" />
- <sensor type="Green" />
- <sensor type="Blue" />
- <sensor type="Stripe" />
+  <gate type="AND" mnemonic="a" class="net.bluecow.robot.gate.AndGate" />
+  <gate type="NOR" mnemonic="O" class="net.bluecow.robot.gate.NorGate" />
+  <gate type="NOT" mnemonic="n" class="net.bluecow.robot.gate.NotGate" />
+  <gate type="NAND" mnemonic="A" class="net.bluecow.robot.gate.NandGate" />
+  <gate type="OR" mnemonic="o" class="net.bluecow.robot.gate.OrGate" />
 
- <gate type="AND" mnemonic="a" class="net.bluecow.robot.gate.AndGate" />
- <gate type="NAND" mnemonic="A" class="net.bluecow.robot.gate.NandGate" />
- <gate type="OR" mnemonic="o" class="net.bluecow.robot.gate.OrGate" />
- <gate type="NOR" mnemonic="O" class="net.bluecow.robot.gate.NorGate" />
- <gate type="NOT" mnemonic="n" class="net.bluecow.robot.gate.NotGate" />
+  <square type="BLACK" mapchar=" " graphic="ROBO-INF/images/blacktile_glint.rsf">
+  </square>
+  <square type="MAGENTA" mapchar="M" graphic="ROBO-INF/images/magentatile.png">
+    <activate-sensor type="Blue" />
+    <activate-sensor type="Red" />
+  </square>
+  <square type="RED" mapchar="R" graphic="ROBO-INF/images/redtile.png">
+    <activate-sensor type="Red" />
+  </square>
+  <square type="WHITE" mapchar="W" graphic="ROBO-INF/images/whitetile.png">
+    <activate-sensor type="Blue" />
+    <activate-sensor type="Red" />
+    <activate-sensor type="Green" />
+  </square>
+  <square type="CYAN" mapchar="C" graphic="ROBO-INF/images/cyantile.png">
+    <activate-sensor type="Blue" />
+    <activate-sensor type="Green" />
+  </square>
+  <square type="YELLOW" mapchar="Y" graphic="ROBO-INF/images/yellowtile.png">
+    <activate-sensor type="Red" />
+    <activate-sensor type="Green" />
+  </square>
+  <square type="BLUE" mapchar="B" graphic="ROBO-INF/images/bluetile.png">
+    <activate-sensor type="Blue" />
+  </square>
+  <square type="GREEN" mapchar="G" graphic="ROBO-INF/images/greentile.png">
+    <activate-sensor type="Green" />
+  </square>
+  <square type="WALL" mapchar="X" graphic="ROBO-INF/images/wall.png">
+    <attribute type="WALL" />
+  </square>
 
- <square type="WALL" mapchar="X" graphic="ROBO-INF/images/wall.png">
-   <attribute type="WALL"/>
- </square>
- <square type="BLACK" mapchar=" " graphic="ROBO-INF/images/blacktile_glint.rsf" />
- <square type="RED" mapchar="R" graphic="ROBO-INF/images/redtile.png">
-   <activate-sensor type="Red"/>
- </square>
- <square type="GREEN" mapchar="G" graphic="ROBO-INF/images/greentile.png">
-   <activate-sensor type="Green"/>
- </square>
- <square type="BLUE" mapchar="B" graphic="ROBO-INF/images/bluetile.png">
-   <activate-sensor type="Blue"/>
- </square>
- <square type="YELLOW" mapchar="Y" graphic="ROBO-INF/images/yellowtile.png">
-   <activate-sensor type="Red"/>
-   <activate-sensor type="Green"/>
- </square>
- <square type="CYAN" mapchar="C" graphic="ROBO-INF/images/cyantile.png">
-   <activate-sensor type="Blue"/>
-   <activate-sensor type="Green"/>
- </square>
- <square type="MAGENTA" mapchar="M" graphic="ROBO-INF/images/magentatile.png">
-   <activate-sensor type="Red"/>
-   <activate-sensor type="Blue"/>
- </square>
- <square type="WHITE" mapchar="W" graphic="ROBO-INF/images/whitetile.png">
-   <activate-sensor type="Red"/>
-   <activate-sensor type="Green"/>
-   <activate-sensor type="Blue"/>
- </square>
- <square type="REDSTRIPE" mapchar="/" graphic="ROBO-INF/images/redstripetile.png">
-   <activate-sensor type="Red"/>
-   <activate-sensor type="Stripe"/>
- </square>
+  <level name="Green means go!" size-x="15" size-y="10">
+  <description><![CDATA[
+This level should be pretty easy to solve!  Just drag a connection from the correctly coloured sensor input to the correct directional motor output.
+  ]]></description>
+    <grod id="grod" step-size="0.1" start-x="3.5" start-y="4.5" evals-per-step="1" label="Grod" label-direction="s" label-enabled="true">
+      <graphic href="ROBO-INF/images/grod/grod.rsf" scale="0.4"/>
+      <gate-allowance type="OR" value="0" />
+      <gate-allowance type="NOT" value="0" />
+      <gate-allowance type="NAND" value="0" />
+      <gate-allowance type="AND" value="0" />
+      <gate-allowance type="NOR" value="0" />
+    </grod>
 
+    <switch id="cake" loc-x="11" loc-y="4" on-enter="robot.setGoalReached(true); level.increaseScore(200);" enabled="true" label="Cake" label-direction="s" label-enabled="true">
+      <graphic href="ROBO-INF/images/cake.png" scale="1.0"/>
+    </switch>
 
- <level name="Easy Map" size-x="15" size-y="10">
-
-  <grod id="grod" label="Gröd" step-size="0.1" start-x="2.5" start-y="2.5" evals-per-step="5" label-direction="w">
-   <graphic href="ROBO-INF/images/grod/grod.rsf" scale="0.4"/>
-   <gate-allowance type="AND" value="10"/>
-   <gate-allowance type="OR" value="10"/>
-   <gate-allowance type="NOT" value="10"/>
-   <gate-allowance type="NAND" value="10"/>
-   <gate-allowance type="NOR" value="10"/>
-  </grod>
-
-  <grod id="gregory" label="Gregory" step-size="0.1" start-x="8" start-y="8">
-   <graphic href="ROBO-INF/images/robot.png" />
-   <gate-allowance type="NOT" value="10"/>
-   <gate-allowance type="NAND" value="3"/>
-  </grod>
-
-  <switch id="cake" loc-x="7" loc-y="1" label="Cake" on-enter="robot.setGoalReached(true); level.increaseScore(200);">
-   <graphic href="ROBO-INF/images/cake.png"/>
-  </switch>
-
-  <switch id="teleport" loc-x="7" loc-y="4" label="Teleport Gregory" on-enter="gregory.x=4.5; gregory.y=4.5; level.increaseScore(100);">
-   <graphic href="ROBO-INF/images/cow.png"/>
-  </switch>
-
-  <map>
+    <map>
 XXXXXXXXXXXXXXX
-X R  X Y      X
-X R  X /      X
-X RCMYW/      X
-X GGGGG/      X
-X             X
 XXXXXXXXXXXXXXX
-X             X
-X             X
 XXXXXXXXXXXXXXX
-  </map>
- </level>
+XXXXXXXXXXXXXXX
+XXXGGGGGGGGGXXX
+XXXXXXXXXXXXXXX
+XXXXXXXXXXXXXXX
+XXXXXXXXXXXXXXX
+XXXXXXXXXXXXXXX
+XXXXXXXXXXXXXXX
+    </map>
+  </level>
+  <level name="On the Diagonal" size-x="15" size-y="10">
+  <description><![CDATA[
+Ok, this one isn't much harder.  See if you can figure out the trick!
+  ]]></description>
+    <grod id="Grod" step-size="0.1" start-x="3.5" start-y="8.5" evals-per-step="1" label="Grod" label-direction="n" label-enabled="true">
+      <graphic href="ROBO-INF/images/grod/grod.rsf" scale="0.4"/>
+      <gate-allowance type="OR" value="0" />
+      <gate-allowance type="NOT" value="0" />
+      <gate-allowance type="NAND" value="0" />
+      <gate-allowance type="AND" value="0" />
+      <gate-allowance type="NOR" value="0" />
+    </grod>
 
+    <switch id="Cake" loc-x="11" loc-y="1" on-enter="robot.setGoalReached(true); level.increaseScore(200);" enabled="true" label="Cake" label-direction="s" label-enabled="true">
+      <graphic href="ROBO-INF/images/cake.png" scale="1.0"/>
+    </switch>
 
- <level name="Cow Map" size-x="15" size-y="10">
+    <map>
+XXXXXXXXXXXXXXX
+XXXBBBBBBBBBXXX
+XXXBBBBBBBBBXXX
+XXXBBBBBBBBBXXX
+XXXBBBBBBBBBXXX
+XXXBBBBBBBBBXXX
+XXXBBBBBBBBBXXX
+XXXBBBBBBBBBXXX
+XXXBBBBBBBBBXXX
+XXXXXXXXXXXXXXX
+    </map>
+  </level>
+  <level name="Time to make a decision" size-x="15" size-y="10">
+  <description><![CDATA[
+Grod has to wake up and make a decision now.  No more mindless
+wandering in the same direction all the time!
+  ]]></description>
+    <grod id="Grod" step-size="0.1" start-x="3.5" start-y="8.5" evals-per-step="1" label="Grod" label-direction="e" label-enabled="true">
+      <graphic href="ROBO-INF/images/grod/grod.rsf" scale="0.4"/>
+      <gate-allowance type="OR" value="0" />
+      <gate-allowance type="NOT" value="0" />
+      <gate-allowance type="NAND" value="0" />
+      <gate-allowance type="AND" value="0" />
+      <gate-allowance type="NOR" value="0" />
+    </grod>
 
-  <grod id="grod" label="Grod" step-size="0.1" start-x="2.5" start-y="2.5">
-   <graphic href="ROBO-INF/images/grod/grod.rsf" scale="0.4"/>
-   <gate-allowance type="AND" value="10"/>
-   <gate-allowance type="OR" value="10"/>
-   <gate-allowance type="NOT" value="10"/>
-   <gate-allowance type="NAND" value="10"/>
-   <gate-allowance type="NOR" value="10"/>
-  </grod>
+    <switch id="Cake" loc-x="11" loc-y="1" on-enter="robot.setGoalReached(true); level.increaseScore(200);" enabled="true" label="Cake" label-direction="s" label-enabled="true">
+      <graphic href="ROBO-INF/images/cake.png" scale="1.0"/>
+    </switch>
 
-  <switch id="cake" loc-x="7" loc-y="1" label="Cake" on-enter="robot.setGoalReached(true); level.increaseScore(200);">
-   <graphic href="ROBO-INF/images/cake.png"/>
-  </switch>
+    <map>
+XXXXXXXXXXXXXXX
+XXXRRRRRRRRRXXX
+XXXBXXXXXRXXXXX
+XXXBXXXXXXXXXXX
+XXXBBXXXXXXXXXX
+XXXBXXXXXXXXXXX
+XXXBXXXXXXXXXXX
+XXXBXXXXXXXXXXX
+XXXBXXXXXXXXXXX
+XXXXXXXXXXXXXXX
+    </map>
+  </level>
+  <level name="Time to make more decisions" size-x="15" size-y="10">
+  <description><![CDATA[
+Three directions, one after the other.  Can you handle it?
+  ]]></description>
+    <grod id="Grod" step-size="0.1" start-x="3.5" start-y="8.5" evals-per-step="1" label="Grod" label-direction="e" label-enabled="true">
+      <graphic href="ROBO-INF/images/grod/grod.rsf" scale="0.4"/>
+      <gate-allowance type="OR" value="0" />
+      <gate-allowance type="NOT" value="0" />
+      <gate-allowance type="NAND" value="0" />
+      <gate-allowance type="AND" value="0" />
+      <gate-allowance type="NOR" value="0" />
+    </grod>
 
-  <map>
-XXXXXXXXXXXXXX
-XRRYYGGCCBBMMX
-XRRYYGGCCBBMMX
-XRRYYGGCCBBMMX
-XRRYYGGCCBBMMX
-XRRYYGGCCBBMMX
-XWWWW    WWWWX
-XXXXXXXXXXXXXX
-  </map>
- </level>
+    <switch id="Cake" loc-x="11" loc-y="8" on-enter="robot.setGoalReached(true); level.increaseScore(200);" enabled="true" label="Cake" label-direction="w" label-enabled="true">
+      <graphic href="ROBO-INF/images/cake.png" scale="1.0"/>
+    </switch>
 
- <level name="Switchcraft" size-x="15" size-y="10">
+    <map>
+XXXXXXXXXXXXXXX
+XXXRRRRRRRRGXXX
+XXXBXXXXRXXGXXX
+XXXBXXXXXXXGXXX
+XXXBBXXXXXXGXXX
+XXXBXXXXXXXGXXX
+XXXBXXXXXXGGXXX
+XXXBXXXXXXXGXXX
+XXXBXXXXXXXGXXX
+XXXXXXXXXXXXXXX
+    </map>
+  </level>
+  <level name="Move right, OR else!" size-x="15" size-y="10">
+  <description><![CDATA[
+Ok, it's finally time to bring out the gates.  Ok, one gate.  Can you figure out how the OR gate works?
+  ]]></description>
+    <grod id="Grod" step-size="0.1" start-x="4.5" start-y="4.5" evals-per-step="1" label="Grod" label-direction="w" label-enabled="true">
+      <graphic href="ROBO-INF/images/grod/grod.rsf" scale="0.4"/>
+      <gate-allowance type="OR" value="1" />
+      <gate-allowance type="NOT" value="0" />
+      <gate-allowance type="NAND" value="0" />
+      <gate-allowance type="AND" value="0" />
+      <gate-allowance type="NOR" value="0" />
+    </grod>
 
-  <grod id="grod" label="Grod" step-size="0.1" start-x="2.5" start-y="2.5">
-   <graphic href="ROBO-INF/images/grod/grod.rsf" scale="0.4"/>
-   <gate-allowance type="AND" value="1"/>
-   <gate-allowance type="OR" value="1"/>
-   <gate-allowance type="NOT" value="1"/>
-  </grod>
+    <switch id="Cake" loc-x="10" loc-y="4" on-enter="robot.setGoalReached(true); level.increaseScore(200);" enabled="true" label="Cake" label-direction="e" label-enabled="true">
+      <graphic href="ROBO-INF/images/cake.png" scale="1.0"/>
+    </switch>
 
-  <switch id="one" loc-x="3" loc-y="2" on-enter="two.enabled=true">
-   <graphic href="ROBO-INF/images/generic_switch.png"/>
-  </switch>
-  <switch id="two" loc-x="7" loc-y="2" enabled="false" on-enter="three.enabled=true">
-   <graphic href="ROBO-INF/images/generic_switch.png"/>
-  </switch>
-  <switch id="three" loc-x="11" loc-y="2" enabled="false" on-enter="cake.enabled=true">
-   <graphic href="ROBO-INF/images/generic_switch.png"/>
-  </switch>
-  <switch id="cake" loc-x="7" loc-y="1" label="Cake" enabled="false" on-enter="robot.setGoalReached(true); level.increaseScore(200);">
-   <graphic href="ROBO-INF/images/cake.png"/>
-  </switch>
+    <map>
+XXXXXXXXXXXXXXX
+XXXXXXXXXXXXXXX
+XXXXXXXXXXXXXXX
+XXXBBBBBRRRRXXX
+XXXBBBBBRRRRXXX
+XXXBBBBBRRRRXXX
+XXXXXXXXXXXXXXX
+XXXXXXXXXXXXXXX
+XXXXXXXXXXXXXXX
+XXXXXXXXXXXXXXX
+    </map>
+  </level>
+  <level name="OR OR OR" size-x="15" size-y="10">
+  <description><![CDATA[
+Can you do the 3-way OR?
+  ]]></description>
+    <grod id="Grod" step-size="0.1" start-x="4.5" start-y="4.5" evals-per-step="1" label="Grod" label-direction="w" label-enabled="true">
+      <graphic href="ROBO-INF/images/grod/grod.rsf" scale="0.4"/>
+      <gate-allowance type="OR" value="2" />
+      <gate-allowance type="NOT" value="0" />
+      <gate-allowance type="NAND" value="0" />
+      <gate-allowance type="AND" value="0" />
+      <gate-allowance type="NOR" value="0" />
+    </grod>
 
-  <map>
-XXXXXXXXXXXXXX
-XRRYYGGCCBBMMX
-XRRYYGGCCBBMMX
-XRRYYGGCCBBMMX
-XRRYYGGCCBBMMX
-XRRYYGGCCBBMMX
-XWWWW    WWWWX
-XXXXXXXXXXXXXX
-  </map>
- </level>
+    <switch id="Cake" loc-x="10" loc-y="4" on-enter="robot.setGoalReached(true); level.increaseScore(200);" enabled="true" label="Cake" label-direction="e" label-enabled="true">
+      <graphic href="ROBO-INF/images/cake.png" scale="1.0"/>
+    </switch>
 
- <level name="Near, yet far!" size-x="15" size-y="4">
+    <map>
+XXXXXXXXXXXXXXX
+XXXXXXXXXXXXXXX
+XXXXXXXXXXXXXXX
+XXXBBBGGGRRRXXX
+XXXBBBGGGRRRXXX
+XXXBBBGGGRRRXXX
+XXXXXXXXXXXXXXX
+XXXXXXXXXXXXXXX
+XXXXXXXXXXXXXXX
+XXXXXXXXXXXXXXX
+    </map>
+  </level>
+  <level name="NOT The Same as Last Time" size-x="15" size-y="10">
+  <description><![CDATA[
+Now what will you do?
+  ]]></description>
+    <grod id="Grod" step-size="0.1" start-x="4.5" start-y="4.5" evals-per-step="1" label="Grod" label-direction="w" label-enabled="true">
+      <graphic href="ROBO-INF/images/grod/grod.rsf" scale="0.4"/>
+      <gate-allowance type="OR" value="0" />
+      <gate-allowance type="NOT" value="1" />
+      <gate-allowance type="NAND" value="0" />
+      <gate-allowance type="AND" value="0" />
+      <gate-allowance type="NOR" value="0" />
+    </grod>
 
-  <grod id="grod" label="Grod" step-size="0.1" start-x="1.5" start-y="1.5">
-   <graphic href="ROBO-INF/images/grod/grod.rsf" scale="0.4"/>
-   <gate-allowance type="AND" value="1"/>
-   <gate-allowance type="OR" value="1"/>
-   <gate-allowance type="NOT" value="1"/>
-  </grod>
+    <switch id="Cake" loc-x="10" loc-y="4" on-enter="robot.setGoalReached(true); level.increaseScore(200);" enabled="true" label="Cake" label-direction="e" label-enabled="true">
+      <graphic href="ROBO-INF/images/cake.png" scale="1.0"/>
+    </switch>
 
-  <switch id="mover" loc-x="2" loc-y="1" on-enter="mover.x++; cake.x++;">
-   <graphic href="ROBO-INF/images/generic_switch.png"/>
-  </switch>
-  <switch id="cake" loc-x="3" loc-y="1" label="Cake" on-enter="robot.setGoalReached(true); level.increaseScore(200);">
-   <graphic href="ROBO-INF/images/cake.png"/>
-  </switch>
+    <map>
+XXXXXXXXXXXXXXX
+XXXXXXXXXXXXXXX
+XXXXXXXXXXXXXXX
+XXXBBBGGGRRRXXX
+XXXBBBGGGRRRXXX
+XXXBBBGGGRRRXXX
+XXXXXXXXXXXXXXX
+XXXXXXXXXXXXXXX
+XXXXXXXXXXXXXXX
+XXXXXXXXXXXXXXX
+    </map>
+  </level>
+  <level name="Colour Mixer" size-x="15" size-y="10">
+  <description><![CDATA[
+When you blend light together, you get different results than when you mix paint.  This is called the "additive colour model."
+<p><p>
+Can you figure out how it works?
+  ]]></description>
+    <grod id="Grod" step-size="0.1" start-x="2.5" start-y="7.5" evals-per-step="1" label="Grod" label-direction="w" label-enabled="true">
+      <graphic href="ROBO-INF/images/grod/grod.rsf" scale="0.4"/>
+      <gate-allowance type="OR" value="0" />
+      <gate-allowance type="NOT" value="0" />
+      <gate-allowance type="NAND" value="0" />
+      <gate-allowance type="AND" value="0" />
+      <gate-allowance type="NOR" value="0" />
+    </grod>
 
-  <map>
-XXXXXXXXXXXXXX
-XRRRRRRRRRRRRX
-XRRYYGGCCBBMMX
-XXXXXXXXXXXXXX
-  </map>
- </level>
+    <switch id="Cake" loc-x="2" loc-y="2" on-enter="robot.setGoalReached(true); level.increaseScore(200);" enabled="true" label="Cake" label-direction="e" label-enabled="true">
+      <graphic href="ROBO-INF/images/cake.png" scale="1.0"/>
+    </switch>
 
- <level name="Labels Everywhere!" size-x="15" size-y="5">
-
-  <grod id="grod" label="Grod" step-size="0.1" start-x="1.5" start-y="1.5">
-   <graphic href="ROBO-INF/images/grod/grod.rsf" scale="0.4"/>
-   <gate-allowance type="AND" value="1"/>
-   <gate-allowance type="OR" value="1"/>
-   <gate-allowance type="NOT" value="1"/>
-  </grod>
-
-  <switch id="e" label-direction="e" loc-x="4" loc-y="2" label="East" on-enter="level.increaseScore(10);">
-   <graphic href="ROBO-INF/images/generic_switch.png"/>
-  </switch>
-  <switch id="se" label-direction="se" loc-x="4" loc-y="3" label="Southeast" on-enter="level.increaseScore(10);">
-   <graphic href="ROBO-INF/images/generic_switch.png"/>
-  </switch>
-  <switch id="s" label-direction="s" loc-x="3" loc-y="3" label="South" on-enter="level.increaseScore(10);">
-   <graphic href="ROBO-INF/images/generic_switch.png"/>
-  </switch>
-  <switch id="sw" label-direction="sw" loc-x="2" loc-y="3" label="Southwest" on-enter="level.increaseScore(10);">
-   <graphic href="ROBO-INF/images/generic_switch.png"/>
-  </switch>
-  <switch id="w" label-direction="w" loc-x="2" loc-y="2" label="West" on-enter="level.increaseScore(10);">
-   <graphic href="ROBO-INF/images/generic_switch.png"/>
-  </switch>
-  <switch id="nw" label-direction="nw" loc-x="2" loc-y="1" label="Northwest" on-enter="level.increaseScore(10);">
-   <graphic href="ROBO-INF/images/generic_switch.png"/>
-  </switch>
-  <switch id="n" label-direction="n" loc-x="3" loc-y="1" label="North" on-enter="level.increaseScore(10);">
-   <graphic href="ROBO-INF/images/generic_switch.png"/>
-  </switch>
-  <switch id="cake" label-direction="ne" loc-x="4" loc-y="1" label="Cake" on-enter="robot.setGoalReached(true); level.increaseScore(200);">
-   <graphic href="ROBO-INF/images/cake.png"/>
-  </switch>
-
-  <map>
-XXXXXXXXXXXXXX
-XRRRRRRRRRRRRX
-XRRYYGGCCBBMMX
-XRRYYGGCCBBMMX
-XXXXXXXXXXXXXX
-  </map>
- </level>
+    <map>
+XXXXXXXXXXXXXXX
+XBBBBBBBBBBCCCX
+XBBBBBBBBBCCCGX
+XBBBBBBBBCCCGGX
+XXXXBBBBCCCGGGX
+XXXXRRRYYYYGGGX
+XRRRRRRRYYYYGGX
+XRRRRRRRRYYYYGX
+XRRRRRRRRRYYYYX
+XXXXXXXXXXXXXXX
+    </map>
+  </level>
 </rocky>
