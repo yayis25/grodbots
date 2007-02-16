@@ -28,6 +28,13 @@ public class NandGate extends AbstractAndGate {
         }
     }
 
+    /**
+     * Returns "NAND".
+     */
+    public String getType() {
+        return "NAND";
+    }
+    
     public NandGate createDisconnectedCopy() {
         final NandGate newGate = new NandGate(getInputs().length);
         newGate.copyFrom(this);

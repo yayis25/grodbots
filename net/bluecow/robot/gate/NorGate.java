@@ -28,6 +28,13 @@ public class NorGate extends AbstractOrGate {
         }
     }
 
+    /**
+     * Returns "NOR".
+     */
+    public String getType() {
+        return "NOR";
+    }
+    
     public NorGate createDisconnectedCopy() {
         final NorGate newGate = new NorGate(getInputs().length);
         newGate.copyFrom(this);

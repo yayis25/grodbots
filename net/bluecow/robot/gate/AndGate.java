@@ -33,6 +33,13 @@ public class AndGate extends AbstractAndGate {
 		}
 	}
 	
+    /**
+     * Returns "AND".
+     */
+    public String getType() {
+        return "AND";
+    }
+    
     public AndGate createDisconnectedCopy() {
         final AndGate gate = new AndGate(getInputs().length);
         gate.copyFrom(this);

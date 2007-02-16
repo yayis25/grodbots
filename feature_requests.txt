@@ -1,9 +1,15 @@
 Game Features:
 -create a set of tutorial levels for learning the game
 -Make real game UI:
+ -level description renders too low--make it truly centred
+ -explain keyboard shortcuts in tutorial level (DEL, new gates, etc)
+ -explain the gates better in tutorial level descriptions
+ -explain grod spinning wildly on conflicting inputs
  -constrain level spinner so you can't go to levels you haven't finished
  -something special for having completed every level (totals?)
  -ensure the overall score doesn't reset when going to the next level
+ -level description should have a stylesheet that puts more space between paragraphs
+ -it should be possible to include inline images (sourced from the level pack resources) in level descriptions
 -Level editor
  -level edit panel is too squished
  -preview mode for playing the current level without running the game
@@ -52,6 +58,10 @@ Sounds:
 -little ditties for the beginning of each level (maybe this would be better suited to the MIDI sequencer api)
 
 Completed:
+-implemented new strategy for setting the split pane divider location
+-label the gates in the toolbox
+-put a "click here" message in initial level
+-say you have to press Start once the wiring is complete in initial level
 -about 7 tutorial levels.. all should be easy to complete if you understand the game
 -fix bug with saving level pack on Windows (default.map isn't included)  -- attempted fix; not tested
 -fix score so it doesn't overlap map
