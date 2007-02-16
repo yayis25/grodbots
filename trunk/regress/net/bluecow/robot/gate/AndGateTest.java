@@ -21,6 +21,10 @@ public class AndGateTest extends TestCase {
             return "Always On";
         }
 
+        public String getType() {
+            return "ALWAYS_ON";
+        }
+        
         public Input[] getInputs() {
             return new Input[0];
         }

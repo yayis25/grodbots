@@ -128,11 +128,29 @@ public class CircuitEditor extends JPanel {
             }
         }
     }
+    
     private class Toolbox {
         
         private List<Gate> gates;
         private Rectangle bounds;
         
+        /**
+         * The number of pixels tall this toolbox would like to paint the mini gates.
+         */
+        private int preferredGateHeight = 20;
+        
+        /**
+         * The length of the input sticks and output sticks. Each stick will have
+         * this length; it's not the total combined length.
+         */
+        private int miniStickLength = 8;
+
+        /**
+         * The number of pixels to leave at the bottom of the toolbox (below the bottom labels'
+         * baseline).
+         */
+        private int bottomMargin = 3;
+
         /**
          * Sets up the toolbox list, which contains one gate instance for each type
          * of gate in the circuit's gate allowance set.
@@ -142,7 +160,6 @@ public class CircuitEditor extends JPanel {
             for (Map.Entry<Class<? extends Gate>, Integer> allowance : circuit.getGateAllowances().entrySet()) {
                 try {
                     Gate miniGate = allowance.getKey().newInstance();
-                    final int miniStickLength = 8;
                     miniGate.setInputStickLength(miniStickLength);
                     miniGate.setOutputStickLength(miniStickLength);
                     miniGate.setCircleSize(4);
@@ -157,28 +174,7 @@ public class CircuitEditor extends JPanel {
                 }
             }
         }
-        
-        /**
-         * Sets up this toolbox to occupy the given rectangular region.
-         */
-        public void setBounds(Rectangle bounds) {
-            this.bounds = new Rectangle(bounds);
-            final FontMetrics fm = getFontMetrics(getFont());
-            final int labelGap = fm.getHeight();
-            final int miniWidth = (int) ((bounds.height - labelGap) * 1.5);
-            final int bottomMargin = 3;
-            
-            int gateNum = 0;
-            for (Gate miniGate : gates) {
-                int x = (int) ((double) getWidth() / (double) gates.size() * (gateNum + 0.5));
-                miniGate.setBounds(new Rectangle(x - miniWidth/2, bounds.y + labelGap, miniWidth, bounds.height - labelGap - bottomMargin));
-                gateNum++;
-            }
-        }
-        
-        public Rectangle getBounds() {
-            return new Rectangle(bounds);
-        }
+
 
         public List<Gate> getGates() {
             return gates;
@@ -189,7 +185,46 @@ public class CircuitEditor extends JPanel {
             // System.out.println("Toolbox "+bounds+" contains "+p+"? "+contains);
             return contains;
         }
+
+        /**
+         * Sets up this toolbox to occupy the given rectangular region.  This
+         * involves setting up the bounds of the minigates so they are evenly
+         * distributed across the toolbox's width.
+         */
+        public void setBounds(Rectangle bounds) {
+            this.bounds = new Rectangle(bounds);
+            final FontMetrics fm = getFontMetrics(getFont());
+            final int labelGap = fm.getHeight();
+            final int miniWidth = preferredGateHeight + miniStickLength * 2;
+            
+            int gateNum = 0;
+            for (Gate miniGate : gates) {
+                int x = (int) ((double) getWidth() / (double) gates.size() * (gateNum + 0.5));
+                miniGate.setBounds(new Rectangle(x - miniWidth/2, bounds.y + labelGap, miniWidth, bounds.height - labelGap*2 - bottomMargin));
+                gateNum++;
+            }
+        }
         
+        public Rectangle getBounds() {
+            return new Rectangle(bounds);
+        }
+
+
+        /**
+         * Returns the preferred size of this toolbox, given the gate height, current
+         * font metrics of the circuit editor, and the number of gates in the toolbox.
+         * 
+         * <p>Note, the width component of the return value is garbage.  Currently,
+         * the layout manager ignores the preferred width.  If you need a reasonable response
+         * for preferred width, you'll have to tweak this method a bit.
+         */
+        public Dimension getPreferredSize() {
+            FontMetrics fm = getFontMetrics(getFont());
+            return new Dimension(
+                    preferredGateHeight * gates.size(),
+                    fm.getHeight() + preferredGateHeight + fm.getHeight() + bottomMargin);
+        }
+
         public void paint(Graphics2D g2) {
             // XXX: painting probably doesn't work properly unless the toolbox is at 0,0.
             
@@ -201,18 +236,26 @@ public class CircuitEditor extends JPanel {
 
             g2.setColor(getForeground());
             //g2.draw(bounds);
-            final FontMetrics fm = getFontMetrics(getFont());
+            final FontMetrics fm = g2.getFontMetrics();
             for (Gate miniGate : getGates()) {
                 Integer allowance = circuit.getGateAllowances().get(miniGate.getClass());
                 Rectangle r = miniGate.getBounds();
+                
                 final String allowanceString = allowance.toString();
                 final int allowanceStringWidth = fm.stringWidth(allowanceString);
-                g2.drawString(allowanceString, r.x + r.width/2 - allowanceStringWidth/2, bounds.y + fm.getAscent());
+                g2.drawString(allowanceString, r.x + r.width/2 - allowanceStringWidth/2, bounds.y + fm.getHeight()); // I think it should be bounds.y + fm.getAscent(), but that paints it too high up
+
                 g2.translate(r.x, r.y);
                 miniGate.drawBody(g2);
                 miniGate.drawInputs(g2, null);
                 miniGate.drawOutput(g2, false);
                 g2.translate(-r.x, -r.y);
+                
+                final String labelString = miniGate.getType() == null ? "NULL" : miniGate.getType();
+                final int labelStringWidth = fm.stringWidth(labelString);
+                g2.drawString(labelString, r.x + r.width/2 - labelStringWidth/2, bounds.y + bounds.height - fm.getHeight() / 2);
+                // bounding box for label text
+                //g2.drawRect(r.x + r.width/2 - labelStringWidth/2, bounds.y + r.y + r.height, labelStringWidth, fm.getHeight());
             }
         }
         
@@ -346,6 +389,12 @@ public class CircuitEditor extends JPanel {
             return parent.getPreferredSize();
         }
 
+        /**
+         * Distributes the robot inputs and outputs evenly along the right- and
+         * left-hand sides respectively, and puts the toolbox at the top.  The
+         * toolbox height is set to its preferred height, but its width is always
+         * pegged to the width of the container, minus a margin.
+         */
         public void layoutContainer(Container parent) {
             CircuitEditor ce = (CircuitEditor) parent;
             Circuit circuit = ce.circuit;
@@ -364,7 +413,8 @@ public class CircuitEditor extends JPanel {
                             ig.getInputStickLength() + ig.getOutputStickLength(),
                             ce.getHeight()));
             final int tbMargin = ig.getInputStickLength();
-            ce.toolbox.setBounds(new Rectangle(tbMargin, 0, ce.getWidth() - tbMargin*2, 40));
+            final Dimension tbPrefSize = ce.toolbox.getPreferredSize();
+            ce.toolbox.setBounds(new Rectangle(tbMargin, 0, ce.getWidth() - tbMargin*2, tbPrefSize.height));
         }
     }
 

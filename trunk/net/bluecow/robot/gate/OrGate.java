@@ -22,6 +22,13 @@ public class OrGate extends AbstractOrGate {
 		}
 	}
 	
+    /**
+     * Returns "OR".
+     */
+    public String getType() {
+        return "OR";
+    }
+    
     public OrGate createDisconnectedCopy() {
         final OrGate newGate = new OrGate(getInputs().length);
         newGate.copyFrom(this);

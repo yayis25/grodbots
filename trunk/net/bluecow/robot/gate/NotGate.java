@@ -25,6 +25,13 @@ public class NotGate extends AbstractGate {
         inputs[0] = new DefaultInput();
     }
 
+    /**
+     * Returns "NOT".
+     */
+    public String getType() {
+        return "NOT";
+    }
+    
     public NotGate createDisconnectedCopy() {
         final NotGate newGate = new NotGate();
         newGate.copyFrom(this);

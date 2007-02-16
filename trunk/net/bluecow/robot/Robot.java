@@ -307,6 +307,13 @@ public class Robot implements Labelable {
             throw new UnsupportedOperationException("Can't copy robot sensor outputs");
         }
 
+        /**
+         * Returns "ROBOT_SENSOR_OUTPUT".
+         */
+        public String getType() {
+            return "ROBOT_SENSOR_OUTPUT";
+        }
+        
 	}
 	
 	/**
@@ -448,6 +455,12 @@ public class Robot implements Labelable {
             throw new UnsupportedOperationException("Can't copy robot sensor outputs");
         }
 
+        /**
+         * Returns "ROBOT_INPUTS_GATE".
+         */
+        public String getType() {
+            return "ROBOT_INPUTS_GATE";
+        }
 	}
 
 	// ACCESSORS and MUTATORS

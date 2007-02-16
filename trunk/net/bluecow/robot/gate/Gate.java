@@ -8,7 +8,14 @@ import java.awt.Rectangle;
 public interface Gate {
     
     /**
-     * Gets the label text that is associated with this gate.
+     * Returns the type of gate this is, for instance "AND" "OR" "NOT" "NAND" and
+     * so on.
+     */
+    public String getType();
+    
+    /**
+     * Gets the label text that is associated with this gate, for instance the robot
+     * outputs are labeled "Red" "Green" "Blue" etc.
      * 
      * @return The text associated with this gate, or null if the gate has no label.
      */

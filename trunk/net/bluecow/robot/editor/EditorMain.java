@@ -14,6 +14,7 @@ import java.awt.GridBagLayout;
 import java.awt.GridLayout;
 import java.awt.Insets;
 import java.awt.Point;
+import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
@@ -1227,10 +1228,22 @@ public class EditorMain {
         frame.add(eastPanel, BorderLayout.EAST);
         
         setupMenu();
+
+        // this pack is required to realize the frame and get the layout going.
+        // the alternative would be frame.setVisible(true), but that would cause
+        // the following rearrangements to be visible to the user (yuck!)
+        frame.pack();
         
+        Dimension frameSize = Toolkit.getDefaultToolkit().getScreenSize();
+        frameSize.width = Math.min(800, frameSize.width);
+        frameSize.height = Math.min(800, frameSize.height);
+        frame.setSize(frameSize);
+        frame.setLocationRelativeTo(null);
+        
+        // must come after frame is realized and sized because the split pane
+        // divider location is calculated relative to its height
         levelChooser.setSelectedIndex(0);
         
-        frame.pack();
         frame.setVisible(true);
     }
 
@@ -1406,14 +1419,20 @@ public class EditorMain {
             splitPane.setTopComponent(makeLevelPropsPanel(level));
             splitPane.setBottomComponent(editorPanel);
             
-            System.out.println("level props panel pref size: "+splitPane.getTopComponent().getPreferredSize());
-            System.out.println("editor panel pref size: "+splitPane.getBottomComponent().getPreferredSize());
-            splitPane.setDividerLocation(splitPane.getTopComponent().getPreferredSize().height);
-            
             editor.setPaintingSquareType((SquareConfig) squareList.getSelectedValue());
-        }        
+        }
+        
         frame.add(levelEditPanel, BorderLayout.CENTER);
         frame.validate();
+        
+        // have to do this after validate to ensure the split pane has been positioned by the layout manager 
+        if (levelEditPanel instanceof JSplitPane) {
+            final JSplitPane splitPane = ((JSplitPane) levelEditPanel);
+            int newDividerLoc = splitPane.getHeight() - splitPane.getBottomComponent().getPreferredSize().height;
+            System.out.println("split pane height: "+splitPane.getHeight());
+            System.out.println("editor panel pref size: "+splitPane.getBottomComponent().getPreferredSize());
+            splitPane.setDividerLocation(newDividerLoc);
+        }
     }
     
     /**
