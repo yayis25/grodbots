@@ -51,19 +51,6 @@ public class GameLoop implements Runnable {
      * run() method is invoked.
      */
     private boolean running;
-    
-    /**
-     * Tells whether or not outside code has intentionally started
-     * the game loop.
-     * 
-     * <p>Justification for this extra state flag: The playfield sometimes
-     * requires extra repaints in order to finish effects that are synchronized
-     * with frame repaints (to reduce aliasing of the effect's framerate with
-     * the repaint rate). If all the playfield effects were asynchronous, this
-     * flag could be eliminated because you'd only need to keep repainting the
-     * playfield when the game is running.
-     */
-    //private boolean started;
 
     /**
      * Counts how many loops the game has gone through since it was started
@@ -188,8 +175,9 @@ public class GameLoop implements Runnable {
                     Switch exitingSwitch = l.getSwitch(oldPos);
                     Switch enteringSwitch = l.getSwitch(robot.getPosition());
                     try {
-                        if (exitingSwitch != null) exitingSwitch.onExit(robot);
-                        if (enteringSwitch != null) enteringSwitch.onEnter(robot);
+                        // TODO it might be better (simpler, more reliable) to evaluate the scripts here instead of in the switches
+                        if (exitingSwitch != null) exitingSwitch.onExit(robot, playfield);
+                        if (enteringSwitch != null) enteringSwitch.onEnter(robot, playfield);
                     } catch (EvalError e) {
                         JOptionPane.showMessageDialog(null, "Error evaluating switch:\n"+e.getMessage());
                     }

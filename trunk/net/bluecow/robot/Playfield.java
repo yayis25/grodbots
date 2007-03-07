@@ -28,12 +28,14 @@ import java.util.List;
 import javax.swing.BorderFactory;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.SwingConstants;
 import javax.swing.Timer;
 import javax.swing.event.AncestorEvent;
 import javax.swing.event.AncestorListener;
 
 import net.bluecow.robot.GameConfig.SquareConfig;
 import net.bluecow.robot.LevelConfig.Switch;
+import net.bluecow.robot.fx.Effect;
 import net.bluecow.robot.sprite.Sprite;
 
 /**
@@ -73,6 +75,17 @@ public class Playfield extends JPanel {
     
     private Integer frameCount;
     
+    /**
+     * All of the effects that are currently active. To start a new effect, just
+     * add it to this list. When effects are finished, the nextFrame() method
+     * will remove them from this list.
+     */
+    private List<Effect> effects = new ArrayList<Effect>();
+    
+    /**
+     * All the robots in this playfield.  Includes ghosts as well as the robots
+     * that are actually part of the current level.
+     */
     private List<RoboStuff> robots;
 
     /**
@@ -195,6 +208,9 @@ public class Playfield extends JPanel {
         for (Robot r : level.getRobots()) {
             addRobot(r);
         }
+        
+        effects.clear();
+        
         level.addPropertyChangeListener("map", new PropertyChangeListener() {
             public void propertyChange(PropertyChangeEvent evt) {
                 if (evt.getSource() == Playfield.this.level) {
@@ -322,6 +338,12 @@ public class Playfield extends JPanel {
         }
         g2.setComposite(backupComposite);
         
+        for (Effect e : effects) {
+            Graphics2D effectsGraphics = (Graphics2D) g2.create();
+            e.paint(effectsGraphics);
+            effectsGraphics.dispose();
+        }
+        
         if (spotlightLocation != null) {
             // XXX I wanted to dim everything but the robot, but couldn't
             //     get it working.  This is just a temporary workaround.
@@ -388,22 +410,39 @@ public class Playfield extends JPanel {
                     10, 10);
             
             String htmlDescription =
-                "<html><h1>"+level.getName()+"</h1>" +
-                "<p>"+level.getDescription();
+                "<html>" +
+                "<head><style>p {margin-top: 5px}</style></head>" +
+                "<body><h1>"+level.getName()+"</h1>" +
+                "<p>"+level.getDescription() +
+                "</body></html>";
+            
             JLabel descriptionLabel = new JLabel(htmlDescription);
             descriptionLabel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
             descriptionLabel.setForeground(Color.WHITE);
+            descriptionLabel.setBackground(Color.RED);
             descriptionLabel.setOpaque(false);
-            descriptionLabel.setBounds(labelBounds);
+            descriptionLabel.setVerticalAlignment(SwingConstants.TOP);
+            descriptionLabel.setBounds(0, 0, labelBounds.width, labelBounds.height);
             Graphics labelGraphics = g2.create(
                     labelBounds.x, labelBounds.y,
                     labelBounds.width, labelBounds.height);
             descriptionLabel.paint(labelGraphics);
-
+            labelGraphics.dispose();
+            
             g2.setComposite(backupComposite);
         }
     }
 
+    /**
+     * Adds the given effect, which will be painted every frame until
+     * it says it is finished.  Once it is finished, it will automatically
+     * be removed from this playfield.
+     */
+    public void addEffect(Effect e) {
+        System.out.println("Adding effect "+e);
+        effects.add(e);
+    }
+    
     /**
      * Tells all the sprites and effects to get ready for the next frame.
      */
@@ -420,6 +459,18 @@ public class Playfield extends JPanel {
             rs.getRobot().getSprite().nextFrame();
         }
 
+        for (Iterator<Effect> effectsIt = effects.iterator(); effectsIt.hasNext(); ) {
+            Effect e = effectsIt.next();
+            
+            if (e.isFinished()) {
+                // System.out.println("---- REMOVING EFFECT "+e);
+                effectsIt.remove();
+            } else {
+                // System.out.println("Next Frame for effect "+e);
+                e.nextFrame();
+            }
+        }
+        
         if (labellingOn) {
             labelOpacity = (float) Math.min(1.0, labelOpacity + labelFadeStep);
         } else {
@@ -561,6 +612,19 @@ public class Playfield extends JPanel {
 
     public Square getSquareAt(Point2D.Float p) {
         return level.getSquare(p.x, p.y);
+    }
+    
+    /**
+     * Converts the given Point2D (in square coordinates) to the equivalent Point
+     * on this playfield in pixel coordinates.
+     * 
+     * @param sp The point to convert.
+     * @return a new Point object that is as close as possible to the given square coordinate.
+     */
+    public Point squarePositionToPoint(Point2D sp) {
+        return new Point(
+                (int) (sp.getX() * getSquareWidth()),
+                (int) (sp.getY() * getSquareWidth()));
     }
     
     public void setWinMessage(String m) {

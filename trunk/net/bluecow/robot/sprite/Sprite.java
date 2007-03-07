@@ -6,7 +6,10 @@
 package net.bluecow.robot.sprite;
 
 import java.awt.Graphics2D;
+import java.awt.geom.AffineTransform;
 import java.util.Map;
+
+import com.sun.org.apache.bcel.internal.generic.GETSTATIC;
 
 /**
  * Sprite is an interface to any type of moving or static image resource
@@ -60,15 +63,42 @@ public interface Sprite {
     
     /**
      * Reports the scaling factor that will be applied to the source image data
-     * before it is drawn (the scale factor also affects the reported width and
-     * height reported by the sprite).
+     * before it is drawn (the scale factor also affects the width and height
+     * reported by the sprite).
      */
     double getScale();
     
     /**
-     * Sets the sprite's scale factor.
+     * Sets the sprite's scale factor.  1.0 means to draw the sprite at its natural
+     * size.
      */
     void setScale(double scale);
+    
+    /**
+     * Returns the current transformation that will be applied when painting this
+     * sprite.  The scale factor (see {@link #getScale()}) will be applied after
+     * this transformation.  This feature is intended for special
+     * effects that temporarily warp or distort the sprite during game play.  Its
+     * default value is always the identity transform.
+     * <p>
+     * This transformation will not be taken into account when reporting this
+     * sprite's visible dimensions.  This policy differs from that of the scale
+     * setting.
+     */
+    AffineTransform getTransform();
+    
+    /**
+     * Sets the transformation that will be applied when painting this
+     * sprite.  The scale factor (see {@link #getScale()}) will be applied after
+     * this transformation.  This feature is intended for special
+     * effects that temporarily warp or distort the sprite during game play.  Its
+     * default value is always the identity transform.
+     * <p>
+     * This transformation will not be taken into account when reporting this
+     * sprite's visible dimensions.  This policy differs from that of the scale
+     * setting.
+     */
+    void setTransform(AffineTransform transform);
     
     /**
      * Tells this sprite that a frame of the overall gamee has passed, and it

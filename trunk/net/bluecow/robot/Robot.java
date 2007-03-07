@@ -97,7 +97,8 @@ public class Robot implements Labelable {
      *      level's playfield. (0,0) is top left.
      * @param stepSize The distance this robot travels in one step
      *      (expressed as a number of playfield suqares)
-     * @param circuit The circuit that governs this robot's behaviour
+     * @param circuit The circuit that governs this robot's behaviour (if null,
+     * an appropriate one will be created for you).
      * @param evalsPerStep The number of circuit evaluations this robot
      *      will perform before taking one step
      */
