@@ -72,18 +72,22 @@ import javax.swing.event.DocumentListener;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 
+import net.bluecow.robot.CircuitEditor;
 import net.bluecow.robot.Direction;
 import net.bluecow.robot.FileFormatException;
 import net.bluecow.robot.GameConfig;
+import net.bluecow.robot.GameLoop;
 import net.bluecow.robot.LevelConfig;
 import net.bluecow.robot.Playfield;
 import net.bluecow.robot.Robot;
 import net.bluecow.robot.RobotUtils;
+import net.bluecow.robot.SoundManager;
 import net.bluecow.robot.GameConfig.GateConfig;
 import net.bluecow.robot.GameConfig.SensorConfig;
 import net.bluecow.robot.GameConfig.SquareConfig;
 import net.bluecow.robot.LevelConfig.Switch;
 import net.bluecow.robot.gate.Gate;
+import net.bluecow.robot.resource.SystemResourceLoader;
 import net.bluecow.robot.sprite.Sprite;
 import net.bluecow.robot.sprite.SpriteFileFilter;
 import net.bluecow.robot.sprite.SpriteManager;
@@ -258,6 +262,27 @@ public class EditorMain {
         }
     };
 
+    private Action playLevelAction = new AbstractAction("Play Test") {
+        public void actionPerformed(ActionEvent e) {
+            final LevelConfig level = (LevelConfig) levelChooser.getSelectedItem();
+            try {
+                level.snapshotState();
+                GameLoop gameLoop = new GameLoop(level.getRobots(), level, editor);
+                for (Robot r : level.getRobots()) {
+                    CircuitEditor ce = new CircuitEditor(
+                            r.getCircuit(),
+                            new SoundManager(new SystemResourceLoader()));  // FIXME need a real sound manager in the level editor
+                    JDialog d = new JDialog(frame, "Circuit for "+r.getLabel());
+                    d.add(ce);
+                    d.pack();
+                    d.setVisible(true);
+                }
+            } finally {
+                level.resetState();
+            }
+        }
+    };
+    
     private Action addRobotAction = new AbstractAction("Add Robot") {
         public void actionPerformed(ActionEvent e) {
             final LevelConfig level = (LevelConfig) levelChooser.getSelectedItem();
@@ -1157,7 +1182,7 @@ public class EditorMain {
         });
         levelChooserPanel.add(new JLabel("Level:"));
         levelChooserPanel.add(levelChooser);
-        JPanel buttonPanel = makeButtonPanel(addLevelAction, removeLevelAction, copyLevelAction);
+        JPanel buttonPanel = makeButtonPanel(addLevelAction, removeLevelAction, copyLevelAction, playLevelAction);
         levelChooserPanel.add(buttonPanel);
         
         frame.add(levelChooserPanel, BorderLayout.NORTH);

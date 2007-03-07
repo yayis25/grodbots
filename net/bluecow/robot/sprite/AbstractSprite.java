@@ -30,6 +30,12 @@ public abstract class AbstractSprite implements Sprite {
      */
     private Map<String, String> attributes;
 
+    /**
+     * The transform currently applied to this sprite when it's painting.
+     * Defaults to the identity transform.
+     */
+    private AffineTransform transform = new AffineTransform();
+    
     protected AbstractSprite(ResourceLoader resourceLoader, Map<String, String> attributes) {
         this.resourceLoader = resourceLoader;
         this.attributes = new LinkedHashMap<String, String>(attributes);
@@ -63,20 +69,23 @@ public abstract class AbstractSprite implements Sprite {
     }
 
     /**
-     * Paints this sprite at the given co-ordinates at the current scale
-     * setting.  The image to paint is obtained by a call to getImage(),
-     * and the scale comes from a call to getScale().  Each of getImage()
-     * and getScale() are called exactly once.  The Graphics2D argument's
-     * transform is modified in the course of this method's invocation, but
-     * it is guaranteed to be restored to its initial setting before this
-     * method returns.
+     * Paints this sprite at the given co-ordinates at the current scale setting
+     * modified by the current transform. The image to paint is obtained by a
+     * call to getImage(), the scale comes from a call to getScale(), and the
+     * transform is obtained from getTransform(). Each of getImage(),
+     * getScale(), and getTransform are called exactly once. The Graphics2D
+     * argument's transform is modified in the course of this method's
+     * invocation, but it is guaranteed to be restored to its initial setting
+     * before this method returns.
      */
     public void paint(Graphics2D g2, int x, int y) {
         AffineTransform backupXform = g2.getTransform();
         try {
             double scale = getScale();
             g2.translate(x, y);
-            g2.drawImage(getImage(), AffineTransform.getScaleInstance(scale, scale), null);
+            AffineTransform drawingTransform = AffineTransform.getScaleInstance(scale, scale);
+            drawingTransform.concatenate(transform);
+            g2.drawImage(getImage(), drawingTransform, null);
         } finally {
             g2.setTransform(backupXform);
         }
@@ -100,6 +109,14 @@ public abstract class AbstractSprite implements Sprite {
 
     public void setScale(double scale) {
         getAttributes().put("scale", String.valueOf(scale));
+    }
+
+    public AffineTransform getTransform() {
+        return transform;
+    }
+
+    public void setTransform(AffineTransform transform) {
+        this.transform = transform;
     }
 
     /**

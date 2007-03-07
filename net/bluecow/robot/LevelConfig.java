@@ -89,7 +89,7 @@ public class LevelConfig {
          * @param robot The robot that just entered this switch
          * @throws EvalError if there is a scripting error
          */
-        public void onEnter(Robot robot) throws EvalError {
+        public void onEnter(Robot robot, Playfield playfield) throws EvalError {
             if (level == null) {
                 throw new IllegalStateException(
                         "Can't evaluate switch onEnter: Switch is not attached to a level.");
@@ -99,6 +99,7 @@ public class LevelConfig {
 
             Interpreter bsh = level.getBshInterpreter();
             bsh.set("robot", robot);
+            bsh.set("playfield", playfield);
             
             if (debugOn) {
                 System.out.printf("Dump of scripting variables: (bsh=0x%x, interpreter=0x%x)\n", System.identityHashCode(bsh), System.identityHashCode(bsh.getNameSpace()));
@@ -113,6 +114,7 @@ public class LevelConfig {
             }
             bsh.eval(onEnter);
             bsh.set("robot", null);
+            bsh.set("playfield", null);
         }
 
         /**
@@ -122,7 +124,7 @@ public class LevelConfig {
          * @param robot The robot that just left this switch
          * @throws EvalError if there is a scripting error
          */
-        public void onExit(Robot robot) throws EvalError {
+        public void onExit(Robot robot, Playfield playfield) throws EvalError {
             if (level == null) {
                 throw new IllegalStateException(
                         "Can't evaluate switch onExit: Switch is not attached to a level.");
@@ -132,8 +134,10 @@ public class LevelConfig {
 
             Interpreter bsh = level.getBshInterpreter();
             bsh.set("robot", robot);
+            bsh.set("playfield", playfield);
             bsh.eval(onExit);
             bsh.set("robot", null);
+            bsh.set("playfield", null);
         }
 
         /**

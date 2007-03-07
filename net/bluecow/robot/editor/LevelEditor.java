@@ -19,7 +19,6 @@ import java.awt.geom.Point2D;
 import net.bluecow.robot.GameConfig;
 import net.bluecow.robot.LevelConfig;
 import net.bluecow.robot.Playfield;
-import net.bluecow.robot.Robot;
 import net.bluecow.robot.GameConfig.SquareConfig;
 
 public class LevelEditor extends Playfield {

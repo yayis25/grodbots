@@ -15,6 +15,12 @@ import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
 
+/**
+ * TODO make this class implement the Effect interface
+ *
+ * @author fuerth
+ * @version $Id$
+ */
 public class Fireworks {
     
     private static class Velocity {
