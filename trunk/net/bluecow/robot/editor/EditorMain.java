@@ -15,6 +15,7 @@ import java.awt.GridLayout;
 import java.awt.Insets;
 import java.awt.Point;
 import java.awt.Toolkit;
+import java.awt.Window;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
@@ -29,6 +30,7 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.io.Writer;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -77,6 +79,8 @@ import net.bluecow.robot.Direction;
 import net.bluecow.robot.FileFormatException;
 import net.bluecow.robot.GameConfig;
 import net.bluecow.robot.GameLoop;
+import net.bluecow.robot.GameState;
+import net.bluecow.robot.GameStateHandler;
 import net.bluecow.robot.LevelConfig;
 import net.bluecow.robot.Playfield;
 import net.bluecow.robot.Robot;
@@ -265,21 +269,54 @@ public class EditorMain {
     private Action playLevelAction = new AbstractAction("Play Test") {
         public void actionPerformed(ActionEvent e) {
             final LevelConfig level = (LevelConfig) levelChooser.getSelectedItem();
-            try {
-                level.snapshotState();
-                GameLoop gameLoop = new GameLoop(level.getRobots(), level, editor);
-                for (Robot r : level.getRobots()) {
-                    CircuitEditor ce = new CircuitEditor(
-                            r.getCircuit(),
-                            new SoundManager(new SystemResourceLoader()));  // FIXME need a real sound manager in the level editor
-                    JDialog d = new JDialog(frame, "Circuit for "+r.getLabel());
-                    d.add(ce);
-                    d.pack();
-                    d.setVisible(true);
-                }
-            } finally {
-                level.resetState();
+            final JFrame playtestFrame = new JFrame("Playtest");
+            final Playfield playfield = new Playfield(project.getGameConfig(), level);
+            
+            level.snapshotState();
+            SoundManager fakeSoundManager = new SoundManager(new SystemResourceLoader());   // FIXME need a real sound manager in the level editor
+
+            GameLoop gameLoop = new GameLoop(level.getRobots(), level, playfield);
+            Map<Robot, CircuitEditor> editors = new HashMap<Robot, CircuitEditor>();
+            final List<Window> windowsToDispose = new ArrayList<Window>();
+            for (Robot r : level.getRobots()) {
+                CircuitEditor ce = new CircuitEditor(
+                        r.getCircuit(),
+                        fakeSoundManager);
+                editors.put(r, ce);
+                JDialog d = new JDialog(playtestFrame, "Circuit for "+r.getLabel());
+                d.add(ce);
+                d.pack();
+                d.setVisible(true);
+                windowsToDispose.add(d);
             }
+
+            final GameStateHandler gsh = new GameStateHandler(gameLoop, fakeSoundManager, editors);
+            JButton quitPlaytestButton = new JButton("Quit Playtest");
+
+            JPanel tb = new JPanel(new FlowLayout());
+            tb.add(gsh.getStartButton());
+            tb.add(gsh.getStepButton());
+            tb.add(gsh.getResetButton());
+            tb.add(quitPlaytestButton);
+            
+            playtestFrame.add(playfield, BorderLayout.CENTER);
+            playtestFrame.add(tb, BorderLayout.SOUTH);
+            
+            playtestFrame.pack();
+            playtestFrame.setVisible(true);
+            windowsToDispose.add(playtestFrame);
+            
+            frame.setVisible(false);
+            
+            quitPlaytestButton.addActionListener(new ActionListener() {
+                public void actionPerformed(ActionEvent e) {
+                    for (Window w : windowsToDispose) {
+                        w.dispose();
+                    }
+                    gsh.setState(GameState.RESET);
+                    frame.setVisible(true);
+                }
+            });
         }
     };
     

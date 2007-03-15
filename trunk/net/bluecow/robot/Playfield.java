@@ -172,6 +172,7 @@ public class Playfield extends JPanel {
      * @param map The map.
      */
     public Playfield(GameConfig game, LevelConfig level) {
+        System.out.println("Creating new Playfield "+System.identityHashCode(this)+" for level "+level.getName());
         setGame(game);
         setLevel(level);
         setupKeyboardActions();
@@ -633,6 +634,7 @@ public class Playfield extends JPanel {
     }
     
     public void setFrameCount(Integer c) {
+        System.out.println("===="+System.identityHashCode(this)+" SetFrameCount Next Frame");
         frameCount = c;
         nextFrame();
     }
@@ -671,7 +673,7 @@ public class Playfield extends JPanel {
     
     private class AsyncRepaintManager implements ActionListener, AncestorListener {
         private boolean enabled = true;
-        private Timer timer;
+        private final Timer timer;
         
         AsyncRepaintManager(int delay) {
             Playfield.this.addAncestorListener(this);
@@ -685,13 +687,16 @@ public class Playfield extends JPanel {
         
         public synchronized void actionPerformed(ActionEvent e) {
             if (enabled) {
+                System.out.println("===="+System.identityHashCode(Playfield.this)+" Async Next Frame");
                 nextFrame();
                 repaint();
             }
         }
 
         
-        // AncestorListener implementation: kills the timer when this component goes away
+        // AncestorListener implementation:
+        //  kills the timer when this component goes away
+        //  and reactivates it when this component is reattached
 
         public void ancestorAdded(AncestorEvent event) {
             if (!timer.isRunning()) timer.start();
