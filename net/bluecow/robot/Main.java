@@ -18,8 +18,6 @@ import java.awt.event.ComponentEvent;
 import java.awt.event.KeyEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
-import java.beans.PropertyChangeEvent;
-import java.beans.PropertyChangeListener;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -55,179 +53,7 @@ import net.bluecow.robot.resource.SystemResourceLoader;
 import net.bluecow.robot.resource.ZipFileResourceLoader;
 
 public class Main {
-    
-    private static enum GameState { NOT_STARTED, RESET, STEP, RUNNING, PAUSED, WON };
-    
-    private GameState state = GameState.NOT_STARTED;
-    
-    private class GameLoopResetter implements PropertyChangeListener {
 
-        private GameLoop gl;
-        private GameStateHandler stateHandler;
-        private Collection<CircuitEditor> editors;
-        private GameState nextState;
-        
-        public GameLoopResetter(GameLoop gl, GameStateHandler stateHandler, Collection<CircuitEditor> editors, GameState nextState) {
-            this.gl = gl;
-            this.stateHandler = stateHandler;
-            this.editors = editors;
-            this.nextState = nextState;
-            if (gl.isRunning()) {
-                gl.addPropertyChangeListener(this);
-                gl.setStopRequested(true);
-            } else {
-                finishReset();
-            }
-        }
-        
-        public void propertyChange(PropertyChangeEvent evt) {
-            if (evt.getPropertyName().equals("running") && evt.getNewValue().equals(false)) {
-                gl.removePropertyChangeListener(this);
-                finishReset();
-            }
-        }
-        
-        private void finishReset() {
-            gl.resetState();
-            playfield.setWinMessage(null);
-            for (CircuitEditor ce : editors) {
-                ce.getCircuit().setLocked(false);
-            }
-            stateHandler.setState(nextState);
-        }
-    }
-
-    private class GameStateHandler implements ActionListener {
-        private final GameLoop loop;
-
-        private final JButton start;
-
-        private final JButton reset;
-
-        private final Map<Robot,CircuitEditor> robots;
-
-        private final JButton step;
-
-        private final JButton nextLevel;
-        
-        private GameStateHandler(
-                GameLoop loop, JButton start, JButton reset,
-                Map<Robot,CircuitEditor> robots, JButton step,
-                JButton nextLevel) {
-            super();
-            this.loop = loop;
-            this.start = start;
-            this.reset = reset;
-            this.robots = robots;
-            this.step = step;
-            this.nextLevel = nextLevel;
-            
-            start.addActionListener(this);
-            step.addActionListener(this);
-            reset.addActionListener(this);
-            nextLevel.addActionListener(this);
-
-            nextLevel.setEnabled(false);
-        }
-
-        public void actionPerformed(ActionEvent e) {
-            JButton source = (JButton) e.getSource();
-            if (source == start) {
-                if (state == GameState.RUNNING) {
-                    setState(GameState.PAUSED);
-                } else {
-                    setState(GameState.RUNNING);
-                }
-            } else if (source == step) {
-                setState(GameState.STEP);
-            } else if (source == reset) {
-                setState(GameState.RESET);
-            } else if (source == nextLevel) {
-                if (levelNumber+1 < config.getLevels().size()) {
-                    setLevel(++levelNumber);
-                } else {
-                    JOptionPane.showMessageDialog(playfield, "There are no more levels.", "A message for you", JOptionPane.INFORMATION_MESSAGE);
-                    JOptionPane.showConfirmDialog(playfield, "What, were you expecting some fanfare?", "Inquiry", JOptionPane.YES_NO_OPTION);
-                    JOptionPane.showOptionDialog(playfield, "Well, there are no more levels. I guess that means you won.", "Retort", 0, 0, null, new String[] {"Yay", "Drat"}, "Drat");
-                }
-            } else {
-                throw new UnsupportedOperationException(
-                        "Game State Handler received unexpected actionevent from "+source);
-            }
-        }
-
-        public void setState(GameState newState) {
-            System.out.printf("Switch state %s -> %s\n", state, newState);
-            if (newState == GameState.RESET) {
-                state = newState;
-                new GameLoopResetter(loop, this, robots.values(), GameState.NOT_STARTED);
-                // the rest of the work is deferred until the loop is really stopped
-            } else if (newState == GameState.PAUSED) {
-                state = newState;
-                loop.setStopRequested(true);
-                lockEditors(true);
-                start.setText("Resume");
-                step.setText("Step");
-                reset.setText("Reset");
-                playfield.setLabellingOn(false);
-            } else if (newState == GameState.NOT_STARTED) {
-                state = newState;
-                lockEditors(false);
-                start.setText("Start");
-                step.setText("Step");
-                reset.setText("Reset");
-                playfield.setLabellingOn(true);
-            } else if (newState == GameState.RUNNING) {
-                if (state == GameState.WON) {
-                    state = GameState.RESET;
-                    new GameLoopResetter(loop, this, robots.values(), GameState.RUNNING);
-                } else {
-                    state = newState;
-                    lockEditors(true);
-                    loop.setStopRequested(false);
-                    new Thread(loop).start();
-                    start.setText("Pause");
-                    step.setText("Step");
-                    reset.setText("Reset");
-                    playfield.setLabellingOn(false);
-                }
-            } else if (newState == GameState.STEP) {
-                if (state == GameState.WON) {
-                    state = GameState.RESET;
-                    new GameLoopResetter(loop, this, robots.values(), GameState.STEP);
-                } else if (state == GameState.RUNNING) {
-                    state = newState;
-                    lockEditors(true);
-                    loop.setStopRequested(true);
-                    setState(GameState.PAUSED);
-                } else {
-                    state = newState;
-                    lockEditors(true);
-                    loop.setStopRequested(false);
-                    loop.singleStep();
-                    setState(GameState.PAUSED);
-                }
-            } else if (newState == GameState.WON) {
-                state = newState;
-                lockEditors(true);
-                playfield.setWinMessage("You Win!");
-                sm.play("win");
-                start.setText("Restart");
-                step.setText("Restep");
-                reset.setText("Reset");
-                nextLevel.setEnabled(true);
-                playfield.setLabellingOn(false);
-            }
-        }
-        
-        /** Locks or unlocks all editors in the robots map. */
-        private void lockEditors(boolean locked) {
-            for (CircuitEditor ce : robots.values()) {
-                ce.getCircuit().setLocked(locked);
-            }
-        }
-    }
-    
     private class SaveCircuitAction extends AbstractAction {
         
         private Collection<Robot> robots;
@@ -511,11 +337,6 @@ public class Main {
 
     private GameStateHandler gameStateHandler;
 
-    /**
-     * A debug menu for choosing which level to play.
-     */
-    private JMenu levelChooserMenu;
-
     public static void main(String[] args) {
         final Main main = new Main();
         SwingUtilities.invokeLater(new Runnable() {
@@ -560,9 +381,6 @@ public class Main {
         menu.add(item = new RecentFilesMenu("Open Recent Ghost", loadGhostAction, RobotUtils.getPrefs().node("recentGhostFiles")));
         item.setMnemonic(KeyEvent.VK_R);
 
-        // note, debug menu gets created later
-        levelChooserMenu = new JMenu("Level");
-        
         try {
             ResourceLoader builtInResourceLoader = new SystemResourceLoader();
             loadGameConfig(builtInResourceLoader);
@@ -597,12 +415,6 @@ public class Main {
                        +e.getMessage()+"\n\n"
                        +"A stack trace is available on the Java Console.",
                     "Startup Error", JOptionPane.ERROR_MESSAGE, null);
-        }
-
-        if (System.getProperty("net.bluecow.robot.DEBUG") != null) {
-            mb.add(menu = new JMenu("Debug"));
-            menu.setMnemonic(KeyEvent.VK_D);
-            menu.add(levelChooserMenu);
         }
     }
 
@@ -657,13 +469,21 @@ public class Main {
             }
         });
 
-        final JButton startButton = new JButton("Start");
-        final JButton stepButton = new JButton("Step");
-        final JButton resetButton = new JButton("Reset");
-        final JButton nextLevelButton = new JButton("Next Level");
+        gameStateHandler = new GameStateHandler(gameLoop, sm, robots);
 
-        gameStateHandler = new GameStateHandler(
-                        gameLoop, startButton, resetButton, robots, stepButton, nextLevelButton);
+        // have to handle next level events ourselves; all others are handled
+        // by the GameStateHandler.
+        gameStateHandler.getNextLevelButton().addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                if (levelNumber+1 < config.getLevels().size()) {
+                    setLevel(++levelNumber);
+                } else {
+                    JOptionPane.showMessageDialog(playfield, "There are no more levels.", "A message for you", JOptionPane.INFORMATION_MESSAGE);
+                    JOptionPane.showConfirmDialog(playfield, "What, were you expecting some fanfare?", "Inquiry", JOptionPane.YES_NO_OPTION);
+                    JOptionPane.showOptionDialog(playfield, "Well, there are no more levels. I guess that means you won.", "Retort", 0, 0, null, new String[] {"Yay", "Drat"}, "Drat");
+                }
+            }
+        });
         
         final JButton saveCircuitButton = new JButton();
         saveCircuitButton.setAction(saveCircuitAction);
@@ -674,41 +494,11 @@ public class Main {
         final JButton loadLevelsButton = new JButton();
         loadLevelsButton.setAction(loadLevelsAction);
         
-        gameLoop.addPropertyChangeListener("goalReached", new PropertyChangeListener() {
-            public void propertyChange(java.beans.PropertyChangeEvent evt) {
-                System.out.println("Property change! goalReached "+evt.getOldValue()+" -> "+evt.getNewValue()+" (running="+gameLoop.isRunning()+"; goalReached="+gameLoop.isGoalReached()+")");
-                SwingUtilities.invokeLater(new Runnable() {
-                    public void run() {
-                        if (gameLoop.isGoalReached()) {
-                            gameStateHandler.setState(GameState.WON);
-                        }
-                    }
-                });
-            }
-        });
-
-        final JSpinner levelSpinner = new JSpinner();
-        levelSpinner.setValue(new Integer(levelNumber));
-        levelSpinner.addChangeListener(new ChangeListener() {
-           public void stateChanged(ChangeEvent evt) {
-               int newLevel = (Integer) levelSpinner.getValue();
-               if (newLevel < 0) {
-                   Toolkit.getDefaultToolkit().beep();
-                   System.out.println("Silly person tried to go to level "+newLevel);
-               } else if (newLevel < config.getLevels().size()) {
-                   setLevel(newLevel);
-               } else {
-                   Toolkit.getDefaultToolkit().beep();
-                   System.out.println("Silly person tried to go to level "+newLevel);
-               }
-           }
-        });
-        
         JPanel topButtonPanel = new JPanel(new FlowLayout());
-        topButtonPanel.add(startButton);
-        topButtonPanel.add(stepButton);
-        topButtonPanel.add(resetButton);
-        topButtonPanel.add(nextLevelButton);
+        topButtonPanel.add(gameStateHandler.getStartButton());
+        topButtonPanel.add(gameStateHandler.getStepButton());
+        topButtonPanel.add(gameStateHandler.getResetButton());
+        topButtonPanel.add(gameStateHandler.getNextLevelButton());
         
         JPanel bottomButtonPanel = new JPanel(new FlowLayout());
         bottomButtonPanel.add(loadCircuitButton);
@@ -716,8 +506,27 @@ public class Main {
         bottomButtonPanel.add(loadLevelsButton);
         bottomButtonPanel.add(new JLabel("Frame Delay:"));
         bottomButtonPanel.add(frameDelaySpinner);
-        bottomButtonPanel.add(new JLabel("Level: "));
-        bottomButtonPanel.add(levelSpinner);
+
+        if (System.getProperty("net.bluecow.robot.DEBUG") != null) {
+            final JSpinner levelSpinner = new JSpinner();
+            levelSpinner.setValue(new Integer(levelNumber));
+            levelSpinner.addChangeListener(new ChangeListener() {
+                public void stateChanged(ChangeEvent evt) {
+                    int newLevel = (Integer) levelSpinner.getValue();
+                    if (newLevel < 0) {
+                        Toolkit.getDefaultToolkit().beep();
+                        System.out.println("Silly person tried to go to level "+newLevel);
+                    } else if (newLevel < config.getLevels().size()) {
+                        setLevel(newLevel);
+                    } else {
+                        Toolkit.getDefaultToolkit().beep();
+                        System.out.println("Silly person tried to go to level "+newLevel);
+                    }
+                }
+            });
+            bottomButtonPanel.add(new JLabel("Level: "));
+            bottomButtonPanel.add(levelSpinner);
+        }
         
         JPanel buttonPanel = new JPanel(new BorderLayout());
         buttonPanel.add(topButtonPanel, BorderLayout.NORTH);

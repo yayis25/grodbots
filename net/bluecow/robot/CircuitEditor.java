@@ -47,7 +47,7 @@ public class CircuitEditor extends JPanel {
         /**
          * The timer that periodically triggers rendering of the next frame.
          */
-        private Timer timer;
+        private final Timer timer;
         
         /**
          * Goes from 0.0 to 1.0 in increments of frameStep.

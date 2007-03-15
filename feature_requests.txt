@@ -9,7 +9,7 @@ Game Features:
  -something special for having completed every level (totals?)
  -ensure the overall score doesn't reset when going to the next level
 -Level editor
- -preview mode for playing the current level without running the game
+ -save the "playtest" circuits with the project, but not with the exported level packs
  ----release----
  -accelerators for close, quit, save, export level pack
  -make a file filter for project files
@@ -56,16 +56,17 @@ Sounds:
 -little ditties for the beginning of each level (maybe this would be better suited to the MIDI sequencer api)
 
 Completed:
+-ED: preview mode for playing the current level without running the game
 -teleport effect
 -bonus points animation thingy
 -level description renders too low when centred. now it's aligned to the top
 -level description should have a stylesheet that puts more space between paragraphs
--implemented new strategy for setting the split pane divider location (to unsquish the level edit panel)
+-ED: implemented new strategy for setting the split pane divider location (to unsquish the level edit panel)
 -label the gates in the toolbox
 -put a "click here" message in initial level
 -say you have to press Start once the wiring is complete in initial level
 -about 7 tutorial levels.. all should be easy to complete if you understand the game
--fix bug with saving level pack on Windows (default.map isn't included)  -- attempted fix; not tested
+-ED: fix bug with saving level pack on Windows (default.map isn't included)  -- attempted fix; not tested
 -fix score so it doesn't overlap map
 -button for going to the next level when you win
 -make ghosts work again (each set of ghosts need their own level config)

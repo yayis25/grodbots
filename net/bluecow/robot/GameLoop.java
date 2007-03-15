@@ -28,7 +28,7 @@ public class GameLoop implements Runnable {
 
     private List<Robot> robots = new ArrayList<Robot>();
     
-    private Playfield playfield;
+    private final Playfield playfield;
     
     /**
      * The current level that the user is playing.
@@ -91,6 +91,13 @@ public class GameLoop implements Runnable {
         robots.remove(robot);
     }
 
+    /**
+     * Returns the playfield that this game loop is attached to.
+     */
+    public Playfield getPlayfield() {
+        return playfield;
+    }
+    
     /**
      * Adds a ghost level to this game loop which will behave properly when
      * the loop has been reset.
