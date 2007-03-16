@@ -43,6 +43,19 @@ import net.bluecow.robot.sprite.Sprite;
  */
 public class Playfield extends JPanel {
     
+    /**
+     * Controls debugging features of this class, including whether or not
+     * it prints debug information to the console.
+     */
+    private static final boolean debugOn = false;
+    
+    /**
+     * Prints the given string plus a newline to stdout, if debugOn==true. 
+     */
+    private static void debug(String msg) {
+        if (debugOn) System.out.println(msg);
+    }
+    
     private class RoboStuff {
         private Robot robot;
         private Composite composite;
@@ -172,7 +185,7 @@ public class Playfield extends JPanel {
      * @param map The map.
      */
     public Playfield(GameConfig game, LevelConfig level) {
-        System.out.println("Creating new Playfield "+System.identityHashCode(this)+" for level "+level.getName());
+        debug("Creating new Playfield "+System.identityHashCode(this)+" for level "+level.getName());
         setGame(game);
         setLevel(level);
         setupKeyboardActions();
@@ -440,7 +453,7 @@ public class Playfield extends JPanel {
      * be removed from this playfield.
      */
     public void addEffect(Effect e) {
-        System.out.println("Adding effect "+e);
+        debug("Adding effect "+e);
         effects.add(e);
     }
     
@@ -464,10 +477,10 @@ public class Playfield extends JPanel {
             Effect e = effectsIt.next();
             
             if (e.isFinished()) {
-                // System.out.println("---- REMOVING EFFECT "+e);
+                debug("---- REMOVING EFFECT "+e);
                 effectsIt.remove();
             } else {
-                // System.out.println("Next Frame for effect "+e);
+                debug("Next Frame for effect "+e);
                 e.nextFrame();
             }
         }
@@ -634,7 +647,7 @@ public class Playfield extends JPanel {
     }
     
     public void setFrameCount(Integer c) {
-        System.out.println("===="+System.identityHashCode(this)+" SetFrameCount Next Frame");
+        debug("===="+System.identityHashCode(this)+" SetFrameCount Next Frame");
         frameCount = c;
         nextFrame();
     }
@@ -687,7 +700,7 @@ public class Playfield extends JPanel {
         
         public synchronized void actionPerformed(ActionEvent e) {
             if (enabled) {
-                System.out.println("===="+System.identityHashCode(Playfield.this)+" Async Next Frame");
+                debug("===="+System.identityHashCode(Playfield.this)+" Async Next Frame");
                 nextFrame();
                 repaint();
             }

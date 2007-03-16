@@ -29,8 +29,25 @@ import bsh.Interpreter;
  */
 public class LevelConfig {
     
+    /**
+     * Controls whether or not the debugging features of this class are enabled.
+     */
     private static final boolean debugOn = false;
     
+    /**
+     * Prints the given printf-formatted message to the console if debugOn==true.
+     */
+    private static void debugf(String fmt, Object ... args) {
+        if (debugOn) System.out.printf(fmt, args);
+    }
+
+    /**
+     * Prints the given string followed by a newline to the console if debugOn==true.
+     */
+    private static void debug(String msg) {
+        if (debugOn) System.out.println(msg);
+    }
+
     /**
      * The Switch class represents an effect that can happen to a level
      * when a robot enters or leaves a square.
@@ -305,7 +322,7 @@ public class LevelConfig {
     
     private void initInterpreter() throws EvalError {
         bsh = new Interpreter();
-        System.out.printf("Created new BSH interpreter 0x%x (namespace 0x%x, level 0x%x)\n", System.identityHashCode(bsh), System.identityHashCode(bsh.getNameSpace()), System.identityHashCode(LevelConfig.this));
+        debugf("Created new BSH interpreter 0x%x (namespace 0x%x, level 0x%x)\n", System.identityHashCode(bsh), System.identityHashCode(bsh.getNameSpace()), System.identityHashCode(LevelConfig.this));
         bsh.set("level", this);
     }
     
@@ -340,7 +357,7 @@ public class LevelConfig {
         if (r.getId() == null) throw new NullPointerException("Null robot id not allowed");
         try {
             if (bsh.get(r.getId()) != null) {
-                System.out.println("Found duplicate object in LevelConfig.addRobot(): old="+bsh.get(r.getId())+" new="+r);
+                debug("Found duplicate object in LevelConfig.addRobot(): old="+bsh.get(r.getId())+" new="+r);
                 throw new IllegalArgumentException("This level already has a scripting object with id \""+r.getId()+"\"");
             }
             bsh.set(r.getId(), r);

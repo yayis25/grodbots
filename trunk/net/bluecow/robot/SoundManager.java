@@ -34,7 +34,7 @@ import net.bluecow.robot.resource.ResourceLoader;
  */
 public class SoundManager {
     
-    private static boolean debug = false;
+    private static boolean debugOn = false;
     
     /**
      * Maps names (which are supplied by the client code) to audio clips.
@@ -88,7 +88,7 @@ public class SoundManager {
             System.out.println("Can't play clip '"+name+"' because it doesn't exist");
             return;
         }
-        if (debug) {
+        if (debugOn) {
             System.out.println("Playing clip "+name);
         }
         c.setFramePosition(0);
@@ -104,7 +104,7 @@ public class SoundManager {
             System.out.println("Can't stop clip '"+name+"' because it doesn't exist");
             return;
         }
-        if (debug) {
+        if (debugOn) {
             System.out.println("Stopping clip "+name);
         }
         c.stop();
@@ -120,7 +120,7 @@ public class SoundManager {
             System.out.println("Can't loop clip '"+name+"' because it doesn't exist");
             return;
         }
-        if (debug) {
+        if (debugOn) {
             System.out.println("Looping clip "+name);
         }
         c.setFramePosition(0);
