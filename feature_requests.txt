@@ -9,6 +9,7 @@ Game Features:
  -something special for having completed every level (totals?)
  -ensure the overall score doesn't reset when going to the next level
 -Level editor
+ -use real sound manager in editor's playtest mode
  -save the "playtest" circuits with the project, but not with the exported level packs
  ----release----
  -accelerators for close, quit, save, export level pack
@@ -56,6 +57,8 @@ Sounds:
 -little ditties for the beginning of each level (maybe this would be better suited to the MIDI sequencer api)
 
 Completed:
+-ensure reasonable window distribution in playtest mode
+-removed superfluous messages to stdout and made the little DIY-debug facility more similar between classes
 -ED: preview mode for playing the current level without running the game
 -teleport effect
 -bonus points animation thingy

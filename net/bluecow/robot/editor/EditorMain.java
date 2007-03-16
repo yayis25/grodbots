@@ -9,11 +9,13 @@ import java.awt.BorderLayout;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
+import java.awt.GraphicsEnvironment;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.GridLayout;
 import java.awt.Insets;
 import java.awt.Point;
+import java.awt.Rectangle;
 import java.awt.Toolkit;
 import java.awt.Window;
 import java.awt.event.ActionEvent;
@@ -307,6 +309,8 @@ public class EditorMain {
             windowsToDispose.add(playtestFrame);
             
             frame.setVisible(false);
+            
+            RobotUtils.tileWindows(windowsToDispose);
             
             quitPlaytestButton.addActionListener(new ActionListener() {
                 public void actionPerformed(ActionEvent e) {
