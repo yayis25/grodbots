@@ -1,6 +1,7 @@
 Game Features:
 -create a set of tutorial levels for learning the game
 -Make real game UI:
+ -preinit the bsh interpreters so there's not a lag during gameplay
  -explain keyboard shortcuts in tutorial level (DEL, new gates, etc)
  -it should be possible to include inline images (sourced from the level pack resources) in level descriptions
  -explain the gates better in tutorial level descriptions (use pictures)
@@ -9,12 +10,12 @@ Game Features:
  -something special for having completed every level (totals?)
  -ensure the overall score doesn't reset when going to the next level
 -Level editor
- -use real sound manager in editor's playtest mode
  -save the "playtest" circuits with the project, but not with the exported level packs
  ----release----
  -accelerators for close, quit, save, export level pack
  -make a file filter for project files
  -implement a GUI resource manager (for adding and removing files in the project) and do away with project directories
+ -use real sound manager in editor's playtest mode (will use the GUI resource manager)
  -make an animated sprite creator thing
  -make a music pattern editor thing (like a 1-track mod)
  -factor out each makeXXXProps.. editor into its own class, and add validate methods
@@ -57,7 +58,8 @@ Sounds:
 -little ditties for the beginning of each level (maybe this would be better suited to the MIDI sequencer api)
 
 Completed:
--ensure reasonable window distribution in playtest mode
+-ED: set robot start position as well as current position in robot props dialog (otherwise reset undoes changes after initial playtest)
+-ED: ensure reasonable window distribution in playtest mode
 -removed superfluous messages to stdout and made the little DIY-debug facility more similar between classes
 -ED: preview mode for playing the current level without running the game
 -teleport effect
