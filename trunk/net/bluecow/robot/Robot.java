@@ -20,6 +20,18 @@ import net.bluecow.robot.sprite.Sprite;
  * The robot.
  */
 public class Robot implements Labelable {
+
+    /**
+     * Controls debugging features of this class.
+     */
+    private static boolean debugOn = false;
+    
+    /**
+     * Prints the given format string to stdout if debugOn is true.
+     */
+    private static void debugf(String fmt, Object ... args) {
+        if (debugOn) System.out.format(fmt, args);
+    }
     
     private static final int MOVING_UP = 1 << 0;
     private static final int MOVING_DOWN = 1 << 1;
@@ -546,19 +558,42 @@ public class Robot implements Labelable {
         this.sprite = sprite;
     }
 
+    /**
+     * Returns a copy of this robot's current position.
+     */
     public Point2D.Float getPosition() {
-		return new Point2D.Float(position.x, position.y);
-	}
-	
+        return new Point2D.Float(position.x, position.y);
+    }
+    
     /**
      * Sets this robot's position by making a copy of the given point.
      * 
      * <p>This method is final because it is called from the constructor.
      */
-	public final void setPosition(Point2D position) {
-		this.position = new Point2D.Float((float) position.getX(), (float) position.getY());
-	}
+    public final void setPosition(Point2D position) {
+        this.position = new Point2D.Float((float) position.getX(), (float) position.getY());
+    }
+
+    /**
+     * Returns a copy of this robot's starting position.
+     */
+    public Point2D.Float getStartPosition() {
+        return new Point2D.Float(startPosition.x, startPosition.y);
+    }
     
+    /**
+     * Sets this robot's starting position by making a copy of the given point.
+     * The starting position is the point that this robot will return to
+     * when it is reset.
+     * 
+     * <p>This method is final because it is called from the constructor.
+     */
+    public final void setStartPosition(Point2D position) {
+        this.startPosition = new Point2D.Float((float) position.getX(), (float) position.getY());
+        debugf("Set start position of %s: (%2.1f,%2.1f)\n",
+                getId(), startPosition.getX(), startPosition.getY());
+    }
+
     /**
      * Reports this robot's x position.
      * 
@@ -641,6 +676,8 @@ public class Robot implements Labelable {
     }
 
     public void resetState() {
+        debugf("Reset State for %s: start position=(%2.1f,%2.1f)\n",
+                getId(), startPosition.getX(), startPosition.getY());
         setGoalReached(false);
         setPosition(startPosition);
         circuit.resetState();
