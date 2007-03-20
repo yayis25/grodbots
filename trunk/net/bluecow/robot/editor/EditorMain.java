@@ -9,13 +9,11 @@ import java.awt.BorderLayout;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
-import java.awt.GraphicsEnvironment;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.GridLayout;
 import java.awt.Insets;
 import java.awt.Point;
-import java.awt.Rectangle;
 import java.awt.Toolkit;
 import java.awt.Window;
 import java.awt.event.ActionEvent;
@@ -273,13 +271,14 @@ public class EditorMain {
             final LevelConfig level = (LevelConfig) levelChooser.getSelectedItem();
             final JFrame playtestFrame = new JFrame("Playtest");
             final Playfield playfield = new Playfield(project.getGameConfig(), level);
+            final List<Window> windowsToDispose = new ArrayList<Window>();
             
             level.snapshotState();
             SoundManager fakeSoundManager = new SoundManager(new SystemResourceLoader());   // FIXME need a real sound manager in the level editor
+            windowsToDispose.add(playtestFrame);
 
             GameLoop gameLoop = new GameLoop(level.getRobots(), level, playfield);
             Map<Robot, CircuitEditor> editors = new HashMap<Robot, CircuitEditor>();
-            final List<Window> windowsToDispose = new ArrayList<Window>();
             for (Robot r : level.getRobots()) {
                 CircuitEditor ce = new CircuitEditor(
                         r.getCircuit(),
@@ -306,7 +305,6 @@ public class EditorMain {
             
             playtestFrame.pack();
             playtestFrame.setVisible(true);
-            windowsToDispose.add(playtestFrame);
             
             frame.setVisible(false);
             
@@ -750,6 +748,7 @@ public class EditorMain {
                     robot.setLabelDirection((Direction) labelDirectionBox.getSelectedItem());
                     robot.setLabelEnabled(labelEnabledBox.isSelected());
                     robot.setPosition(pos);
+                    robot.setStartPosition(pos);
                     
                     Sprite sprite = SpriteManager.load(
                             gameConfig.getResourceLoader(),
