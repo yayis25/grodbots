@@ -22,7 +22,6 @@ import java.util.prefs.BackingStoreException;
 import java.util.prefs.Preferences;
 
 import javax.swing.JDialog;
-import javax.swing.JFrame;
 import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
 
@@ -151,25 +150,20 @@ public class RobotUtils {
         for (Window w : windows) {
             Insets wi = w.getInsets();
             nexty = Math.max(nexty, w.getHeight() + wi.top + wi.bottom);
+
+            // Note, this logic doesn't cover all possible cases. For instance,
+            // windows that are wider than the screen, or the possibility of
+            // having to start a row below the bottom the screen.
+            
             if (x + w.getWidth() <= b.width - i.right) {
                 // window will fit on this row
                 w.setLocation(x, y);
                 x = x + w.getWidth() + wi.left + wi.right;
-            } else if (x == startx) {
-                // window is too wide for the screen! just put it on its own row
-                w.setLocation(x, y);
-                y += w.getHeight() + wi.top + wi.bottom;
             } else {
                 // window won't fit on this row
                 x = startx;
                 y = nexty;
                 w.setLocation(x, y);
-            }
-            if (y >= b.height - i.bottom) {
-                System.out.println("Warning: couldn't tile all windows on screen. There will be overlaps.");
-                x = b.x + i.left;
-                y = b.y + i.top;
-                nexty = y;
             }
         }
     }
