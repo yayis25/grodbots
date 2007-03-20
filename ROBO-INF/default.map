@@ -13,23 +13,23 @@
   <square type="BLACK" mapchar=" " graphic="ROBO-INF/images/blacktile_glint.rsf">
   </square>
   <square type="MAGENTA" mapchar="M" graphic="ROBO-INF/images/magentatile.png">
-    <activate-sensor type="Red" />
     <activate-sensor type="Blue" />
+    <activate-sensor type="Red" />
   </square>
   <square type="RED" mapchar="R" graphic="ROBO-INF/images/redtile.png">
     <activate-sensor type="Red" />
   </square>
   <square type="WHITE" mapchar="W" graphic="ROBO-INF/images/whitetile.png">
-    <activate-sensor type="Red" />
     <activate-sensor type="Blue" />
-    <activate-sensor type="Green" />
-  </square>
-  <square type="YELLOW" mapchar="Y" graphic="ROBO-INF/images/yellowtile.png">
     <activate-sensor type="Red" />
     <activate-sensor type="Green" />
   </square>
   <square type="CYAN" mapchar="C" graphic="ROBO-INF/images/cyantile.png">
     <activate-sensor type="Blue" />
+    <activate-sensor type="Green" />
+  </square>
+  <square type="YELLOW" mapchar="Y" graphic="ROBO-INF/images/yellowtile.png">
+    <activate-sensor type="Red" />
     <activate-sensor type="Green" />
   </square>
   <square type="BLUE" mapchar="B" graphic="ROBO-INF/images/bluetile.png">
@@ -52,10 +52,10 @@ To make this message disappear, click on it!
   ]]></description>
     <grod id="grod" step-size="0.1" start-x="3.5" start-y="4.5" evals-per-step="1" label="Grod" label-direction="s" label-enabled="true">
       <graphic href="ROBO-INF/images/grod/grod.rsf" scale="0.4"/>
-      <gate-allowance type="AND" value="0" />
-      <gate-allowance type="NOR" value="0" />
-      <gate-allowance type="NOT" value="0" />
       <gate-allowance type="OR" value="0" />
+      <gate-allowance type="NOR" value="0" />
+      <gate-allowance type="AND" value="0" />
+      <gate-allowance type="NOT" value="0" />
       <gate-allowance type="NAND" value="0" />
     </grod>
 
@@ -85,10 +85,10 @@ Ok, this one isn't much harder.  See if you can figure out the trick!
   ]]></description>
     <grod id="Grod" step-size="0.1" start-x="3.5" start-y="8.5" evals-per-step="1" label="Grod" label-direction="n" label-enabled="true">
       <graphic href="ROBO-INF/images/grod/grod.rsf" scale="0.4"/>
-      <gate-allowance type="AND" value="0" />
-      <gate-allowance type="NOR" value="0" />
-      <gate-allowance type="NOT" value="0" />
       <gate-allowance type="OR" value="0" />
+      <gate-allowance type="NOR" value="0" />
+      <gate-allowance type="AND" value="0" />
+      <gate-allowance type="NOT" value="0" />
       <gate-allowance type="NAND" value="0" />
     </grod>
 
@@ -116,10 +116,10 @@ wandering in the same direction all the time!
   ]]></description>
     <grod id="Grod" step-size="0.1" start-x="3.5" start-y="8.5" evals-per-step="1" label="Grod" label-direction="e" label-enabled="true">
       <graphic href="ROBO-INF/images/grod/grod.rsf" scale="0.4"/>
-      <gate-allowance type="AND" value="0" />
-      <gate-allowance type="NOR" value="0" />
-      <gate-allowance type="NOT" value="0" />
       <gate-allowance type="OR" value="0" />
+      <gate-allowance type="NOR" value="0" />
+      <gate-allowance type="AND" value="0" />
+      <gate-allowance type="NOT" value="0" />
       <gate-allowance type="NAND" value="0" />
     </grod>
 
@@ -146,10 +146,10 @@ Three directions, one after the other.  Can you handle it?
   ]]></description>
     <grod id="Grod" step-size="0.1" start-x="3.5" start-y="8.5" evals-per-step="1" label="Grod" label-direction="e" label-enabled="true">
       <graphic href="ROBO-INF/images/grod/grod.rsf" scale="0.4"/>
-      <gate-allowance type="AND" value="0" />
-      <gate-allowance type="NOR" value="0" />
-      <gate-allowance type="NOT" value="0" />
       <gate-allowance type="OR" value="0" />
+      <gate-allowance type="NOR" value="0" />
+      <gate-allowance type="AND" value="0" />
+      <gate-allowance type="NOT" value="0" />
       <gate-allowance type="NAND" value="0" />
     </grod>
 
@@ -176,10 +176,10 @@ Ok, it's finally time to bring out the gates.  Ok, one gate.  Can you figure out
   ]]></description>
     <grod id="Grod" step-size="0.1" start-x="4.5" start-y="4.5" evals-per-step="1" label="Grod" label-direction="w" label-enabled="true">
       <graphic href="ROBO-INF/images/grod/grod.rsf" scale="0.4"/>
-      <gate-allowance type="AND" value="0" />
-      <gate-allowance type="NOR" value="0" />
-      <gate-allowance type="NOT" value="0" />
       <gate-allowance type="OR" value="1" />
+      <gate-allowance type="NOR" value="0" />
+      <gate-allowance type="AND" value="0" />
+      <gate-allowance type="NOT" value="0" />
       <gate-allowance type="NAND" value="0" />
     </grod>
 
@@ -206,10 +206,10 @@ Can you do the 3-way OR?
   ]]></description>
     <grod id="Grod" step-size="0.1" start-x="4.5" start-y="4.5" evals-per-step="1" label="Grod" label-direction="w" label-enabled="true">
       <graphic href="ROBO-INF/images/grod/grod.rsf" scale="0.4"/>
-      <gate-allowance type="AND" value="0" />
-      <gate-allowance type="NOR" value="0" />
-      <gate-allowance type="NOT" value="0" />
       <gate-allowance type="OR" value="2" />
+      <gate-allowance type="NOR" value="0" />
+      <gate-allowance type="AND" value="0" />
+      <gate-allowance type="NOT" value="0" />
       <gate-allowance type="NAND" value="0" />
     </grod>
 
@@ -236,10 +236,10 @@ Now what will you do?
   ]]></description>
     <grod id="Grod" step-size="0.1" start-x="4.5" start-y="4.5" evals-per-step="1" label="Grod" label-direction="w" label-enabled="true">
       <graphic href="ROBO-INF/images/grod/grod.rsf" scale="0.4"/>
-      <gate-allowance type="AND" value="0" />
-      <gate-allowance type="NOR" value="0" />
-      <gate-allowance type="NOT" value="1" />
       <gate-allowance type="OR" value="0" />
+      <gate-allowance type="NOR" value="0" />
+      <gate-allowance type="AND" value="0" />
+      <gate-allowance type="NOT" value="1" />
       <gate-allowance type="NAND" value="0" />
     </grod>
 
@@ -268,10 +268,10 @@ Can you figure out how it works?
   ]]></description>
     <grod id="Grod" step-size="0.1" start-x="2.5" start-y="7.5" evals-per-step="1" label="Grod" label-direction="w" label-enabled="true">
       <graphic href="ROBO-INF/images/grod/grod.rsf" scale="0.4"/>
-      <gate-allowance type="AND" value="0" />
-      <gate-allowance type="NOR" value="0" />
-      <gate-allowance type="NOT" value="0" />
       <gate-allowance type="OR" value="0" />
+      <gate-allowance type="NOR" value="0" />
+      <gate-allowance type="AND" value="0" />
+      <gate-allowance type="NOT" value="0" />
       <gate-allowance type="NAND" value="0" />
     </grod>
 
@@ -298,10 +298,50 @@ This level is for testing and demoing new stuff.
   ]]></description>
     <grod id="Grod" step-size="0.1" start-x="2.5" start-y="7.5" evals-per-step="1" label="Grod" label-direction="w" label-enabled="true">
       <graphic href="ROBO-INF/images/grod/grod.rsf" scale="0.4"/>
-      <gate-allowance type="AND" value="0" />
-      <gate-allowance type="NOR" value="0" />
-      <gate-allowance type="NOT" value="0" />
       <gate-allowance type="OR" value="0" />
+      <gate-allowance type="NOR" value="0" />
+      <gate-allowance type="AND" value="0" />
+      <gate-allowance type="NOT" value="0" />
+      <gate-allowance type="NAND" value="0" />
+    </grod>
+    <grod id="Grod2" step-size="0.1" start-x="2.5" start-y="7.5" evals-per-step="1" label="Grod" label-direction="w" label-enabled="true">
+      <graphic href="ROBO-INF/images/grod/grod.rsf" scale="0.4"/>
+      <gate-allowance type="OR" value="0" />
+      <gate-allowance type="NOR" value="0" />
+      <gate-allowance type="AND" value="0" />
+      <gate-allowance type="NOT" value="0" />
+      <gate-allowance type="NAND" value="0" />
+    </grod>
+    <grod id="Grod3" step-size="0.1" start-x="2.5" start-y="7.5" evals-per-step="1" label="Grod" label-direction="w" label-enabled="true">
+      <graphic href="ROBO-INF/images/grod/grod.rsf" scale="0.4"/>
+      <gate-allowance type="OR" value="0" />
+      <gate-allowance type="NOR" value="0" />
+      <gate-allowance type="AND" value="0" />
+      <gate-allowance type="NOT" value="0" />
+      <gate-allowance type="NAND" value="0" />
+    </grod>
+    <grod id="Grod4" step-size="0.1" start-x="2.5" start-y="7.5" evals-per-step="1" label="Grod" label-direction="w" label-enabled="true">
+      <graphic href="ROBO-INF/images/grod/grod.rsf" scale="0.4"/>
+      <gate-allowance type="OR" value="0" />
+      <gate-allowance type="NOR" value="0" />
+      <gate-allowance type="AND" value="0" />
+      <gate-allowance type="NOT" value="0" />
+      <gate-allowance type="NAND" value="0" />
+    </grod>
+    <grod id="Grod5" step-size="0.1" start-x="2.5" start-y="7.5" evals-per-step="1" label="Grod" label-direction="w" label-enabled="true">
+      <graphic href="ROBO-INF/images/grod/grod.rsf" scale="0.4"/>
+      <gate-allowance type="OR" value="0" />
+      <gate-allowance type="NOR" value="0" />
+      <gate-allowance type="AND" value="0" />
+      <gate-allowance type="NOT" value="0" />
+      <gate-allowance type="NAND" value="0" />
+    </grod>
+    <grod id="Grod6" step-size="0.1" start-x="2.5" start-y="7.5" evals-per-step="1" label="Grod" label-direction="w" label-enabled="true">
+      <graphic href="ROBO-INF/images/grod/grod.rsf" scale="0.4"/>
+      <gate-allowance type="OR" value="0" />
+      <gate-allowance type="NOR" value="0" />
+      <gate-allowance type="AND" value="0" />
+      <gate-allowance type="NOT" value="0" />
       <gate-allowance type="NAND" value="0" />
     </grod>
 
