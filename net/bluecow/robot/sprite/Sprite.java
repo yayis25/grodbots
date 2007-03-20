@@ -9,8 +9,6 @@ import java.awt.Graphics2D;
 import java.awt.geom.AffineTransform;
 import java.util.Map;
 
-import com.sun.org.apache.bcel.internal.generic.GETSTATIC;
-
 /**
  * Sprite is an interface to any type of moving or static image resource
  * in the Robot game, possibly animated by having multiple frames (all of the
