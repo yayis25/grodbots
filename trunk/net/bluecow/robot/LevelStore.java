@@ -8,12 +8,9 @@ package net.bluecow.robot;
 import java.awt.Point;
 import java.awt.geom.Point2D;
 import java.io.BufferedInputStream;
-import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -56,63 +53,6 @@ public class LevelStore {
     private static boolean debugging = false;
     
     /**
-     * Writes the given Game configuration in the Rocky 4.0 XML format to the
-     * given file.  The actual writing process is done into a temporary file in
-     * the same directory as destFile, and if successful, the temporary file
-     * is renamed to the pathname given for destFile.  Therefore, if an exception
-     * gets thrown, there may be a partially complete new level file in the
-     * same directory as destFile.  In that case, destFile will not have been
-     * affected.
-     * 
-     * @param destFile
-     * @param gc
-     * @param encoding The desired encoding of the output file.  This string will
-     * also be written to the XML declaration.
-     * @throws IOException
-     */
-    public static void save(File destFile, GameConfig gc, String encoding) throws IOException {
-        File destDir = destFile.getParentFile();
-        if (!destDir.exists()) {
-            throw new IOException("Destination directory \""+destDir+"\" does not exist");
-        }
-        File tempFile = new File(destDir, "map_tmp_"+System.currentTimeMillis());
-        Writer out = null;
-        try {
-            out = new BufferedWriter(
-                    new OutputStreamWriter(
-                            new FileOutputStream(tempFile), encoding));
-            save(out, gc, encoding);
-            out.flush();
-            out.close();
-            out = null;
-            if (destFile.exists()) {
-                destFile.renameTo(new File(destDir, "map_backup_"+System.currentTimeMillis()));
-            }
-            tempFile.renameTo(destFile);
-        } catch (Exception ex) {
-            ex.printStackTrace();
-            throw new IOException(
-                    "Error writing game description XML file.\n\n" +
-                    "Exception type: " + ex.getClass().getName() + "\n" +
-                    "Exception message: " + ex.getMessage() + "\n\n" +
-                    "You can examine the partially-saved game description in\n" +
-                    tempFile.getAbsolutePath());
-        } finally {
-            if (out != null) {
-                try {
-                    out.flush();
-                    out.close();
-                    out = null;
-                } catch (IOException ex) {
-                    // have to squish this one to preserve possible exceptions thrown in the try block
-                    System.err.println("Error flushing and closing output file. Suppressing exception:");
-                    ex.printStackTrace();
-                }
-            }
-        }
-    }
-
-    /**
      * Writes the given game configuration as described in
      * {@link #save(File, GameConfig, String)}, but makes no attempts at safety
      * (the game config simply gets dumped to the given writer).
@@ -125,7 +65,7 @@ public class LevelStore {
      * XML delcaration says.
      * @throws IOException
      */
-    private static void save(Writer out, GameConfig gc, String encoding) throws IOException {
+    public static void save(Writer out, GameConfig gc, String encoding) throws IOException {
         out.write("<?xml version=\"1.0\" encoding=\""+encoding+"\"?>\n");
         out.write("<rocky version=\"4.0\">");
 

@@ -78,6 +78,7 @@ public class Main {
                 }
             } catch (IOException ex) {
                 JOptionPane.showMessageDialog(playfieldFrame, "Save Failed: "+ex.getMessage());
+                ex.printStackTrace();
             } catch (BackingStoreException ex) {
                 System.err.println("Couldn't update user prefs");
                 ex.printStackTrace();
