@@ -1,0 +1,296 @@
+/*
+ * Created on Mar 22, 2007
+ *
+ * This code belongs to Jonathan Fuerth
+ */
+package net.bluecow.robot.resource;
+
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Enumeration;
+import java.util.List;
+import java.util.jar.JarEntry;
+import java.util.jar.JarFile;
+import java.util.jar.JarInputStream;
+
+public class JarResourceManager extends AbstractResourceLoader implements ResourceManager {
+
+    /**
+     * Controls the debugging features of this class.
+     */
+    private static final boolean debugOn = true;
+    
+    /**
+     * Prints the given message to System.out if debugOn is true.
+     */
+    private static void debug(String msg) {
+        if (debugOn) System.out.println(msg);
+    }
+    
+    /**
+     * A filter that excludes the JAR manifest from the files being extracted.
+     * If we extract the manifest and include it in the resource list, then
+     * creating a JAR of this resource manager's contents will fail due to
+     * a duplicate entry name exception.
+     */
+    private static ResourceNameFilter jarJunkFilter =
+        new RegexResourceNameFilter("META-INF/MANIFEST.MF", true);
+    
+    /**
+     * Indicates whether or not this resource manager has been closed.
+     */
+    private boolean closed = false;
+    
+    /**
+     * The temporary directory where the jar file contents have been
+     * unpacked so we can manipulate them.
+     */
+    private File dir;
+
+    /**
+     * Creates a new ResourceManager whose contents are populated initially from
+     * a JAR file in the filesystem.
+     * 
+     * @param jar The JAR file to extract the initial set of resources from.
+     * @throws IOException If there is a problem opening or extracting from
+     * the JAR.
+     */
+    public JarResourceManager(File jar) throws IOException {
+        dir = createTempDir();
+        unjar(jar, dir);
+    }
+
+    /**
+     * WARNING: The code for this constructor was transplanted from Project,
+     * but due to other circumstances, it is not in use any more. I'm keeping
+     * it in case I need to create a resource manager from a jar input stream
+     * in the future.
+     * <p>
+     * Creates a new ResourceManager whose contents are populated initially from
+     * a JAR file which is available as a classloader resource.
+     * 
+     * @param classLoader The class loader to read the resource from
+     * @param resourcePath The resource's path within the given classloader's
+     * namespace.
+     * @throws IOException If there is a problem opening or extracting from
+     * the JAR.
+     */
+    public JarResourceManager(ClassLoader classLoader, String resourcePath) throws IOException {
+        dir = createTempDir();
+        JarInputStream jin =
+            new JarInputStream(classLoader.getResourceAsStream(resourcePath));
+        JarEntry je;
+        while ( (je = jin.getNextJarEntry()) != null ) {
+            String path = je.getName();
+            if (!jarJunkFilter.accepts(path)) {
+                continue;
+            }
+            File resourceFile = new File(dir, path);
+            if (je.isDirectory()) {
+                debug("Creating resource directory "+resourceFile.getAbsolutePath());
+                resourceFile.mkdir();
+            } else {
+                debug("Creating resource file "+resourceFile.getAbsolutePath());
+                OutputStream out = new FileOutputStream(resourceFile);
+                byte[] buffer = new byte[1024];
+                int len;
+                while ( (len = jin.read(buffer)) != -1 ) {
+                    out.write(buffer, 0, len);
+                }
+                out.flush();
+                out.close();
+            }
+        }
+        jin.close();
+    }
+    
+    
+    // ------------------ Interface Methods ----------------------
+    
+    public List<String> listAll() throws IOException {
+        checkClosed();
+        return recursiveListResources("", dir, new ArrayList<String>());
+    }
+
+    public List<String> list(String path) {
+        File resourceDir = new File(dir, path);
+        debug("Listing children of " + resourceDir.getAbsolutePath());
+        if (resourceDir.isFile()) {
+            debug("It's not a directory");
+            return Collections.emptyList();
+        }
+        
+        if (!path.endsWith("/")) {
+            path += "/";
+        }
+        
+        File[] children = resourceDir.listFiles();
+        Arrays.sort(children);
+
+        List<String> retval = new ArrayList<String>();
+        for (File f : children) {
+            String resourcePath = path + f.getName();
+            if (f.isDirectory() && (!resourcePath.endsWith("/"))) {
+                resourcePath += "/";
+            }
+            retval.add(resourcePath);
+        }
+        
+        debug("Children are: " + retval);
+        
+        return retval;
+    }
+    
+    public OutputStream openForWrite(String path, boolean create) throws IOException {
+        checkClosed();
+        File resourceFile = new File(dir, path);
+        if (!create && !resourceFile.exists()) {
+            throw new FileNotFoundException(
+                    "Resource \""+path+"\" cannot be written because it" +
+                    " does not exist, and I was instructed not to create it.");
+        }
+        return new FileOutputStream(resourceFile);
+    }
+
+    public void remove(String path) throws IOException {
+        checkClosed();
+        File f = new File(dir, path);
+        if (!f.delete()) {
+            boolean exists = f.exists();
+            boolean canWrite = f.canWrite();
+            boolean isDir = f.isDirectory();
+            throw new IOException("Couldn't delete resource \""+path+"\" " +
+                    "(exists="+exists+", canWrite="+canWrite+", isDir="+isDir+")");
+        }
+    }
+
+    public InputStream getResourceAsStream(String path) throws IOException {
+        checkClosed();
+        return new FileInputStream(new File(dir, path));
+    }
+    
+    public void close() {
+        recursiveRmdir(dir);
+    }
+    
+    // ------------------ Helper Methods ----------------------
+    
+    /**
+     * Throws an IOException with an appropriate message if this resource manager
+     * is closed. Otherwise returns with no side effects.
+     */
+    private void checkClosed() throws IOException {
+        if (closed) throw new IOException("This resource manager is closed");
+    }
+    
+    private static void recursiveRmdir(File dir) {
+        for (File f : dir.listFiles()) {
+            if (f.isDirectory()) {
+                recursiveRmdir(f);
+            }
+            f.delete();
+        }
+    }
+    
+    /**
+     * Recursive subroutine that appends the names of all files
+     * at and below the given directory.
+     * 
+     * @param resources The list to append to.
+     * @return The resources list.
+     */
+    private List<String> recursiveListResources(String pathName, File dir, List<String> resources) {
+        File[] files = dir.listFiles();
+        Arrays.sort(files);
+        for (File file : files) {
+            String newPath;
+            if (pathName.length() == 0) {
+                newPath = file.getName();  // this prevents a leading slash in entry name
+            } else {
+                newPath = pathName + "/" + file.getName();
+            }
+            if (file.isDirectory()) {
+                resources.add(newPath + "/");
+                recursiveListResources(newPath, file, resources);
+            } else {
+                resources.add(newPath);
+            }
+        }
+        return resources;
+    }
+    
+    /**
+     * Extracts all the files in the given JAR file to the target
+     * directory (and subdirectories thereof).
+     * 
+     * @param jar The input JAR file
+     * @param dir The base directory to store the extracted files into
+     * @throws IOException If there are problems either reading the JAR or
+     * writing the extracted files
+     * @throws FileNotFoundException If the specified JAR file does not exist
+     */
+    private final static void unjar(File jar, File dir) throws IOException, FileNotFoundException {
+        JarFile jf = new JarFile(jar);
+        for (Enumeration<JarEntry> e = jf.entries() ; e.hasMoreElements() ;) {
+            final JarEntry jarEntry = e.nextElement();
+            final File outFile = new File(dir, jarEntry.getName());
+            debug("JarEntry: " + jarEntry.getName() + "; outFile: " + outFile);
+            if (!jarJunkFilter.accepts(jarEntry.getName())) {
+                debug("  skipping (rejected by filter)");
+                continue;
+            }
+            if (jarEntry.isDirectory()) {
+                debug("  making dir");
+                outFile.mkdirs();
+                continue;
+            }
+            InputStream in = null;
+            OutputStream out = null;
+            try {
+                debug("  extracting file");
+                in = jf.getInputStream(jarEntry);
+                out = new FileOutputStream(outFile);
+                int count;
+                byte[] buf = new byte[8192];
+                while ( (count = in.read(buf)) > 0 ) {
+                    out.write(buf, 0, count);
+                }
+                out.flush();
+            } finally {
+                if (in != null) {
+                    try {
+                        in.close();
+                    } catch (IOException ex) {
+                        System.err.println("Couldn't close input stream"); ex.printStackTrace();
+                    }
+                }
+                if (out != null) {
+                    try {
+                        out.close();
+                    } catch (IOException ex) {
+                        System.err.println("Couldn't close output stream"); ex.printStackTrace();
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * Creates a new directory inside the system's "java.io.tmpdir" area.
+     * Some attempt is made to ensure the name of the created directory
+     * will be unique.
+     */
+    private static File createTempDir() {
+        File dir = new File(System.getProperty("java.io.tmpdir"), "robotmp_"+System.currentTimeMillis());
+        dir.mkdir();
+        return dir;
+    }
+}

@@ -90,6 +90,7 @@ import net.bluecow.robot.GameConfig.GateConfig;
 import net.bluecow.robot.GameConfig.SensorConfig;
 import net.bluecow.robot.GameConfig.SquareConfig;
 import net.bluecow.robot.LevelConfig.Switch;
+import net.bluecow.robot.editor.resource.ResourcesComboBoxModel;
 import net.bluecow.robot.gate.Gate;
 import net.bluecow.robot.resource.SystemResourceLoader;
 import net.bluecow.robot.sprite.Sprite;
@@ -474,8 +475,7 @@ public class EditorMain {
     
     public static Project promptUserForProject() {
         JFileChooser fc = new JFileChooser();
-        fc.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
-        fc.setDialogTitle("Choose a Robot Project Directory");
+        fc.setDialogTitle("Choose a Robot Project File");
         File recentProject = new File(recentProjects.get("0", System.getProperty("user.home")));
         if (recentProject.isDirectory()) {
             // for project directories, we want to default the dialog to the parent dir
@@ -534,7 +534,8 @@ public class EditorMain {
         }
         sensorTypesList.setSelectedIndices(selectionIndices);
         
-        final JComboBox spritePathField = new JComboBox(new ResourcesComboBoxModel(project, new SpriteFileFilter()));
+        final JComboBox spritePathField = new JComboBox(
+                new ResourcesComboBoxModel(project.getResourceManager(), new SpriteFileFilter()));
         if (sc.getSprite() != null) {
             spritePathField.setSelectedItem(sc.getSprite().getAttributes().get(Sprite.KEY_HREF));
         }
@@ -663,7 +664,8 @@ public class EditorMain {
         final JComboBox labelDirectionBox = new JComboBox(Direction.values());
         final JSpinner xPosition = new JSpinner(new SpinnerNumberModel(0.0, 0.0, level.getWidth(), robot.getStepSize()));
         final JSpinner yPosition = new JSpinner(new SpinnerNumberModel(0.0, 0.0, level.getHeight(), robot.getStepSize()));
-        final JComboBox spritePathField = new JComboBox(new ResourcesComboBoxModel(project, new SpriteFileFilter()));
+        final JComboBox spritePathField = new JComboBox(
+                new ResourcesComboBoxModel(project.getResourceManager(), new SpriteFileFilter()));
         final JSpinner spriteScaleSpinner = new JSpinner(new SpinnerNumberModel(1.0, 0.0, 1000.0, 0.01));
         final JSpinner evalsPerStep = new JSpinner(new SpinnerNumberModel(1, 1, null, 1));
         final JSpinner stepSize = new JSpinner(new SpinnerNumberModel(0.1, 0.01, null, 0.01));
@@ -951,7 +953,8 @@ public class EditorMain {
         final JTextField labelField = new JTextField();
         final JCheckBox labelEnabledBox = new JCheckBox("Label Enabled");
         final JComboBox labelDirectionBox = new JComboBox(Direction.values());
-        final JComboBox spritePathField = new JComboBox(new ResourcesComboBoxModel(project, new SpriteFileFilter()));
+        final JComboBox spritePathField = new JComboBox(
+                new ResourcesComboBoxModel(project.getResourceManager(), new SpriteFileFilter()));
         final JSpinner spriteScaleSpinner = new JSpinner(new SpinnerNumberModel(1.0, 0.0, 1000.0, 0.01));
         final JTextArea onEnterArea = new JTextArea(6, 15);
 
@@ -1739,6 +1742,19 @@ public class EditorMain {
         if (recentProjects.get("autoLoadOk", "false").equals("false")) return false;
         File mostRecentProjectLocation = new File(recentProjects.get("0", null));
         if (mostRecentProjectLocation.isDirectory()) {
+            System.err.println("autoloadMostRecentProject():");
+            System.err.println("  Most recent project location '"+
+                        mostRecentProjectLocation.getPath()+"' is a directory." +
+                        " This probably means it's an old-style project which needs" +
+                        " to be jarred up.");
+            JOptionPane.showMessageDialog(null,
+                    "Your most recent project location is a directory." +
+                    "\nThere is now no difference between the level pack" +
+                    "\nfile and the project file.  Export a level pack of" +
+                    "\nyour project using an old version of the editor," +
+                    "\nthen load that into this version of the editor and" +
+                    "\nyou'll be good to go!");
+        } else {
             try {
                 Project project = Project.load(mostRecentProjectLocation);
                 new EditorMain(project);
@@ -1749,10 +1765,6 @@ public class EditorMain {
                         mostRecentProjectLocation.getPath()+"'. Giving up.");
                 ex.printStackTrace();
             }
-        } else {
-            System.err.println("autoloadMostRecentProject():");
-            System.err.println("  Most recent project location '"+
-                        mostRecentProjectLocation.getPath()+"' isn't a directory. Giving up.");
         }
         return false;
     }
@@ -1786,21 +1798,13 @@ public class EditorMain {
                 proj = promptUserForProject();
             } else if (choice == 2) {
                 // create new
-                String projName = JOptionPane.showInputDialog(
-                        "What will your project be called?");
                 JFileChooser fc = new JFileChooser();
-                fc.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
                 fc.setDialogTitle("Where do you want to save your project?");
                 int fcChoice = fc.showSaveDialog(null);
-                File projDir = new File(fc.getSelectedFile(), projName);
                 if (fcChoice == JFileChooser.APPROVE_OPTION) {
-                    proj = Project.createNewProject(projDir);
+                    File projFile = fc.getSelectedFile();
+                    proj = Project.createNewProject(projFile);
                 }
-                JOptionPane.showMessageDialog(null, 
-                        "Ok, your project has been created!\n" +
-                        "If you want to add to, remove from, or modify its resources\n" +
-                        "(images and sounds), you can find them in the project directory:\n\n" +
-                        new File(projDir, "ROBO-INF").getAbsolutePath());
             }
         } catch (Exception ex) {
             showException(null, "Couldn't load project!", ex);

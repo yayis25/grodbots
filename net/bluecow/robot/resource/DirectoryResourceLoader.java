@@ -11,7 +11,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 
-public class DirectoryResourceLoader extends ResourceLoader {
+public class DirectoryResourceLoader extends AbstractResourceLoader {
 
     private File basedir;
     
@@ -30,7 +30,6 @@ public class DirectoryResourceLoader extends ResourceLoader {
         this.basedir = basedir;
     }
     
-    @Override
     public InputStream getResourceAsStream(String resourceName) throws IOException {
         File resourceFile = new File(basedir, resourceName);
         if (!resourceFile.exists()) {

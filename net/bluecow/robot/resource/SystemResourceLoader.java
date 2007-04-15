@@ -8,9 +8,8 @@ package net.bluecow.robot.resource;
 import java.io.IOException;
 import java.io.InputStream;
 
-public class SystemResourceLoader extends ResourceLoader {
+public class SystemResourceLoader extends AbstractResourceLoader {
 
-    @Override
     public InputStream getResourceAsStream(String resourceName) throws IOException {
         InputStream resourceStream = ClassLoader.getSystemResourceAsStream(resourceName);
         if (resourceStream == null) {

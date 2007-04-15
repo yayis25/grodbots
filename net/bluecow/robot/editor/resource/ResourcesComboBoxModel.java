@@ -3,9 +3,10 @@
  *
  * This code belongs to Jonathan Fuerth
  */
-package net.bluecow.robot.editor;
+package net.bluecow.robot.editor.resource;
 
 import java.io.FilenameFilter;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -13,21 +14,39 @@ import javax.swing.ComboBoxModel;
 import javax.swing.event.ListDataEvent;
 import javax.swing.event.ListDataListener;
 
+import net.bluecow.robot.resource.ResourceManager;
+
 public class ResourcesComboBoxModel implements ComboBoxModel {
 
     private final List<String> items;
     
     private String selectedItem;
     
-    ResourcesComboBoxModel(Project proj, FilenameFilter filter) {
-        this.items = new ArrayList<String>();
-        items.add(null);
-        for (String item : proj.getAllResourceNames()) {
-            if (filter == null || filter.accept(null, item)) {
-                items.add(item);
+    /**
+     * Creates a new combo box model with a snapshot of the resource manager's
+     * resources.  The contents of the combo box do not currently change to
+     * reflect changes in the resource manager, but this class might get that
+     * upgrade later on.
+     * 
+     * @param resourceManager The resource manager to populate resource names from
+     * @param filter The filter to apply to resource names. Specifying a null
+     * filter has the same effect as specifying a filter that accepts everything.
+     * @throws RuntimeException if the resource manager throws an IOException,
+     * this constructor wraps it in a RuntimeException for you.
+     */
+    public ResourcesComboBoxModel(ResourceManager resourceManager, FilenameFilter filter) {
+        try {
+            this.items = new ArrayList<String>();
+            items.add(null);
+            for (String item : resourceManager.listAll()) {
+                if (filter == null || filter.accept(null, item)) {
+                    items.add(item);
+                }
             }
+            this.selectedItem = null;
+        } catch (IOException ex) {
+            throw new RuntimeException(ex);
         }
-        this.selectedItem = null;
     }
     
     public Object getSelectedItem() {

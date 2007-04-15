@@ -13,7 +13,7 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipException;
 import java.util.zip.ZipFile;
 
-public class ZipFileResourceLoader extends ResourceLoader {
+public class ZipFileResourceLoader extends AbstractResourceLoader {
 
     private ZipFile zipFile;
     
@@ -21,7 +21,6 @@ public class ZipFileResourceLoader extends ResourceLoader {
         zipFile = new ZipFile(file);
     }
     
-    @Override
     public InputStream getResourceAsStream(String resourceName) throws IOException {
         ZipEntry resource = zipFile.getEntry(resourceName);
         if (resource == null) {

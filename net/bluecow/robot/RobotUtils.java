@@ -24,6 +24,7 @@ import java.util.prefs.Preferences;
 import javax.swing.JDialog;
 import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
+import javax.swing.filechooser.FileFilter;
 
 public class RobotUtils {
     
@@ -99,6 +100,10 @@ public class RobotUtils {
         }
     }
     
+    /**
+     * Presents a modal dialog with a nicely-formatted error message which reflects
+     * the given FileFormatException.
+     */
     public static void showFileFormatException(FileFormatException ex) {
         JOptionPane.showMessageDialog(null, 
                 "Syntax error in project file:\n\n" +
@@ -132,6 +137,15 @@ public class RobotUtils {
         }
     }
     
+    /**
+     * Attempts to tile the given list of windows on the main display, starting
+     * with the first window in the list in the top left-hand corner of the
+     * display.  This implementation doesn't behave well when there are more windows
+     * than can be distributed across the display in this manner, or when there is a
+     * window in the list which is taller or wider than the display.
+     *   
+     * @param windows
+     */
     public static void tileWindows(List<Window> windows) {
         GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
         GraphicsDevice gd = ge.getDefaultScreenDevice();
@@ -166,5 +180,48 @@ public class RobotUtils {
                 w.setLocation(x, y);
             }
         }
+    }
+
+    /**
+     * Returns a file filter that accepts only pathnames ending with ".rlp"
+     */
+    public static FileFilter createLevelPackFilter() {
+        return new FileFilter() {
+            public boolean accept(File pathname) {
+                return pathname.toString().endsWith(".rlp");
+            }
+
+            @Override
+            public String getDescription() {
+                return "Robot Level Packs";
+            }
+        };
+    }
+
+    /**
+     * Creates a String representation of the given list where the String
+     * value of each item in the list is on its own line.
+     * <p>
+     * Note: Presently, no checking is done to ensure the String representations
+     * of the list items themselves are free of newline characters, so consider
+     * this transformation non-invertible.  It's intended for diagnostics and
+     * debugging.
+     *  
+     * @param list The list to list.
+     * @return A String containing the String representations of all the items
+     * in the given list, in order, separated by the newline character '\n'. 
+     */
+    public static String listOnSeparateLines(List<? extends Object> list) {
+        boolean first = true;
+        StringBuilder sb = new StringBuilder();
+        for (Object item : list) {
+            if (!first) {
+                sb.append('\n');
+            } else {
+                first = false;
+            }
+            sb.append(item);
+        }
+        return sb.toString();
     }
 }
