@@ -124,33 +124,52 @@ public class EditorMain {
         }
         
         public void actionPerformed(ActionEvent e) {
-            Project proj = promptUserForProject();
-            if (proj != null) {
-                closeProject();
-                new EditorMain(proj);
+            if (closeProject()) {
+                Project proj = promptUserForProject();
+                if (proj != null) {
+                    new EditorMain(proj);
+                } else {
+                    presentWelcomeMenu();
+                }
             }
         }
     }
     
-    private class SaveLevelPackAction extends AbstractAction {
+    /**
+     * Handles both the "save" and "save as" actions for the project.
+     */
+    private class SaveAction extends AbstractAction {
         
-        public SaveLevelPackAction() {
-            super("Export Level Pack...");
-            putValue(MNEMONIC_KEY, KeyEvent.VK_E);
+        private final boolean saveAs;
+        
+        public SaveAction(boolean saveAs) {
+            super(saveAs ? "Save As..." : "Save");
+            if (saveAs) {
+                putValue(MNEMONIC_KEY, KeyEvent.VK_A);
+            } else {
+                putValue(MNEMONIC_KEY, KeyEvent.VK_S);
+            }
+            this.saveAs = saveAs;
         }
         
         public void actionPerformed(ActionEvent e) {
             Preferences recentFiles = RobotUtils.getPrefs().node("recentGameFiles");
             Writer out = null;
-            try {
+            if (saveAs || project.getFileLocation() == null) {
                 JFileChooser fc = new JFileChooser();
-                fc.setDialogTitle("Save Level Pack");
+                fc.setDialogTitle("Save Project");
                 fc.setCurrentDirectory(new File(recentFiles.get("0", System.getProperty("user.home"))));
                 int choice = fc.showSaveDialog(frame);
                 if (choice == JFileChooser.APPROVE_OPTION) {
-                    project.saveLevelPack(fc.getSelectedFile());
-                    RobotUtils.updateRecentFiles(recentFiles, fc.getSelectedFile());
+                    project.setFileLocation(fc.getSelectedFile());
+                } else {
+                    return;
                 }
+            }
+            try {
+                project.saveLevelPack(null);
+                setFrameTitle(project.getFileLocation().getName());
+                RobotUtils.updateRecentFiles(recentFiles, project.getFileLocation());
             } catch (IOException ex) {
                 JOptionPane.showMessageDialog(frame, "Save Failed: "+ex.getMessage());
             } catch (BackingStoreException ex) {
@@ -163,25 +182,6 @@ public class EditorMain {
                     System.out.println("Bad luck.. couldn't close output file!");
                     e1.printStackTrace();
                 }
-            }
-        }
-    }
-
-    /**
-     * Just saves the project resources in place.
-     */
-    private class SaveAction extends AbstractAction {
-        
-        public SaveAction() {
-            super("Save");
-            putValue(MNEMONIC_KEY, KeyEvent.VK_S);
-        }
-        
-        public void actionPerformed(ActionEvent e) {
-            try {
-                project.save();
-            } catch (IOException ex) {
-                JOptionPane.showMessageDialog(frame, "Save Failed: "+ex.getMessage());
             }
         }
     }
@@ -267,6 +267,11 @@ public class EditorMain {
         }
     };
 
+    /**
+     * An action that pops up a dialog for reordering the sequence of the levels.
+     */
+    private final OrganizeLevelsAction organizeLevelsAction;
+    
     private Action playLevelAction = new AbstractAction("Play Test") {
         public void actionPerformed(ActionEvent e) {
             final LevelConfig level = (LevelConfig) levelChooser.getSelectedItem();
@@ -424,8 +429,8 @@ public class EditorMain {
     private Icon removeItemIcon = new AddRemoveIcon(AddRemoveIcon.Type.REMOVE);
     
     private LoadProjectAction loadProjectAction = new LoadProjectAction();
-    private SaveAction saveProjectAction = new SaveAction();
-    private SaveLevelPackAction saveLevelPackAction = new SaveLevelPackAction();
+    private SaveAction saveAction = new SaveAction(false);
+    private SaveAction saveAsAction = new SaveAction(true);
     private CloseProjectAction closeProjectAction = new CloseProjectAction();
 
     
@@ -1200,7 +1205,7 @@ public class EditorMain {
     public EditorMain(Project project) {
         this.project = project;
         
-        frame = new JFrame("Robot Level Editor");
+        frame = new JFrame();
         frame.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
         frame.addWindowListener(new WindowAdapter() {
             public void windowClosing(java.awt.event.WindowEvent e) {
@@ -1209,6 +1214,8 @@ public class EditorMain {
         });
         
         final GameConfig myGameConfig = project.getGameConfig();
+        
+        organizeLevelsAction = new OrganizeLevelsAction(frame, myGameConfig);
         
         frame.getContentPane().setLayout(new BorderLayout(8, 8));
         ((JComponent) frame.getContentPane()).setBorder(BorderFactory.createEmptyBorder(6, 6, 6, 6));
@@ -1297,6 +1304,12 @@ public class EditorMain {
         
         setupMenu();
 
+        if (project.getFileLocation() != null) {
+            setFrameTitle(project.getFileLocation().getName());
+        } else {
+            setFrameTitle(null);
+        }
+        
         // this pack is required to realize the frame and get the layout going.
         // the alternative would be frame.setVisible(true), but that would cause
         // the following rearrangements to be visible to the user (yuck!)
@@ -1365,10 +1378,17 @@ public class EditorMain {
         JMenu m;
         mb.add (m = new JMenu("File"));
         m.add(new JMenuItem(loadProjectAction));
-        m.add(new JMenuItem(saveProjectAction));
-        m.add(new JMenuItem(saveLevelPackAction));
+        m.add(new JMenuItem(saveAction));
+        m.add(new JMenuItem(saveAsAction));
         m.add(new JMenuItem(closeProjectAction));
         m.add(new JMenuItem(exitAction));
+        
+        mb.add(m = new JMenu("Level"));
+        m.add(new JMenuItem(addLevelAction));
+        m.add(new JMenuItem(copyLevelAction));
+        m.add(new JMenuItem(removeLevelAction));
+        m.addSeparator();
+        m.add(new JMenuItem(organizeLevelsAction));
         
         frame.setJMenuBar(mb);
     }
@@ -1405,6 +1425,22 @@ public class EditorMain {
         if (choice == JOptionPane.YES_OPTION) {
             System.exit(0);
         }
+    }
+    
+    /**
+     * Changes the title of the frame to include the given string.  This method insures
+     * that the title will always contain the phrase "Robot Level Editor".
+     * 
+     * @param title The string to display in the editor frame's title, in addition
+     * to the set phrase "Robot Level Editor".
+     */
+    public void setFrameTitle(String title) {
+        StringBuilder newTitle = new StringBuilder();
+        newTitle.append("Robot Level Editor");
+        if (title != null) {
+            newTitle.append(" - ").append(title);
+        }
+        frame.setTitle(newTitle.toString());
     }
     
     /**

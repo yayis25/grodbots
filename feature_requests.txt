@@ -1,4 +1,5 @@
 Game Features:
+-os x integration (menus, hooks for about and exit)
 -create a set of tutorial levels for learning the game
 -Make real game UI:
  -preinit the bsh interpreters so there's not a lag during gameplay
@@ -9,13 +10,16 @@ Game Features:
  -something special for having completed every level (totals?)
  -ensure the overall score doesn't reset when going to the next level
 -Level editor
- -save the "playtest" circuits with the project, but not with the exported level packs
+ -delete the JarResourceManager temp files on exit
+ -fix the problem where gates used in the playtest circuit are deducted from the robot's gate allowance!
+   (probably best to use a separate deep copy of the whole level for the playtest)
+ -make a file filter for project files, and check that saved projects match it
+ -use real sound manager in editor's playtest mode
  ----release----
- -accelerators for close, quit, save, export level pack
- -make a file filter for project files
+ -save the "playtest" circuits with the project, but not with the exported level packs
+ -accelerators for close, quit, save
  -have resource managers fire events when resources are added, removed, and modified.
  -implement a GUI resource manager (for adding and removing files in the project)
- -use real sound manager in editor's playtest mode
  -make an animated sprite creator thing
  -make a sound preview thing so you can play audio resorces that exist in the project
  -make a music pattern editor thing (like a 1-track mod)
@@ -59,6 +63,10 @@ Sounds:
 -little ditties for the beginning of each level (maybe this would be better suited to the MIDI sequencer api)
 
 Completed:
+-ED: created an action with a dialog that lets you rearrange the sequence of the levels
+-ED: fix the "Open Project" action so it behaves in a more usual manner
+-ED: combine the "save" and "export level pack" actions into one "save" action
+-ED: started the resource manager GUI (not planned for completion this release)
 -ED: projects are now a single file, just like level packs. however, there is no GUI resource manager yet.
 -Created a new ResourceManager interface which is an extension of ResourceLoader: it can list the resources it contains, and provides write access as well as read
 -Turned ResourceLoader into an interface, and moved its former contents into the new AbstractResourceLoader class

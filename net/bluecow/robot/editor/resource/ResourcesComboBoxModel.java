@@ -5,7 +5,6 @@
  */
 package net.bluecow.robot.editor.resource;
 
-import java.io.FilenameFilter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -15,6 +14,7 @@ import javax.swing.event.ListDataEvent;
 import javax.swing.event.ListDataListener;
 
 import net.bluecow.robot.resource.ResourceManager;
+import net.bluecow.robot.resource.ResourceNameFilter;
 
 public class ResourcesComboBoxModel implements ComboBoxModel {
 
@@ -34,15 +34,9 @@ public class ResourcesComboBoxModel implements ComboBoxModel {
      * @throws RuntimeException if the resource manager throws an IOException,
      * this constructor wraps it in a RuntimeException for you.
      */
-    public ResourcesComboBoxModel(ResourceManager resourceManager, FilenameFilter filter) {
+    public ResourcesComboBoxModel(ResourceManager resourceManager, ResourceNameFilter filter) {
         try {
-            this.items = new ArrayList<String>();
-            items.add(null);
-            for (String item : resourceManager.listAll()) {
-                if (filter == null || filter.accept(null, item)) {
-                    items.add(item);
-                }
-            }
+            this.items = resourceManager.listAll(filter);
             this.selectedItem = null;
         } catch (IOException ex) {
             throw new RuntimeException(ex);

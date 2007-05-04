@@ -112,6 +112,15 @@ public class RobotUtils {
     }
 
     /**
+     * Presents a modal dialog displaying the given message and information
+     * about the given exception.  Also prints a stack trace to stderr.
+     */
+    public static void showException(String message, Exception ex) {
+        ex.printStackTrace();
+        JOptionPane.showMessageDialog(null, message+"\n\n"+ex+"\n");
+    }
+
+    /**
      * Tries very hard to create a JDialog which is owned by the parent
      * Window of the given component.  However, if the component does not
      * have a Window ancestor, or the component has a Window ancestor that
@@ -224,4 +233,5 @@ public class RobotUtils {
         }
         return sb.toString();
     }
+
 }

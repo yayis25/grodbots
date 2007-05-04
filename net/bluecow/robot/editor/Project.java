@@ -9,15 +9,11 @@ import java.awt.Point;
 import java.awt.geom.Point2D;
 import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.util.ArrayList;
-import java.util.jar.JarEntry;
-import java.util.jar.JarInputStream;
 
 import net.bluecow.robot.GameConfig;
 import net.bluecow.robot.LevelConfig;
@@ -32,6 +28,15 @@ public class Project {
 
     private static final boolean debugOn = false;
 
+    private static void debug(String msg) {
+        if (debugOn) System.out.println(msg);
+    }
+
+    /**
+     * The file that this project was most recently loaded from or saved to.
+     */
+    private File fileLocation;
+    
     /**
      * The game config associated with this project.
      */
@@ -87,6 +92,7 @@ public class Project {
         ResourceManager resources = new JarResourceManager(jar);
         Project proj = new Project();
         proj.gameConfig = LevelStore.loadLevels(resources);
+        proj.fileLocation = jar;
         return proj;
     }
 
@@ -105,21 +111,31 @@ public class Project {
     
 
     /**
-     * Saves this project, then bundles all its resources into
-     * a single JAR file.
+     * Saves this project by bundling all its resources into a single JAR file.
+     * Also updates the {@link #fileLocation} property if applicable.
      * 
-     * FIXME this should preen the resource set a little bit: remove
+     * FIXME there should be a variant that preens the resource set a little bit: remove
      * old map backups, remove example solutions (when we get that working),
      * and whatever else isn't fit for mass distribution.  A good way to
      * implement this would be a file filter that knows which resources
      * to exclude.
      * 
-     * @param location the file to save into (doesn't have to exist yet)
+     * @param location the file to save into (doesn't have to exist yet). If
+     * this argument is null, the project will be saved to {@link #fileLocation}.
+     * If that is also null, a NullPointerException will be thrown.
+     * 
      * @throws IOException If there are any problems during the save operation
      */
     public void saveLevelPack(File location) throws IOException {
-        save();
+        saveMapFile();
+        if (location == null) {
+            location = fileLocation;
+        }
+        if (location == null) {
+            throw new NullPointerException("Don't know where to save the project (both locations are null)");
+        }
         ResourceUtils.createResourceJar(getResourceManager(), location);
+        fileLocation = location;
     }
     
     /**
@@ -130,7 +146,7 @@ public class Project {
      * @throws IOException
      *             if there are any problems saving the resources
      */
-    public void save() throws IOException {
+    private void saveMapFile() throws IOException {
         String encoding = "utf-8";
         OutputStream out = getResourceManager().openForWrite(LevelStore.DEFAULT_MAP_RESOURCE_PATH, true);
         Writer writer = new BufferedWriter(new OutputStreamWriter(out, encoding));
@@ -153,8 +169,13 @@ public class Project {
     public Switch createSwitch() {
         return new LevelConfig.Switch(defaultSwitch);
     }
-    
-    private static void debug(String msg) {
-        if (debugOn) System.out.println(msg);
+
+    public File getFileLocation() {
+        return fileLocation;
     }
+
+    public void setFileLocation(File fileLocation) {
+        this.fileLocation = fileLocation;
+    }
+    
 }

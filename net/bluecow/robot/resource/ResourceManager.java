@@ -66,7 +66,27 @@ public interface ResourceManager extends ResourceLoader {
      * resource list.
      */
     List<String> listAll() throws IOException;
-    
+
+    /**
+     * Produces a list of all resources currently available in this resource
+     * manager, subject to the given filter. Directories will be included in
+     * this list, and they will come earlier in the list than any file or
+     * subdirectory they contain. Directory entries are defined as resource
+     * names ending with the "/" character. Regular files have names that do not
+     * end in "/".
+     * 
+     * @param filter
+     *            The filter to apply to each resource name. Resource names not
+     *            accepted by the filter will not be included in the listing.
+     *            If this argument is null, no filtering will be performed.
+     * @return A list of path names which can be opened for read or write, or
+     *         removed.
+     * @throws IOException
+     *             If there is some unexpected difficulty in producing the
+     *             resource list.
+     */
+    List<String> listAll(ResourceNameFilter filter) throws IOException;
+
     /**
      * Closes this resource manager and frees any system resources it may
      * have allocated.  Once this resource manager is closed, all methods
@@ -95,4 +115,25 @@ public interface ResourceManager extends ResourceLoader {
      *         in their names.
      */
     List<String> list(String path);
+
+    /**
+     * Lists the resources directly contained under the given resource directory
+     * (not a recursive listing) in sorted order. If the given path exists but
+     * represents a file resource (rather than a directory resource), the return
+     * value is the empty list. If the path doesn't exist at all, then an
+     * IOException will be thrown.
+     * 
+     * @param path
+     *            The path name to a directory to list the contents of. Must not
+     *            be null. To list the contents of the root directory, use an
+     *            empty string.
+     * @param filter
+     *            The filter to apply to each resource name. Resource names not
+     *            accepted by the filter will not be included in the listing.
+     *            If this argument is null, no filtering will be performed.
+     * @return A list of the immediate child resources under the given path.
+     *         Children that are themselves directories will have a trailing "/"
+     *         in their names.
+     */
+    List<String> list(String path, ResourceNameFilter filter);
 }
