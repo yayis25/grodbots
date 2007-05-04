@@ -13,7 +13,9 @@ import javax.swing.event.TreeModelListener;
 import javax.swing.tree.TreeModel;
 import javax.swing.tree.TreePath;
 
+import net.bluecow.robot.resource.RegexResourceNameFilter;
 import net.bluecow.robot.resource.ResourceManager;
+import net.bluecow.robot.resource.ResourceNameFilter;
 
 /**
  * The ResourceManagerTreeModel makes a ResourceManager available
@@ -41,9 +43,11 @@ public class ResourceManagerTreeModel implements TreeModel {
     
     private List<TreeModelListener> treeModelListeners = new ArrayList<TreeModelListener>();
     private ResourceManager resourceManager;
+    private ResourceNameFilter filter;
     
     public ResourceManagerTreeModel(ResourceManager resourceManager) throws IOException {
         this.resourceManager = resourceManager;
+        filter = new RegexResourceNameFilter("/?META-INF/.*", true);
     }
     
     public void addTreeModelListener(TreeModelListener l) {
@@ -61,19 +65,19 @@ public class ResourceManagerTreeModel implements TreeModel {
     public Object getChild(Object parent, int index) {
         debug("RMTM: getIndexOfChild(" + parent + ", " + index + ")");
         String path = (String) parent;
-        return resourceManager.list(path).get(index);
+        return resourceManager.list(path, filter).get(index);
     }
 
     public int getChildCount(Object parent) {
         debug("RMTM: getChildCount(" + parent + ")");
         String path = (String) parent;
-        return resourceManager.list(path).size();
+        return resourceManager.list(path, filter).size();
     }
 
     public int getIndexOfChild(Object parent, Object child) {
         debug("RMTM: getIndexOfChild(" + parent + ", " + child + ")");
         String path = (String) parent;
-        List<String> children = resourceManager.list(path);
+        List<String> children = resourceManager.list(path, filter);
         return children.indexOf(child);
     }
 

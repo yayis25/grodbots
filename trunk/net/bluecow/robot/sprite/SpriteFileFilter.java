@@ -5,23 +5,21 @@
  */
 package net.bluecow.robot.sprite;
 
-import java.io.File;
-import java.io.FilenameFilter;
+import net.bluecow.robot.resource.ResourceNameFilter;
 
 /**
- * The SpriteFileFilter is used for distinguishing files that can be used
+ * The SpriteFileFilter is used for distinguishing resources that can be used
  * to create sprites using SpriteManager from those that can't.
  *
  * @author fuerth
  * @version $Id$
  */
-public class SpriteFileFilter implements FilenameFilter {
+public class SpriteFileFilter implements ResourceNameFilter {
 
-    public boolean accept(File dir, String name) {
+    public boolean accepts(String name) {
         if (name == null) return false; 
         else return name.endsWith(".rsf") ||
-                    name.endsWith(".png") ||
-                    name.endsWith(".gif");
+                    name.endsWith(".png");
     }
     
 }

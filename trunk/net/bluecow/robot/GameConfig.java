@@ -275,7 +275,11 @@ public class GameConfig {
     }
 
     public void addLevel(LevelConfig level) {
-        levels.add(level);
+        addLevel(levels.size(), level);
+    }
+
+    public void addLevel(int index, LevelConfig level) {
+        levels.add(index, level);
         pcs.firePropertyChange("levels", null, level);
     }
 

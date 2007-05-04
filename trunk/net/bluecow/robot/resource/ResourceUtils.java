@@ -71,4 +71,10 @@ public class ResourceUtils {
         jout.close();
     }
 
+    /**
+     * Creates a ResourceNameFilter which only accepts directory entries.
+     */
+    public static ResourceNameFilter directoryOnlyFilter() {
+        return new RegexResourceNameFilter(".*/", false);
+    }
 }

@@ -116,11 +116,19 @@ public class JarResourceManager extends AbstractResourceLoader implements Resour
     // ------------------ Interface Methods ----------------------
     
     public List<String> listAll() throws IOException {
+        return listAll(null);
+    }
+    
+    public List<String> listAll(ResourceNameFilter filter) throws IOException {
         checkClosed();
-        return recursiveListResources("", dir, new ArrayList<String>());
+        return recursiveListResources("", dir, filter, new ArrayList<String>());
     }
 
     public List<String> list(String path) {
+        return list(path, null);
+    }
+    
+    public List<String> list(String path, ResourceNameFilter filter) {
         File resourceDir = new File(dir, path);
         debug("Listing children of " + resourceDir.getAbsolutePath());
         if (resourceDir.isFile()) {
@@ -141,7 +149,10 @@ public class JarResourceManager extends AbstractResourceLoader implements Resour
             if (f.isDirectory() && (!resourcePath.endsWith("/"))) {
                 resourcePath += "/";
             }
-            retval.add(resourcePath);
+            
+            if (filter == null || filter.accepts(resourcePath)) {
+                retval.add(resourcePath);
+            }
         }
         
         debug("Children are: " + retval);
@@ -207,21 +218,41 @@ public class JarResourceManager extends AbstractResourceLoader implements Resour
      * @param resources The list to append to.
      * @return The resources list.
      */
-    private List<String> recursiveListResources(String pathName, File dir, List<String> resources) {
+    private List<String> recursiveListResources(
+            String pathName, File dir, ResourceNameFilter filter, List<String> resources) {
+        
         File[] files = dir.listFiles();
         Arrays.sort(files);
+        
+        //debug("rlr: pathName="+pathName+"; files="+Arrays.toString(files));
+        
         for (File file : files) {
             String newPath;
             if (pathName.length() == 0) {
                 newPath = file.getName();  // this prevents a leading slash in entry name
             } else {
-                newPath = pathName + "/" + file.getName();
+                newPath = pathName + file.getName();
             }
+            
+            String resourceName;
             if (file.isDirectory()) {
-                resources.add(newPath + "/");
-                recursiveListResources(newPath, file, resources);
+                resourceName = newPath + "/";
             } else {
-                resources.add(newPath);
+                resourceName = newPath;
+            }
+            
+            boolean accepted;
+            if (filter == null || filter.accepts(resourceName)) {
+                accepted = true;
+                resources.add(resourceName);
+            } else {
+                accepted = false;
+            }
+            
+            debug("rlr:   newPath="+newPath+"; resourceName="+resourceName+"; accepted="+accepted);
+            
+            if (file.isDirectory()) {
+                recursiveListResources(resourceName, file, filter, resources);
             }
         }
         return resources;
