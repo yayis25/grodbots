@@ -10,12 +10,10 @@ Game Features:
  -something special for having completed every level (totals?)
  -ensure the overall score doesn't reset when going to the next level
 -Level editor
- -delete the JarResourceManager temp files on exit
- -fix the problem where gates used in the playtest circuit are deducted from the robot's gate allowance!
-   (probably best to use a separate deep copy of the whole level for the playtest)
  -make a file filter for project files, and check that saved projects match it
- -use real sound manager in editor's playtest mode
+ -allow "reposition using mouse" for robots and switches
  ----release----
+ -init sound manager with a gameconfig argument, and add sound configuration to the game file
  -save the "playtest" circuits with the project, but not with the exported level packs
  -accelerators for close, quit, save
  -have resource managers fire events when resources are added, removed, and modified.
@@ -28,6 +26,8 @@ Game Features:
  -effect for the "cursor" box to fade in and out and change colours and stuff
  -put a real spotlight on the currently-selected robot or switch
 -be able to save all circuits in the entire game into one file, and load it back later
+ -ED: use this to remember the circuit associated with each level, and save with project
+      (will need a check that the restored circuit hasn't gone over gate limits)
 -make an effects API for switch scripts: int getNumFrames() and void doFrame(int).
 -bonus points for left-over gates
 -Batteries
@@ -63,6 +63,9 @@ Sounds:
 -little ditties for the beginning of each level (maybe this would be better suited to the MIDI sequencer api)
 
 Completed:
+-ED: delete the JarResourceManager temp files on exit (uses lifecycle event)
+-Created project lifecycle event infrastructure (it can generalize to anything, but it's only being used for projects right now)
+-ED: fix the problem where gates used in the playtest circuit are permanently deducted from the robot's gate allowance!
 -ED: created an action with a dialog that lets you rearrange the sequence of the levels
 -ED: fix the "Open Project" action so it behaves in a more usual manner
 -ED: combine the "save" and "export level pack" actions into one "save" action
