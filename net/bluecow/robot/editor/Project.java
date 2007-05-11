@@ -14,16 +14,37 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.util.ArrayList;
+import java.util.List;
 
 import net.bluecow.robot.GameConfig;
 import net.bluecow.robot.LevelConfig;
 import net.bluecow.robot.LevelStore;
 import net.bluecow.robot.Robot;
 import net.bluecow.robot.LevelConfig.Switch;
+import net.bluecow.robot.editor.event.LifecycleEvent;
+import net.bluecow.robot.editor.event.LifecycleListener;
 import net.bluecow.robot.resource.JarResourceManager;
 import net.bluecow.robot.resource.ResourceManager;
 import net.bluecow.robot.resource.ResourceUtils;
 
+/**
+ * The Project class represents a project in the robot's level editor.
+ * It includes the project's resource manager, which the editor uses
+ * for loading, saving, and exploring the resource files available;
+ * the project's game configuration, which assembles those resources
+ * together into levels, squares, switches, robots, and so on; the
+ * project file's location on the local filesystem; and finally a
+ * set of prototypical objects that the editor uses as starting points
+ * for new robots and swiches.
+ * <p>
+ * The Project also manages the lifecycle of an editing session, and
+ * as such it is essential that the project instance is notified when
+ * it is no longer needed (by calling the {@link #close()} method).
+ * The initial use for project lifecycles was to let the resource
+ * manager know when to clean up its temporary files, but the
+ * lifecycle events are not inherently limited to just resource
+ * manager cleanup.
+ */
 public class Project {
 
     private static final boolean debugOn = false;
@@ -55,8 +76,26 @@ public class Project {
             new Point(1, 1), "new_switch", "", null, null);
     
     /**
+     * All of the listeners interested in this project's lifecycle.
+     */
+    private final List<LifecycleListener> lifecycleListeners = new ArrayList<LifecycleListener>();
+    
+    /**
+     * Private do-nothing constructor to prevent heathens from creating
+     * projects on their own.  See {@link #createNewProject(File)} and
+     * {@link #load(File)}.
+     */
+    private Project() {
+        super();
+    }
+
+    /**
      * Creates a new project with a default empty level.  This operation creates
      * the project's initial JAR file containing the ROBO-INF subdirectory.
+     * <p>
+     * Important Note: It is essential that you call {@link #close()} on the
+     * returned project instance when you are done with it.. even if the next
+     * step will be to terminate the JVM.
      * 
      * @param file The file that will hold this project.  It must not exist yet.
      * @return The new project.
@@ -83,19 +122,37 @@ public class Project {
     /**
      * Creates a new Project instance by loading it from a JAR file which
      * contains files laid out in a special way.
+     * <p>
+     * Important Note: It is essential that you call {@link #close()} on the
+     * returned project instance when you are done with it.. even if the next
+     * step will be to terminate the JVM.
      * 
      * @param jar The JAR file to read the project descirption from.
      * @return
      * @throws IOException
      */
     public static Project load(File jar) throws IOException {
-        ResourceManager resources = new JarResourceManager(jar);
+        final ResourceManager resources = new JarResourceManager(jar);
         Project proj = new Project();
         proj.gameConfig = LevelStore.loadLevels(resources);
         proj.fileLocation = jar;
+        
+        proj.addLifecycleListener(new LifecycleListener() {
+            public void lifecycleEnding(LifecycleEvent evt) {
+                try {
+                    resources.close();
+                } catch (IOException ex) {
+                    System.err.println("Couldn't close project resource manager!");
+                    ex.printStackTrace();
+                }
+            }
+        });
         return proj;
     }
 
+    /**
+     * Returns this project's game configuration.
+     */
     public GameConfig getGameConfig() {
         return gameConfig;
     }
@@ -166,16 +223,66 @@ public class Project {
         return r;
     }
     
+    /**
+     * Creates a new Switch which is identical to this project's prototypical
+     * switch instance.
+     */
     public Switch createSwitch() {
         return new LevelConfig.Switch(defaultSwitch);
     }
 
+    /**
+     * See {@link #fileLocation}.
+     */
     public File getFileLocation() {
         return fileLocation;
     }
 
+    /**
+     * See {@link #fileLocation}.
+     */
     public void setFileLocation(File fileLocation) {
         this.fileLocation = fileLocation;
     }
     
+    /**
+     * Notifies this project that it is no longer in use.  Causes a
+     * <tt>projectClosing</tt> event.  It is essential that this method
+     * is called for every project instance, because the event it fires
+     * can lead to temp file cleanup and other important housekeeping
+     * tasks.
+     */
+    public void close() {
+        fireProjectClosing();
+    }
+
+    /**
+     * Adds the given lifecycle listener to this project.
+     * 
+     * @param l The listener to add. Must not be null.
+     */
+    public void addLifecycleListener(LifecycleListener l) {
+        if (l == null) throw new NullPointerException("Null lifecycle listener");
+        lifecycleListeners.add(l);
+    }
+
+    /**
+     * Removes the given lifecycle listener from this project.
+     * If the given listener was not attached to this project,
+     * this method has no effect.
+     */
+    public void removeLifecycleListener(LifecycleListener l) {
+        lifecycleListeners.remove(l);
+    }
+    
+    /**
+     * Fires a projectClosing event.  This is normally called via the
+     * {@link #close()} method.
+     */
+    private void fireProjectClosing() {
+        LifecycleEvent evt = new LifecycleEvent(this);
+        for (int i = lifecycleListeners.size() - 1; i >= 0; i--) {
+            lifecycleListeners.get(i).lifecycleEnding(evt);
+        }
+    }
 }

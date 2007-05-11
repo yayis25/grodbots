@@ -92,7 +92,6 @@ import net.bluecow.robot.GameConfig.SquareConfig;
 import net.bluecow.robot.LevelConfig.Switch;
 import net.bluecow.robot.editor.resource.ResourcesComboBoxModel;
 import net.bluecow.robot.gate.Gate;
-import net.bluecow.robot.resource.SystemResourceLoader;
 import net.bluecow.robot.sprite.Sprite;
 import net.bluecow.robot.sprite.SpriteFileFilter;
 import net.bluecow.robot.sprite.SpriteManager;
@@ -274,21 +273,32 @@ public class EditorMain {
     
     private Action playLevelAction = new AbstractAction("Play Test") {
         public void actionPerformed(ActionEvent e) {
-            final LevelConfig level = (LevelConfig) levelChooser.getSelectedItem();
+            
+            LevelConfig realLevel = (LevelConfig) levelChooser.getSelectedItem();
+            if (realLevel == null) {
+                JOptionPane.showMessageDialog(frame, "Can't play test: No level selected.", "Error", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+            
+            final LevelConfig level = new LevelConfig(realLevel);
             final JFrame playtestFrame = new JFrame("Playtest");
             final Playfield playfield = new Playfield(project.getGameConfig(), level);
             final List<Window> windowsToDispose = new ArrayList<Window>();
+            final SoundManager soundManager = new SoundManager(project.getResourceManager());
             
+            // This makes the reset feature of GameStateHandler work properly.
             level.snapshotState();
-            SoundManager fakeSoundManager = new SoundManager(new SystemResourceLoader());   // FIXME need a real sound manager in the level editor
+            
             windowsToDispose.add(playtestFrame);
 
-            GameLoop gameLoop = new GameLoop(level.getRobots(), level, playfield);
+            List<Robot> robots = level.getRobots();
+            
+            GameLoop gameLoop = new GameLoop(robots, level, playfield);
             Map<Robot, CircuitEditor> editors = new HashMap<Robot, CircuitEditor>();
-            for (Robot r : level.getRobots()) {
+            for (Robot r : robots) {
                 CircuitEditor ce = new CircuitEditor(
                         r.getCircuit(),
-                        fakeSoundManager);
+                        soundManager);
                 editors.put(r, ce);
                 JDialog d = new JDialog(playtestFrame, "Circuit for "+r.getLabel());
                 d.add(ce);
@@ -297,7 +307,7 @@ public class EditorMain {
                 windowsToDispose.add(d);
             }
 
-            final GameStateHandler gsh = new GameStateHandler(gameLoop, fakeSoundManager, editors);
+            final GameStateHandler gsh = new GameStateHandler(gameLoop, soundManager, editors);
             JButton quitPlaytestButton = new JButton("Quit Playtest");
 
             JPanel tb = new JPanel(new FlowLayout());
@@ -490,8 +500,9 @@ public class EditorMain {
         int choice = fc.showOpenDialog(null);
         if (choice == JFileChooser.APPROVE_OPTION) {
             File f = fc.getSelectedFile();
+            Project proj = null;
             try {
-                Project proj = Project.load(f);
+                proj = Project.load(f);
                 RobotUtils.updateRecentFiles(recentProjects, fc.getSelectedFile());
                 recentProjects.put("autoLoadOk", "true");
                 return proj;
@@ -512,6 +523,11 @@ public class EditorMain {
                            +ex.getMessage()+"\n\n"
                            +"A stack trace is available on the Java Console.",
                         "Load Error", JOptionPane.ERROR_MESSAGE, null);
+            }
+            
+            // load failed, but we still have to ensure proper cleanup!
+            if (proj != null) {
+                proj.close();
             }
         }
 
@@ -1423,6 +1439,9 @@ public class EditorMain {
     public void confirmExit() {
         int choice = JOptionPane.showConfirmDialog(frame, "Do you really want to quit?", "Quit the level editor", JOptionPane.YES_NO_OPTION);
         if (choice == JOptionPane.YES_OPTION) {
+            if (project != null) {
+                project.close();
+            }
             System.exit(0);
         }
     }
@@ -1464,6 +1483,7 @@ public class EditorMain {
                 new String[] {"Close", "Keep Working"}, "Close");
         if (choice != 0) return false;
         
+        project.close();
         frame.dispose();
         recentProjects.put("autoLoadOk", "false");
         return true;
@@ -1791,8 +1811,9 @@ public class EditorMain {
                     "\nthen load that into this version of the editor and" +
                     "\nyou'll be good to go!");
         } else {
+            Project project = null;
             try {
-                Project project = Project.load(mostRecentProjectLocation);
+                project = Project.load(mostRecentProjectLocation);
                 new EditorMain(project);
                 return true;
             } catch (Exception ex) {
@@ -1800,6 +1821,11 @@ public class EditorMain {
                 System.err.println("  Exception while opening most recent project from '"+
                         mostRecentProjectLocation.getPath()+"'. Giving up.");
                 ex.printStackTrace();
+                
+                // clean up even if creating editor failed
+                if (project != null) {
+                    project.close();
+                }
             }
         }
         return false;

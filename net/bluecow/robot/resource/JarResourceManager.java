@@ -202,13 +202,19 @@ public class JarResourceManager extends AbstractResourceLoader implements Resour
         if (closed) throw new IOException("This resource manager is closed");
     }
     
+    /**
+     * Deletes the given directory and all of its contents, including
+     * any nested directories.
+     */
     private static void recursiveRmdir(File dir) {
         for (File f : dir.listFiles()) {
             if (f.isDirectory()) {
                 recursiveRmdir(f);
+            } else {
+                f.delete();
             }
-            f.delete();
         }
+        dir.delete();
     }
     
     /**
