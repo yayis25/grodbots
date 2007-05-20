@@ -54,6 +54,26 @@ import net.bluecow.robot.resource.ZipFileResourceLoader;
 
 public class Main {
 
+    /**
+     * Controls whether or not the debugging features of this class are enabled.
+     */
+    private static final boolean debugOn = true;
+    
+    /**
+     * Prints the given printf-formatted message, followed by a newline,
+     * to the console if debugOn == true.
+     */
+    private void debugf(String fmt, Object ... args) {
+        if (debugOn) debug(String.format(fmt, args));
+    }
+
+    /**
+     * Prints the given string followed by a newline to the console if debugOn==true.
+     */
+    private void debug(String msg) {
+        if (debugOn) System.out.println(msg);
+    }
+
     private class SaveCircuitAction extends AbstractAction {
         
         private Collection<Robot> robots;
@@ -431,9 +451,25 @@ public class Main {
     }
 
     void setLevel(int newLevelNum) {
-        if (gameStateHandler != null) {
-            gameStateHandler.setState(GameState.RESET);
+
+        debugf("Change level %d -> %d", levelNumber, newLevelNum);
+
+        // We have to reset the game state to start with, in case the
+        // current level is still running right now.  However, the reset
+        // also puts the level's score back to 0.  Since total score
+        // is calculated as the sum of the level scores, we need to preserve
+        // the level score as it was at the time we left each level.
+        // Hence, the following:
+
+        {
+            LevelConfig oldLevel = config.getLevels().get(levelNumber);
+            oldLevel.lockInScore();
+
+            if (gameStateHandler != null) {
+                gameStateHandler.setState(GameState.RESET);
+            }
         }
+        
         for (Window w : windowsToClose) {
             w.dispose();
         }
@@ -441,10 +477,7 @@ public class Main {
         levelNumber = newLevelNum;
         final LevelConfig level = config.getLevels().get(newLevelNum);
         level.resetState();
-//        if (playfield != null) {
-//            // this is necessary because the playfield cleans up after itself when removed
-//            playfield.getParent().remove(playfield);
-//        }
+
         playfield = new Playfield(config, level);
         playfield.setLabellingOn(true);
         Map<Robot,CircuitEditor> robots = new LinkedHashMap<Robot,CircuitEditor>();
@@ -477,7 +510,7 @@ public class Main {
         gameStateHandler.getNextLevelButton().addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 if (levelNumber+1 < config.getLevels().size()) {
-                    setLevel(++levelNumber);
+                    setLevel(levelNumber + 1);
                 } else {
                     JOptionPane.showMessageDialog(playfield, "There are no more levels.", "A message for you", JOptionPane.INFORMATION_MESSAGE);
                     JOptionPane.showConfirmDialog(playfield, "What, were you expecting some fanfare?", "Inquiry", JOptionPane.YES_NO_OPTION);

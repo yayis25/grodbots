@@ -32,20 +32,23 @@ public class LevelConfig {
     /**
      * Controls whether or not the debugging features of this class are enabled.
      */
-    private static final boolean debugOn = false;
+    private static final boolean debugOn = true;
     
     /**
-     * Prints the given printf-formatted message to the console if debugOn==true.
+     * Prints the given printf-formatted message, followed by a newline,
+     * to the console if debugOn == true.
      */
-    private static void debugf(String fmt, Object ... args) {
-        if (debugOn) System.out.printf(fmt, args);
+    private void debugf(String fmt, Object ... args) {
+        if (debugOn) debug(String.format(fmt, args));
     }
 
     /**
      * Prints the given string followed by a newline to the console if debugOn==true.
      */
-    private static void debug(String msg) {
-        if (debugOn) System.out.println(msg);
+    private void debug(String msg) {
+        if (debugOn) System.out.println(
+                String.format("LevelConfig %x \"%s\": %s",
+                        System.identityHashCode(this), getName(), msg));
     }
 
     /**
@@ -288,7 +291,17 @@ public class LevelConfig {
 
     private Square[][] map = new Square[0][0];
     private Interpreter bsh;
+    
+    /**
+     * The current score for this level.  See also {@link #getEffectiveScore()}.
+     */
     private int score;
+
+    /**
+     * The current locked-in score value for this level.  If there is not
+     * currently a score locked in, the value will be null.
+     */
+    private Integer lockedInScore;
     
     /**
      * Provides property change event services.
@@ -322,7 +335,7 @@ public class LevelConfig {
     
     private void initInterpreter() throws EvalError {
         bsh = new Interpreter();
-        debugf("Created new BSH interpreter 0x%x (namespace 0x%x, level 0x%x)\n", System.identityHashCode(bsh), System.identityHashCode(bsh.getNameSpace()), System.identityHashCode(LevelConfig.this));
+        debugf("Created new BSH interpreter 0x%x (namespace 0x%x, level 0x%x)", System.identityHashCode(bsh), System.identityHashCode(bsh.getNameSpace()), System.identityHashCode(LevelConfig.this));
         bsh.set("level", this);
     }
     
@@ -519,38 +532,61 @@ public class LevelConfig {
     public Square[][] getMap() {
         return map;
     }
-    
+
     /**
-     * Increases the score by the given amount.
-     * 
-     * <p>Causes a property change event for the property "score".
-     * 
-     * @param amount The amount to add to the score.  If this value is
-     * negative, the score will decrease by that amount.
-     */
-    public void increaseScore(int amount) {
-        setScore(score + amount);
-    }
-    
-    /**
-     * Sets the score for this level to the given value.
+     * Sets the current score for this level to the given value.
+     * This always changes the current score, regardless of whether or
+     * not there is presently a locked-in score value for this level.
      * 
      * <p>Causes a property change event for the property "score".
      */
     public void setScore(int newScore) {
         int oldScore = score;
         this.score = newScore;
+        debugf("score change %d -> %d", oldScore, newScore);
         pcs.firePropertyChange("score", oldScore, newScore);
     }
     
     /**
      * Returns the score for this level.
+     * This always reports the current score, regardless of whether or
+     * not there is presently a locked-in score value for this level.
+     * See also {@link #getEffectiveScore()}.
      * 
      * <p>This is a bound property.  You will get a property change event when
      * its value changes.
      */
     public int getScore() {
         return score;
+    }
+    
+    /**
+     * Locks in the current score of this level, so the effective score
+     * will no longer track changes to the current score.
+     */
+    public void lockInScore() {
+        lockedInScore = getScore();
+        debugf("Locking in effective score %d", lockedInScore);
+    }
+    
+    /**
+     * Cancels this level's locked-in score, so the effective score
+     * will track the current score.
+     */
+    public void unLockInScore() {
+        lockedInScore = null;
+    }
+    
+    /**
+     * Returns the effective score for this level: If there is a locked-in score,
+     * it will take precedence; otherwise the current score is returned.
+     */
+    public int getEffectiveScore() {
+        if (lockedInScore != null) {
+            return lockedInScore;
+        } else {
+            return score;
+        }
     }
     
     /**
@@ -638,4 +674,5 @@ public class LevelConfig {
     public Interpreter getBshInterpreter() {
         return bsh;
     }
+
 }
