@@ -188,7 +188,7 @@ public class GameConfig {
     public int getScore() {
         int score = 0;
         for (LevelConfig lc : levels) {
-            score += lc.getScore();
+            score += lc.getEffectiveScore();
         }
         return score;
     }
