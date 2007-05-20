@@ -10,6 +10,15 @@ import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.Point;
 
+/**
+ * The PointsEarnedEffect gives a slowly-rising-text visual effect.  The message
+ * (often a number, representing bonus points just earned by the player) slowly
+ * rises from its initial position, also fading from opaque to transparent as it
+ * rises.
+ *
+ * @author fuerth
+ * @version $Id$
+ */
 public class PointsEarnedEffect extends AbstractEffect {
 
     /**
@@ -18,7 +27,7 @@ public class PointsEarnedEffect extends AbstractEffect {
     private String message;
     
     /**
-     * The time-to-live for this effect, in frames.  Defaults to 12.
+     * The time-to-live for this effect, in frames.  Defaults to 15.
      */
     private int ttl = 15;
     
