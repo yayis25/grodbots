@@ -12,7 +12,27 @@ import java.awt.Rectangle;
  */
 public abstract class AbstractGate implements Gate {
 
-	/**
+    /**
+     * Controls whether or not the debugging features of this class are enabled.
+     */
+    private static final boolean debugOn = false;
+    
+    /**
+     * Prints the given printf-formatted message, followed by a newline,
+     * to the console if debugOn == true.
+     */
+    private void debugf(String fmt, Object ... args) {
+        if (debugOn) debug(String.format(fmt, args));
+    }
+
+    /**
+     * Prints the given string followed by a newline to the console if debugOn==true.
+     */
+    private void debug(String msg) {
+        if (debugOn) System.out.println(msg);
+    }
+    
+    /**
 	 * The label text for this gate.
 	 */
 	private String label;
@@ -304,8 +324,15 @@ public abstract class AbstractGate implements Gate {
         Rectangle bb = getBounds();
         x -= bb.x;
         y -= bb.y;
-        if (x < 0 || x > inputStickLength) return null;
-        else return getInputs()[y / (bb.height / ni)];
+        if (x < 0 || x > inputStickLength) {
+            return null;
+        } else {
+            int index = (int) ( (float) y / ( (float) bb.height / ni));
+            debugf("bb=[%d,%d,%d,%d] x=%d y=%d ni=%d index=%d",
+                    bb.x,bb.y,bb.width,bb.height,
+                    x,y,ni,index);
+            return getInputs()[index];
+        }
     }
     
     public boolean isOutput(int x, int y) {
