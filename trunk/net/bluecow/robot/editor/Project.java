@@ -10,6 +10,7 @@ import java.awt.geom.Point2D;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
@@ -107,12 +108,10 @@ public class Project {
                     "File "+file.getAbsolutePath()+" already exists.");
         }
 
-        // now populate with the default resource collection
-        ResourceManager defaultResources = 
-            new JarResourceManager(Project.class.getClassLoader(),
-                                   "net/bluecow/robot/default_resources.jar");
-        
-        defaultResources.close();
+        // now copy the default project to the user's selected location
+        // then load it like a regular project
+        InputStream in = Project.class.getClassLoader().getResourceAsStream("net/bluecow/robot/default_resources.jar");
+        ResourceUtils.copyToFile(in, file);
         
         Project proj = load(file);
         
