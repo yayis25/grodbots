@@ -8,7 +8,6 @@ Game Features:
  -explain the gates better in tutorial level descriptions (use pictures)
  -explain grod spinning wildly on conflicting inputs
  -something special for having completed every level (totals?)
- -ensure the overall score doesn't reset when going to the next level
 -Level editor
  -make a file filter for project files, and check that saved projects match it
  -allow "reposition using mouse" for robots and switches
@@ -63,6 +62,9 @@ Sounds:
 -little ditties for the beginning of each level (maybe this would be better suited to the MIDI sequencer api)
 
 Completed:
+-ensure the overall score doesn't reset when going to the next level
+-ED: Fixed refactoring fallout bug that made it impossible to create a new project
+-Fixed integer rounding error that caused IOOBE in AbstractGate.getInputAt()
 -ED: delete the JarResourceManager temp files on exit (uses lifecycle event)
 -Created project lifecycle event infrastructure (it can generalize to anything, but it's only being used for projects right now)
 -ED: fix the problem where gates used in the playtest circuit are permanently deducted from the robot's gate allowance!
