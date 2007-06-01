@@ -1,8 +1,8 @@
-<project name="RockyRobot" default="run">
+<project name="grodbots" default="run">
 
 	<description>A robot logic strategy game. Fun for the whole family!</description>
 
-	<property name="src" location="net" />
+	<property name="src" location="src" />
 	<property name="build" location="build" />
 	<property name="dist" location="dist" />
 
@@ -36,6 +36,11 @@
 	<target name="jar" depends="compile,copyresources,default_resoruces_jar">
 		<unjar src="lib/bsh.jar" dest="build"/>
 		<jar destfile="robot.jar" basedir="build" manifest="robot_jar_manifest" />
+		
+		<!-- Note: Ant 1.7 issues a warning about this jar task, claiming it's going
+		     to skip creating the file because it has no contents.  Despite the
+		     warning, the jar file is created.  Thought you'd want to know.
+		  -->
 		<jar destfile="robot_editor.jar" manifest="editor_jar_manifest" />
 	</target>
 
