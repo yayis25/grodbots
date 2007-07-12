@@ -841,6 +841,10 @@ public class EditorMain {
         gbc.fill = GridBagConstraints.HORIZONTAL;
         cp.add(yPosition, gbc);
 
+        gbc.fill = GridBagConstraints.NONE;
+        gbc.anchor = GridBagConstraints.LINE_END;
+        cp.add(new JLabel("You can also reposition a robot by dragging it"), gbc);
+        
         gbc.weightx = 0.0;
         gbc.gridwidth = 1;
         gbc.fill = GridBagConstraints.NONE;
@@ -1083,6 +1087,10 @@ public class EditorMain {
         gbc.weightx = 0.5;
         gbc.fill = GridBagConstraints.HORIZONTAL;
         cp.add(yPosition, gbc);
+
+        gbc.fill = GridBagConstraints.NONE;
+        gbc.anchor = GridBagConstraints.LINE_END;
+        cp.add(new JLabel("You can also reposition a switch by dragging it"), gbc);
 
         gbc.weightx = 0.0;
         gbc.gridwidth = 1;

@@ -337,12 +337,12 @@ public class Playfield extends JPanel {
             }
             
             Sprite sprite = robot.getSprite();
-            Point2D.Float roboPos = robot.getPosition();
+            Point2D roboPos = robot.getPosition();
             AffineTransform backupXform = g2.getTransform();
 
             g2.translate(
-                    (squareWidth * roboPos.x) - (sprite.getWidth() / 2.0),
-                    (squareWidth * roboPos.y) - (sprite.getHeight() / 2.0));
+                    (squareWidth * roboPos.getX()) - (sprite.getWidth() / 2.0),
+                    (squareWidth * roboPos.getY()) - (sprite.getHeight() / 2.0));
             
             AffineTransform iconXform = new AffineTransform();
             iconXform.rotate(robot.getIconHeading(), sprite.getWidth()/2.0, sprite.getHeight()/2.0);
@@ -514,11 +514,11 @@ public class Playfield extends JPanel {
      * a map location.  For example, the point (x,y) = (3.5, 2.5) is at the screen
      * position (3.5*squareWidth, 2.5*squareWidth).
      */
-    private void drawLabel(Graphics2D g2, FontMetrics fm, Labelable labelable, Point2D.Float position) {
+    private void drawLabel(Graphics2D g2, FontMetrics fm, Labelable labelable, Point2D position) {
         String label = labelable.getLabel();
         if (label == null) return;
-        int x = (int) (position.x * squareWidth);
-        int y = (int) (position.y * squareWidth);
+        int x = (int) (position.getX() * squareWidth);
+        int y = (int) (position.getY() * squareWidth);
         Composite backupComposite = g2.getComposite();
         g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, labelOpacity));
         g2.setColor(boxColor);

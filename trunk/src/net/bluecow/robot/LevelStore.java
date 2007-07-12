@@ -116,8 +116,8 @@ public class LevelStore {
             for (Robot r : level.getRobots()) {
                 out.write("    <grod id=\""+r.getId()+"\" " +
                              "step-size=\""+r.getStepSize()+"\" " +
-                               "start-x=\""+r.getPosition().x+"\" " +
-                               "start-y=\""+r.getPosition().y+"\" " +
+                               "start-x=\""+r.getPosition().getX()+"\" " +
+                               "start-y=\""+r.getPosition().getY()+"\" " +
                         "evals-per-step=\""+r.getEvalsPerStep()+"\" " +
                        makeLabelAttributes(r) +
                        ">\n");

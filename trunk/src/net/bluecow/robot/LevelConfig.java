@@ -508,8 +508,8 @@ public class LevelConfig {
      * @return The switch located on the given map position, or null if there are no
      * switches there.
      */
-    public Switch getSwitch(Point2D.Float position) {
-        Point point = new Point((int) position.x, (int) position.y);
+    public Switch getSwitch(Point2D position) {
+        Point point = new Point((int) position.getX(), (int) position.getY());
         for (Switch s : switches) {
             if (s.getPosition().equals(point)) {
                 return s;

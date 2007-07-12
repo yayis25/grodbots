@@ -16,7 +16,8 @@ public class AndGateTest extends TestCase {
 
     private class AlwaysOnGate implements Gate {
         public boolean getOutputState() { return true; }
-
+        public boolean isOutputConnectable() { return true; }
+        
         public String getLabel() {
             return "Always On";
         }

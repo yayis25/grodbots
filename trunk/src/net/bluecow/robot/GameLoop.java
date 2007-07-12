@@ -168,7 +168,7 @@ public class GameLoop implements Runnable {
                     robot.getCircuit().evaluateOnce();
                 }
                 
-                Point2D.Float oldPos = robot.getPosition();
+                Point2D oldPos = robot.getPosition();
                 robot.move();
                 
                 if (!isSameSquare(oldPos, robot.getPosition())) {
@@ -215,9 +215,9 @@ public class GameLoop implements Runnable {
         }
     }
     
-    private static boolean isSameSquare(Point2D.Float p1, Point2D.Float p2) {
-        return (Math.floor(p1.x) == Math.floor(p2.x)) &&
-               (Math.floor(p1.y) == Math.floor(p2.y));
+    private static boolean isSameSquare(Point2D p1, Point2D p2) {
+        return (Math.floor(p1.getX()) == Math.floor(p2.getX())) &&
+               (Math.floor(p1.getY()) == Math.floor(p2.getY()));
     }
     
     /**
