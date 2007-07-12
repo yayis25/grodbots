@@ -8,6 +8,7 @@ package net.bluecow.robot.editor;
 import java.awt.AlphaComposite;
 import java.awt.BasicStroke;
 import java.awt.Color;
+import java.awt.Cursor;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Point;
@@ -19,8 +20,32 @@ import java.awt.geom.Point2D;
 import net.bluecow.robot.GameConfig;
 import net.bluecow.robot.LevelConfig;
 import net.bluecow.robot.Playfield;
+import net.bluecow.robot.Robot;
 import net.bluecow.robot.GameConfig.SquareConfig;
+import net.bluecow.robot.LevelConfig.Switch;
+import net.bluecow.robot.sprite.Sprite;
 
+/**
+ * The Level Editor for GrodBots.  This is an extended version of the Playfield
+ * class, which is used while playing the game.  This extended version provides
+ * several modes of reacting to mouse input:
+ * 
+ * <ul>
+ * 
+ * <li><b>Painting:</b> This is the default state.  Mouse click and drag gestures
+ * will set the square type for the square under the mouse pointer.  To set which
+ * square type the editor paints with, see {@link #setPaintingSquareType(SquareConfig)}.
+ * 
+ * <li><b>Repositioning:</b> This is a temporary state in which a sprite tracks the
+ * mouse pointer until the mouse button is clicked.  After the click, the editor
+ * transitions back to the default (painting) state.  To enter the repositioning state,
+ * use {@link #repositionSprite(Sprite)}.
+ * 
+ * </ul>
+ *
+ * @author fuerth
+ * @version $Id:$
+ */
 public class LevelEditor extends Playfield {
 
     /**
@@ -28,6 +53,15 @@ public class LevelEditor extends Playfield {
      */
     private SquareConfig paintingSquare = null;
     
+    /**
+     * The object that is currently being repositioned by this editor.
+     * In order for this sprite to actually track the mouse pointer's position,
+     * the editor's state must be set to POSITIONING.
+     * <p>
+     * TODO turn this into a Sprite once Sprite supports (set|get)Position
+     */
+    private Object repositioningSprite;
+
     /**
      * The exact location of the pointer in square coordinates.  Useful for placing objects
      * such as robots, which don't occupy one specific square location.
@@ -41,6 +75,31 @@ public class LevelEditor extends Playfield {
      */
     private Point paintingLocation = null;
     
+    /**
+     * The set of states this editor can be in for handling mouse input.
+     */
+    private enum State {
+        /**
+         * The default state. From this state, it is possible to paint squares
+         * by pressing or dragging the mouse pointer.
+         */
+        DEFAULT,
+        
+        /**
+         * The state we're in when we're positioning some sprite (i.e. a robot
+         * or a switch).  From this state, clicking the mouse will anchor the
+         * object we're positioning, and then the state will transition back
+         * to DEFAULT.
+         */
+        POSITIONING
+    }
+    
+    /**
+     * The current state of this editor.  The state affects how the editor reacts
+     * to mouse events.
+     */
+    private State state = State.DEFAULT;
+    
     private MouseAdapter mouseAdapter = new MouseAdapter() {
         @Override
         public void mouseExited(MouseEvent e) {
@@ -50,9 +109,27 @@ public class LevelEditor extends Playfield {
         @Override
         public void mousePressed(MouseEvent e) {
             updatePaintingLocation(e.getPoint());
-            changeSquareType(paintingLocation, paintingSquare);
+            if (state == State.DEFAULT) {
+                // TODO make this a Sprite when Sprites support positioning
+                Object movableItem = getSpriteAt(paintingLocationDouble);
+                if (movableItem != null) {
+                    repositionSprite(movableItem);
+                    // state is now POSITIONING
+                } else {
+                    changeSquareType(paintingLocation, paintingSquare);
+                }
+            }
         }
 
+        @Override
+        public void mouseReleased(MouseEvent e) {
+            updatePaintingLocation(e.getPoint());
+            if (state == State.POSITIONING) {
+                repositioningSprite = null;
+                state = State.DEFAULT;
+                setCursor(null);
+            }
+        }
     };
 
     private MouseMotionAdapter mouseMotionAdapter = new MouseMotionAdapter() {
@@ -64,7 +141,11 @@ public class LevelEditor extends Playfield {
         @Override
         public void mouseDragged(MouseEvent e) {
             updatePaintingLocation(e.getPoint());
-            changeSquareType(paintingLocation, paintingSquare);
+            if (state == State.DEFAULT) {
+                changeSquareType(paintingLocation, paintingSquare);
+            } else if (state == State.POSITIONING) {
+                repositionFloatingSprite(paintingLocationDouble);
+            }
         }
     };
     
@@ -85,6 +166,38 @@ public class LevelEditor extends Playfield {
         }
     }
 
+    /**
+     * Causes this level editor to switch from its default behaviour (of allowing
+     * painting) to a different behaviour in which the given sprite tracks the
+     * mouse pointer until the mouse button is clicked (at which point the
+     * sprite remains at its present location and this editor switches back
+     * to the default behaviour).
+     * <p>
+     * TODO change arg to Sprite once Sprite supports repositioning
+     * 
+     * @param s The sprite to reposition
+     */
+    private void repositionSprite(Object s) {
+        repositioningSprite = s;
+        state = State.POSITIONING;
+        setCursor(Cursor.getPredefinedCursor(Cursor.MOVE_CURSOR));
+    }
+
+    private void repositionFloatingSprite(Point2D p) {
+        // TODO when Sprite interface gets position information, this can be much simplified.
+        if (repositioningSprite instanceof LevelConfig.Switch) {
+            ((LevelConfig.Switch) repositioningSprite).setPosition((int) p.getX(), (int) p.getY());
+        } else if (repositioningSprite instanceof Robot) {
+            ((Robot) repositioningSprite).setPosition(p);
+        }
+    }
+    
+    /**
+     * Tells this editor that subsequent painting operations should use the
+     * given square type.
+     * 
+     * @param sc The square type to paint with
+     */
     public void setPaintingSquareType(SquareConfig sc) {
         paintingSquare = sc;
     }
@@ -126,5 +239,33 @@ public class LevelEditor extends Playfield {
             paintingLocationDouble = new Point2D.Double(x / squareWidth, y / squareWidth);
             paintingLocation = new Point((int) (x / squareWidth), (int) (y / squareWidth));
         }
+    }
+    
+    /**
+     * Returns a sprite on this playfield whose is position is
+     * within 1/2 a square of the given point.
+     * 
+     * @param p The point, in playfield squares (not screen pixels)
+     * @return An object near the given point, or null if there are no
+     * objects near it.  If there are multiple objects near the given point,
+     * the one which paints "on top" will be returned.
+     */
+    private Object getSpriteAt(Point2D p) {
+        // TODO just iterate through the sprites of this playfield once Sprites support positioning
+        for (Robot r : getLevel().getRobots()) {
+            Point2D p1 = r.getPosition();
+            double distance = Math.sqrt(Math.pow(p1.getX() - p.getX(), 2.0) + Math.pow(p1.getY() - p.getY(), 2.0));
+            if (distance <= 0.5) {
+                return r;
+            }
+        }
+        for (Switch s : getLevel().getSwitches()) {
+            Point2D p1 = s.getPosition();
+            if (Math.floor(p1.getX()) == Math.floor(p.getX()) &&
+                Math.floor(p1.getY()) == Math.floor(p.getY())) {
+                return s;
+            }
+        }
+        return null;
     }
 }

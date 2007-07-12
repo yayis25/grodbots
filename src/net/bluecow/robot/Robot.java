@@ -437,6 +437,20 @@ public class Robot implements Labelable {
 	        this.inputs = inputs;
 	    }
 
+        /**
+         * Returns false because this gate doesn't appear to have an output,
+         * (and conceptually, it shouldn't have one at all), but it would be
+         * possible to accidentally connect something to this gate's output.
+         * Making such a connection is confusing.  If you haven't guessed yet,
+         * this has happened to a few people, and they got confused. :)
+         * 
+         * @return false.
+         */
+        @Override
+        public boolean isOutputConnectable() {
+            return false;
+        }
+        
 	    public Input[] getInputs() {
 	        return inputs;
 	    }
@@ -561,7 +575,7 @@ public class Robot implements Labelable {
     /**
      * Returns a copy of this robot's current position.
      */
-    public Point2D.Float getPosition() {
+    public Point2D getPosition() {
         return new Point2D.Float(position.x, position.y);
     }
     

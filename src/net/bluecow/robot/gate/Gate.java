@@ -22,6 +22,13 @@ public interface Gate {
     public String getLabel();
     
     /**
+     * Returns true if the output on this gate is allowed to be connected to another
+     * gate's input; false otherwise.  This flag is amost always true; see the
+     * {@link net.bluecow.robot.Robot.RobotInputsGate} for an example of why you might want to set it false.
+     */
+    public boolean isOutputConnectable();
+    
+    /**
      * Returns the current output state of this gate.
      */
     public boolean getOutputState();

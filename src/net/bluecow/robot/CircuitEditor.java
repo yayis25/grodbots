@@ -813,7 +813,8 @@ public class CircuitEditor extends JPanel {
             if (circuit.isLocked()) return;
 		    Point p = e.getPoint();
 		    if (mode == MODE_CONNECTING_FROM_INPUT) {
-		        pendingConnectionLine = pendingConnectionLine.moveCursor(p, circuit.getGateAt(p) != null);
+		        pendingConnectionLine = pendingConnectionLine.moveCursor(p,
+                        circuit.getGateAt(p) != null && circuit.getGateAt(p).isOutputConnectable());
 		        repaint();
 		    } else if (mode == MODE_CONNECTING_FROM_OUTPUT) {
                 Gate g = circuit.getGateAt(p);
@@ -909,7 +910,7 @@ public class CircuitEditor extends JPanel {
                         connectionStartInput = inp;
                         playSound("start_drawing_wire");
                         loopSound("pull_wire");
-                    } else if (g.isOutput(p.x, p.y)) {
+                    } else if (g.isOutput(p.x, p.y) && g.isOutputConnectable()) {
                         mode = MODE_CONNECTING_FROM_OUTPUT;
                         pendingConnectionLine = new ConnectionLine(g.getOutputPosition(), p, false);
                         connectionStartOutput = g;
@@ -935,7 +936,7 @@ public class CircuitEditor extends JPanel {
                 showPopup(e.getPoint());
             } else if (mode == MODE_CONNECTING_FROM_INPUT) {
                 Gate g = circuit.getGateAt(p);
-                if (g != null) {
+                if (g != null && g.isOutputConnectable()) {
                     connectGates(g, connectionStartInput);
                     playSound("terminated_wire");
                 } else {

@@ -191,7 +191,13 @@ public abstract class AbstractGate implements Gate {
 	    return outputState;
 	}
     
-    
+    /**
+     * Returns true because this is almost always the only reasonable answer.
+     */
+    public boolean isOutputConnectable() {
+        return true;
+    }
+
     // -------------- UI Crap ----------------
     
     private Rectangle bounds;
