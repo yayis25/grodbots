@@ -1,6 +1,3 @@
-Bookkeeppiinngg:
--Add BSD license to all files
-
 Game Features:
 -os x integration (menus, hooks for about and exit)
 -create a set of tutorial levels for learning the game
@@ -65,6 +62,7 @@ Sounds:
 -little ditties for the beginning of each level (maybe this would be better suited to the MIDI sequencer api)
 
 Completed:
+-Bookkeeppiinngg: Add BSD license to all files
 -ED: allow "reposition using mouse" for robots and switches
 -don't allow connections from the robot inputs gate's output (which is past the RHS of the editor window)
 -ensure the overall score doesn't reset when going to the next level
