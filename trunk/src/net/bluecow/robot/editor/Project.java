@@ -166,6 +166,7 @@ public class Project {
         Project proj = new Project();
         proj.gameConfig = LevelStore.loadLevels(resources);
         proj.fileLocation = jar;
+        ResourceUtils.initResourceURLHandler(resources);
         
         proj.addLifecycleListener(new LifecycleListener() {
             public void lifecycleEnding(LifecycleEvent evt) {

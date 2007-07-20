@@ -80,6 +80,7 @@ import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
 import net.bluecow.robot.resource.ResourceLoader;
+import net.bluecow.robot.resource.ResourceUtils;
 import net.bluecow.robot.resource.SystemResourceLoader;
 import net.bluecow.robot.resource.ZipFileResourceLoader;
 
@@ -474,11 +475,12 @@ public class Main {
      * Reads in a new game config, replacing the currently-loaded one with
      * the one in the given ResourceLoader.
      * 
-     * @param builtInResourceLoader
+     * @param resourceLoader
      * @throws IOException
      */
-    private void loadGameConfig(ResourceLoader builtInResourceLoader) throws IOException {
-        config = LevelStore.loadLevels(builtInResourceLoader);
+    private void loadGameConfig(ResourceLoader resourceLoader) throws IOException {
+        config = LevelStore.loadLevels(resourceLoader);
+        ResourceUtils.initResourceURLHandler(resourceLoader);
     }
 
     void setLevel(int newLevelNum) {

@@ -43,11 +43,14 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.URL;
 import java.util.List;
 import java.util.jar.JarEntry;
 import java.util.jar.JarOutputStream;
 
 import net.bluecow.robot.RobotUtils;
+import net.bluecow.robot.resource.url.ResourceURLStreamHandler;
+import net.bluecow.robot.resource.url.ResourceURLStreamHandlerFactory;
 
 /**
  * A collection of utility methods that operate on resource loaders
@@ -69,6 +72,8 @@ public class ResourceUtils {
         if (debugOn) System.out.println(msg);
     }
     
+    private static ResourceURLStreamHandler resourceURLStreamHandler;
+    
     /**
      * This class is not instantiable.
      */
@@ -76,6 +81,30 @@ public class ResourceUtils {
         // there will be no instances of this class
     }
     
+    /**
+     * Initializes the systemwide URL resolution system to recognize the
+     * URL protocol "resource:" and provide URL content via the given
+     * ResourceLoader instance.
+     * <p>
+     * Due to rules in Java's URL API, this method will only succeed if
+     * nothing has yet tried to call URL.setURLStreamHandlerFactory().
+     * Also, unfortunately, this has to be done in a static manner, so
+     * it is not directly possible to provide multiple namespaces for
+     * resource loader URL resolution.  If this becomes a problem, one
+     * way to solve it would be to associate each resource loader instance
+     * with a unique String value, then use the hostname part of the URL
+     * (it's currently not in use) to specify which resource loader to use.
+     */
+    public static void initResourceURLHandler(ResourceLoader loader) {
+        if (resourceURLStreamHandler == null) {
+            resourceURLStreamHandler = new ResourceURLStreamHandler(loader);
+            ResourceURLStreamHandlerFactory factory =
+                new ResourceURLStreamHandlerFactory("resource", resourceURLStreamHandler);
+            URL.setURLStreamHandlerFactory(factory);
+        } else {
+            resourceURLStreamHandler.setResourceLoader(loader);
+        }
+    }
     /**
      * Packs all resources in the given resource manager into a JAR file.
      * 
