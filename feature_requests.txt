@@ -1,16 +1,19 @@
 Game Features:
+-Debug menu for testing levels in the real game (not in the editor)
 -os x integration (menus, hooks for about and exit)
 -create a set of tutorial levels for learning the game
 -Make real game UI:
  -preinit the bsh interpreters so there's not a lag during gameplay
+ -explain that unterminated inputs are always off
+ -explain that there's an invisible global clock and everything takes one tick
  -explain keyboard shortcuts in tutorial level (DEL, new gates, etc)
- -it should be possible to include inline images (sourced from the level pack resources) in level descriptions
  -explain the gates better in tutorial level descriptions (use pictures)
- -explain grod spinning wildly on conflicting inputs
  -something special for having completed every level (totals?)
 -Level editor
  -make a file filter for project files, and check that saved projects match it
  ----release----
+ -bonus points for left-over gates
+ -Create a hint system where you can buy hints for points (if you have enough)
  -Move position information from Switch and Robot into Sprite, then make the obviouis fixes in LevelEditor
  -init sound manager with a gameconfig argument, and add sound configuration to the game file
  -save the "playtest" circuits with the project, but not with the exported level packs
@@ -28,7 +31,6 @@ Game Features:
  -ED: use this to remember the circuit associated with each level, and save with project
       (will need a check that the restored circuit hasn't gone over gate limits)
 -make an effects API for switch scripts: int getNumFrames() and void doFrame(int).
--bonus points for left-over gates
 -Batteries
 -Radio Communication between robots
 -init sound manager sound set from config file
@@ -62,6 +64,8 @@ Sounds:
 -little ditties for the beginning of each level (maybe this would be better suited to the MIDI sequencer api)
 
 Completed:
+-it is now possible to include inline images (sourced from the level pack resources) in level descriptions
+-explain grod spinning wildly on conflicting inputs (this was done a while ago)
 -Bookkeeppiinngg: Add BSD license to all files
 -ED: allow "reposition using mouse" for robots and switches
 -don't allow connections from the robot inputs gate's output (which is past the RHS of the editor window)
