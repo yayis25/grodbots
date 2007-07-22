@@ -243,7 +243,7 @@ public abstract class AbstractGate implements Gate {
      * The colour of a normal (not highlighted and inactive) gate.
      * FIXME: this is also defined in CircuitEditor!
      */
-    private Color normalColor = Color.BLACK;
+    private Color normalColor = Color.WHITE;
     
     /**
      * The colour of a highlighted gate.

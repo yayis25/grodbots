@@ -147,6 +147,7 @@ public class CircuitEditor extends JPanel {
             gate.setOutputStickLength((int) (startOutputStickLength + progress * (endOutputStickLength - startOutputStickLength)));
             
             Graphics2D g2 = (Graphics2D) getGraphics();
+            g2.setColor(gate.getNormalColor());
             g2.translate(r.x, r.y);
             gate.drawBody(g2);
             g2.translate(-r.x, -r.y);
@@ -187,6 +188,8 @@ public class CircuitEditor extends JPanel {
          * of gate in the circuit's gate allowance set.
          */
         Toolbox() {
+            setBackground(CircuitEditor.this.getBackground());
+            setForeground(CircuitEditor.this.getForeground());
             gates = new ArrayList<Gate>(circuit.getGateAllowances().size());
             for (Map.Entry<Class<? extends Gate>, Integer> allowance : circuit.getGateAllowances().entrySet()) {
                 try {
@@ -259,13 +262,12 @@ public class CircuitEditor extends JPanel {
         public void paint(Graphics2D g2) {
             // XXX: painting probably doesn't work properly unless the toolbox is at 0,0.
             
-            g2.setColor(new Color(0.1f, 0.1f, 0.1f));
+            g2.setColor(getForeground());
             Composite backupComposite = g2.getComposite();
-            g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.1f));
+            g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.15f));
             g2.fillRoundRect(bounds.x, bounds.y, bounds.width, bounds.height, 10, 10);
             g2.setComposite(backupComposite);
 
-            g2.setColor(getForeground());
             //g2.draw(bounds);
             final FontMetrics fm = g2.getFontMetrics();
             for (Gate miniGate : getGates()) {
@@ -657,6 +659,8 @@ public class CircuitEditor extends JPanel {
 	    this.circuit = circuit;
 	    this.sm = sm;
 	    setPreferredSize(new Dimension(400, 400));
+        setBackground(Color.BLACK);
+        setForeground(Color.WHITE);
 	    mouseListener = new MouseInput();
 	    setupActions();
         toolbox = new Toolbox();

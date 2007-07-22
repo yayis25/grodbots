@@ -1,8 +1,8 @@
 Game Features:
--Debug menu for testing levels in the real game (not in the editor)
 -os x integration (menus, hooks for about and exit)
 -create a set of tutorial levels for learning the game
 -Make real game UI:
+ -be able to page through the HTML in the level intro (there's too much to say!)
  -preinit the bsh interpreters so there's not a lag during gameplay
  -explain that unterminated inputs are always off
  -explain that there's an invisible global clock and everything takes one tick
@@ -64,6 +64,7 @@ Sounds:
 -little ditties for the beginning of each level (maybe this would be better suited to the MIDI sequencer api)
 
 Completed:
+-Make the circuit editors white-on-black instead of OS defaults
 -it is now possible to include inline images (sourced from the level pack resources) in level descriptions
 -explain grod spinning wildly on conflicting inputs (this was done a while ago)
 -Bookkeeppiinngg: Add BSD license to all files
