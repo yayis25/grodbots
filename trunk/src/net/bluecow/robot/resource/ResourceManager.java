@@ -167,4 +167,20 @@ public interface ResourceManager extends ResourceLoader {
      *         in their names.
      */
     List<String> list(String path, ResourceNameFilter filter);
+
+    /**
+     * Creates a new directory with the given name as a direct child of the
+     * given target directory. The target must already exist, and the new
+     * directory name may not contain the '/' (forward slash) character.
+     * If there is already a resource (be it a directory or a regular resource)
+     * with the given name, an IOException will be thrown.
+     * 
+     * @param targetDir
+     *            The existing directory that will be the parent of the new
+     *            directory. Trailing slash is optional.
+     * @param newDirName
+     *            The new directory name. No slashes allowed!
+     * @throws IOException if there is already a resource with the given path.
+     */
+    void createDirectory(String targetDir, String newDirName) throws IOException;
 }
