@@ -52,6 +52,8 @@ import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.jar.JarInputStream;
 
+import net.bluecow.robot.resource.event.ResourceManagerListener;
+
 public class JarResourceManager extends AbstractResourceLoader implements ResourceManager {
 
     /**
@@ -361,4 +363,25 @@ public class JarResourceManager extends AbstractResourceLoader implements Resour
         dir.mkdir();
         return dir;
     }
+
+    /* docs come from interface */
+    public void createDirectory(String targetDir, String newDirName) throws IOException {
+        if (newDirName.contains("/")) {
+            throw new IOException("New resource directory name not valid: it contains the / character.");
+        }
+        File parent = new File(dir, targetDir);
+        if (!parent.exists()) {
+            throw new IOException("Target resource directory \"" + targetDir + "\" does not exist.");
+        }
+        File newDir = new File(parent, newDirName);
+        if (!newDir.mkdir()) {
+            throw new IOException("Could not create resource directory \"" + newDirName + "\".");
+        }
+    }
+    
+    // ------------- Events! ----------------
+    
+    private final List<ResourceManagerListener> listeners = new ArrayList<ResourceManagerListener>();
+    
+    
 }

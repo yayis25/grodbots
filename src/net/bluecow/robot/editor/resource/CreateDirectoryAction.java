@@ -1,4 +1,6 @@
 /*
+ * Created on Jul 30, 2007
+ *
  * Copyright (c) 2007, Jonathan Fuerth
  * 
  * All rights reserved.
@@ -29,17 +31,46 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-/*
- * Created on Apr 24, 2007
+
+package net.bluecow.robot.editor.resource;
+
+import java.awt.event.ActionEvent;
+
+import javax.swing.JComponent;
+import javax.swing.JOptionPane;
+
+import net.bluecow.robot.RobotUtils;
+import net.bluecow.robot.resource.ResourceManager;
+
+/**
+ * The CreateDirectoryAction creates a new directory in the resource
+ * manager when it is invoked.  It presents several dialogs to get
+ * the location and name from the user, which sucks.  One day, I'll
+ * make a better interface that just creates the dir and lets you
+ * rename it in the tree.
  *
- * This code belongs to Jonathan Fuerth
+ * @author fuerth
+ * @version $Id:$
  */
-package net.bluecow.robot.resource;
+public class CreateDirectoryAction extends ResourceEditorAction {
 
-public interface ResourceManagerListener {
+    public CreateDirectoryAction(ResourceManager resourceManager,
+                                 JComponent owningComponent) {
+        super("New Directory...", resourceManager, owningComponent);
+    }
 
-    void resourceAdded(ResourceManager source, String path);
-    void resourceRemoved(ResourceManager source, String path);
-    void resourceChanged(ResourceManager source, String path);
+    public void actionPerformed(ActionEvent e) {
+        String targetDir = promptForTargetDir(e.getActionCommand());
+        if (targetDir == null) return;
+        
+        String newDirName = JOptionPane.showInputDialog(
+                owningComponent, "What name will the new directory have?");
+        
+        try {
+            resourceManager.createDirectory(targetDir, newDirName);
+        } catch (Exception ex) {
+            RobotUtils.showException("Couldn't create directory", ex);
+        }
+    }
 
 }

@@ -36,6 +36,7 @@
  */
 package net.bluecow.robot.editor.resource;
 
+import java.awt.HeadlessException;
 import java.awt.event.ActionEvent;
 import java.io.BufferedInputStream;
 import java.io.File;
@@ -45,7 +46,6 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.prefs.Preferences;
 
-import javax.swing.AbstractAction;
 import javax.swing.JComboBox;
 import javax.swing.JComponent;
 import javax.swing.JFileChooser;
@@ -55,33 +55,18 @@ import net.bluecow.robot.RobotUtils;
 import net.bluecow.robot.resource.ResourceManager;
 import net.bluecow.robot.resource.ResourceUtils;
 
-public class CreateResourceAction extends AbstractAction {
+public class CreateResourceAction extends ResourceEditorAction {
 
-    /**
-     * The component whos containing window will own any dialogs created by this action.
-     */
-    private final JComponent owningComponent;
-    
-    /**
-     * The resource manager that this action adds resources to.
-     */
-    private final ResourceManager resourceManager;
-    
     public CreateResourceAction(ResourceManager resourceManager, JComponent owningComponent) {
-        super("Create Resource...");
-        this.resourceManager = resourceManager;
-        this.owningComponent = owningComponent;
+        super("Create Resource...", resourceManager, owningComponent);
     }
     
     public void actionPerformed(ActionEvent e) {
         
+        
         // need to get target path for resource
-        JComboBox cb = new JComboBox(new ResourcesComboBoxModel(resourceManager, ResourceUtils.directoryOnlyFilter()));
-        int choice = JOptionPane.showOptionDialog(
-                owningComponent, cb, "Choose a target directory in the project",
-                JOptionPane.OK_CANCEL_OPTION, -1, null, null, 0);
-        if (choice != JOptionPane.OK_OPTION) return;
-        String targetdir = (String) cb.getSelectedItem();
+        String defaultTargetDir = e.getActionCommand();
+        String targetdir = promptForTargetDir(defaultTargetDir);
         
         Preferences prefs = RobotUtils.getPrefs().node("recentResourceFiles");
         String mostRecentResource = prefs.get("0", null);
@@ -94,7 +79,7 @@ public class CreateResourceAction extends AbstractAction {
             }
         }
         
-        choice = fc.showOpenDialog(owningComponent);
+        int choice = fc.showOpenDialog(owningComponent);
         if (choice != JFileChooser.APPROVE_OPTION) return;
         File inFile = fc.getSelectedFile();
         InputStream in = null;

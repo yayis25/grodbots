@@ -44,13 +44,13 @@ import java.io.IOException;
 
 import javax.swing.JFrame;
 import javax.swing.JMenuItem;
-import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
 import javax.swing.JScrollPane;
 import javax.swing.JSplitPane;
 import javax.swing.JTree;
 import javax.swing.SwingUtilities;
 import javax.swing.tree.TreeModel;
+import javax.swing.tree.TreePath;
 
 import net.bluecow.robot.resource.JarResourceManager;
 import net.bluecow.robot.resource.ResourceManager;
@@ -80,12 +80,15 @@ public class ResourceEditor {
      */
     private ResourcePreview resourcePreview;
     
-    private CreateResourceAction createResourceAction;
-    
     /**
-     * This panel contains the editor's complete GUI.
+     * The action that can add a new resource via a dialog.
      */
-    private JPanel panel;
+    private final CreateResourceAction createResourceAction;
+
+    /**
+     * The action that can add a new resource via a dialog.
+     */
+    private final CreateDirectoryAction createDirectoryAction;
     
     public ResourceEditor(ResourceManager resourceManager) throws IOException {
         this.resourceManager = resourceManager;
@@ -99,6 +102,7 @@ public class ResourceEditor {
         resourceTree.addTreeSelectionListener(resourcePreview);
         
         createResourceAction = new CreateResourceAction(resourceManager, resourceTree);
+        createDirectoryAction = new CreateDirectoryAction(resourceManager, resourceTree);
         
         resourceTree.addMouseListener(new MouseAdapter() {
             @Override
@@ -116,14 +120,48 @@ public class ResourceEditor {
         });
     }
     
+    
     /**
      * Causes a popup menu with various resource tree actions to
      * display over the resource tree at the given point.
      */
     public void showPopupMenu(Point p) {
         JPopupMenu m = new JPopupMenu();
-        m.add(new JMenuItem(createResourceAction));
+        JMenuItem mi;
+        
+        mi = new JMenuItem(createResourceAction);
+        mi.setActionCommand(getSelectedDirectory());
+        m.add(mi);
+        
+        m.add(new JMenuItem(createDirectoryAction));
+        mi.setActionCommand(getSelectedDirectory());
+        m.add(mi);
+
         m.show(resourceTree, p.x, p.y);
+    }
+    
+    /**
+     * Returns the currently-selected resource directory. If the current selection
+     * is a resource (not a directory), then the resource's parent directory is
+     * returned. Finally, if there is no tree selection, this method returns null.
+     * 
+     * @return The current directory selection, or null if nothing is selected.
+     */
+    public String getSelectedDirectory() {
+        final TreePath selectionPath = resourceTree.getSelectionPath();
+        if (selectionPath == null) return null;
+        String path = (String) selectionPath.getLastPathComponent();
+        if (!path.endsWith("/")) {
+            path = path.substring(0, path.lastIndexOf('/'));
+        }
+        return path;
+    }
+
+    /**
+     * Returns the resource manager this editor was created for.
+     */
+    public ResourceManager getResourceManager() {
+        return resourceManager;
     }
     
     public static void main(String[] args) {
@@ -131,8 +169,11 @@ public class ResourceEditor {
             public void run() {
                 try {
                     JFrame f = new JFrame("Test resource editor");
+                    
+                    // this only exists if you have run the default_resoruces_jar build target
+                    // (and if using eclipse, make sure to refresh the project) 
                     ResourceManager rm = new JarResourceManager(
-                            new File("net/bluecow/robot/default_resources.jar"));
+                            new File("build/net/bluecow/robot/default_resources.jar"));
                     ResourceEditor re = new ResourceEditor(rm);
                     JSplitPane sp = new JSplitPane(JSplitPane.VERTICAL_SPLIT);
                     f.add(sp);
