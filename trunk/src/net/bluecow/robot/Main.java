@@ -607,7 +607,7 @@ public class Main {
         pffcp.add(floaterPanel, BorderLayout.CENTER);
         pffcp.add(buttonPanel, BorderLayout.SOUTH);
         
-        playfieldFrame.setTitle("CakeBots: Level "+newLevelNum);
+        playfieldFrame.setTitle("GrodBots: Level "+newLevelNum);
         playfieldFrame.setContentPane(pffcp);
         playfieldFrame.pack();
         playfieldFrame.setVisible(true);

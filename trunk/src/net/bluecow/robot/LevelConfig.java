@@ -42,6 +42,7 @@ import java.awt.geom.Point2D;
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
@@ -343,6 +344,13 @@ public class LevelConfig {
      * A snapshot of this configuration which can be restored at a later time.
      */
     private LevelConfig snapshot;
+
+    /**
+     * The individual pages of this level's description text.  This list is
+     * created by a simple parser that gets invoked whenever the description
+     * changes.  See {@link #setDescription(String)}.
+     */
+    private List<String> descriptionPages;
     
     /**
      * Normal constructor.  Creates a LevelConfig with default settings.
@@ -386,8 +394,21 @@ public class LevelConfig {
     
     public void setDescription(String description) {
         this.description = description;
+        
+        if (description != null) {
+            descriptionPages = Arrays.asList(description.split("<pb>"));
+        } else {
+            descriptionPages = Collections.emptyList();
+        }
     }
-    
+
+    /**
+     * Returns the pages of this level's description text.
+     */
+    public List<String> getDescriptionPages() {
+        return descriptionPages;
+    }
+
     /**
      * Adds the given robot to this level config.
      * 

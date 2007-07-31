@@ -166,6 +166,18 @@ public class Playfield extends JPanel {
      * {@link #descriptionOn} flag.
      */
     private boolean clickToToggleDescription = true;
+
+    /**
+     * The "hot zone" for the button that goes to the previous description page.
+     * Gets initialized to a reasonable value in the constructor.
+     */
+    private Rectangle prevDescriptionPageRegion;
+    
+    /**
+     * The "hot zone" for the button that goes to the next description page.
+     * Gets initialized to a reasonable value in the constructor.
+     */
+    private Rectangle nextDescriptionPageRegion;
     
     /**
      * The colour that drawLabel() will use to paint the box underneath labels.
@@ -209,6 +221,12 @@ public class Playfield extends JPanel {
      * The amount of space the header bar takes up (for the score display).
      */
     private int headerHeight;
+
+    /**
+     * The current page number of the HTML description text to display.  See
+     * {@link #getDescriptionPage(int)}.
+     */
+    private int descriptionPageNumber;
     
     /**
      * Creates a new playfield with the specified map.
@@ -224,7 +242,12 @@ public class Playfield extends JPanel {
             boolean descriptionState = isDescriptionOn();
             @Override
             public void mousePressed(MouseEvent e) {
-                if (isClickToToggleDescription()) {
+                Point p = e.getPoint();
+                if (isDescriptionOn() && prevDescriptionPageRegion != null && prevDescriptionPageRegion.contains(p)) {
+                    switchToPrevPage();
+                } else if (isDescriptionOn() && nextDescriptionPageRegion != null && nextDescriptionPageRegion.contains(p)) {
+                    switchToNextPage();
+                } else if (isClickToToggleDescription()) {
                     descriptionState = !descriptionState;
                     setDescriptionOn(descriptionState);
                 }
@@ -232,6 +255,13 @@ public class Playfield extends JPanel {
         });
         
         setBackground(Color.BLACK);
+        
+        // set up the default location for the description page flipper buttons
+        int buttonLength = 30;
+        int x = level.getWidth() * getSquareWidth() - buttonLength * 3;
+        int y = getSquareWidth();
+        prevDescriptionPageRegion = new Rectangle(x, y, buttonLength, buttonLength);
+        nextDescriptionPageRegion = new Rectangle(x + buttonLength, y, buttonLength, buttonLength);
         
         // double the font height because the height on its own isn't enough (?)
         headerHeight = getFont().getSize() * 2;
@@ -442,7 +472,9 @@ public class Playfield extends JPanel {
             g2.drawString(winMessage, 15, getHeight()/2-5);
         }
         
-        if (level.getDescription() != null && descriptionOpacity > 0.0f) {
+        final List<String> pages = level.getDescriptionPages();
+        if ( (pages != null) && (pages.size() > getDescriptionPageNumber()) && (descriptionOpacity > 0.0f) ) {
+            final String descText = pages.get(getDescriptionPageNumber());
             backupComposite = g2.getComposite();
             g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, descriptionOpacity));
             Rectangle labelBounds = new Rectangle(
@@ -458,7 +490,7 @@ public class Playfield extends JPanel {
                 "<html>" +
                 "<head><style>p {margin-top: 5px}</style></head>" +
                 "<body><h1>"+level.getName()+"</h1>" +
-                "<p>"+level.getDescription() +
+                "<p>" + descText +
                 "</body></html>";
             
             JLabel descriptionLabel = new JLabel(htmlDescription);
@@ -473,9 +505,31 @@ public class Playfield extends JPanel {
                     labelBounds.width, labelBounds.height);
             descriptionLabel.paint(labelGraphics);
             labelGraphics.dispose();
+
+            
+            // Page flipper
+            if (pages.size() > 1) {
+                g2.setColor(Color.RED);
+                if (prevDescriptionPageRegion != null) {
+                    g2.draw(prevDescriptionPageRegion);
+                }
+                if (nextDescriptionPageRegion != null) {
+                    g2.draw(nextDescriptionPageRegion);
+                }
+
+                g2.setColor(Color.WHITE);
+                g2.drawString("Page "+ (getDescriptionPageNumber() + 1) +
+                        "/" + level.getDescriptionPages().size(),
+                        prevDescriptionPageRegion.x,
+                        prevDescriptionPageRegion.y + prevDescriptionPageRegion.height + fm.getHeight());
+            }
             
             g2.setComposite(backupComposite);
         }
+    }
+
+    private int getDescriptionPageNumber() {
+        return descriptionPageNumber;
     }
 
     /**
@@ -802,6 +856,29 @@ public class Playfield extends JPanel {
     public void setClickToToggleDescription(boolean clickToToggleDescription) {
         this.clickToToggleDescription = clickToToggleDescription;
     }
+
+    /**
+     * Switches the current description page to the one before the current
+     * one, if there is such a page.  Otherwise, leaves the current page
+     * unaffected.
+     */
+    private void switchToPrevPage() {
+        if (getDescriptionPageNumber() > 0) {
+            descriptionPageNumber--;
+        }
+    }
+
+    /**
+     * Switches the current description page to the one after the current
+     * one, if there is such a page.  Otherwise, leaves the current page
+     * unaffected.
+     */
+    private void switchToNextPage() {
+        if ( (getDescriptionPageNumber() + 1) < level.getDescriptionPages().size()) {
+            descriptionPageNumber++;
+        }
+    }
+
     
     public void setHeaderHeight(int headerHeight) {
         this.headerHeight = headerHeight;
