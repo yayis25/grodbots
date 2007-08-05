@@ -36,7 +36,6 @@
  */
 package net.bluecow.robot.editor.resource;
 
-import java.awt.HeadlessException;
 import java.awt.event.ActionEvent;
 import java.io.BufferedInputStream;
 import java.io.File;
@@ -46,14 +45,11 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.prefs.Preferences;
 
-import javax.swing.JComboBox;
 import javax.swing.JComponent;
 import javax.swing.JFileChooser;
-import javax.swing.JOptionPane;
 
 import net.bluecow.robot.RobotUtils;
 import net.bluecow.robot.resource.ResourceManager;
-import net.bluecow.robot.resource.ResourceUtils;
 
 public class CreateResourceAction extends ResourceEditorAction {
 

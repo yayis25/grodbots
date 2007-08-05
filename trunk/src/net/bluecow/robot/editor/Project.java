@@ -134,6 +134,7 @@ public class Project {
      * @throws IOException If the file already exists, or it can't be created.
      */
     public static Project createNewProject(File file) throws IOException {
+        debug("Trying to create new project at \""+file.getAbsolutePath()+"\"");
         if (file.exists()) {
             throw new IOException(
                     "File "+file.getAbsolutePath()+" already exists.");

@@ -52,6 +52,7 @@ import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.jar.JarInputStream;
 
+import net.bluecow.robot.resource.event.ResourceManagerEvent;
 import net.bluecow.robot.resource.event.ResourceManagerListener;
 
 public class JarResourceManager extends AbstractResourceLoader implements ResourceManager {
@@ -157,11 +158,11 @@ public class JarResourceManager extends AbstractResourceLoader implements Resour
         return recursiveListResources("", dir, filter, new ArrayList<String>());
     }
 
-    public List<String> list(String path) {
+    public List<String> list(String path) throws IOException {
         return list(path, null);
     }
     
-    public List<String> list(String path, ResourceNameFilter filter) {
+    public List<String> list(String path, ResourceNameFilter filter) throws IOException {
         File resourceDir = new File(dir, path);
         debug("Listing children of " + resourceDir.getAbsolutePath());
         if (resourceDir.isFile()) {
@@ -174,6 +175,9 @@ public class JarResourceManager extends AbstractResourceLoader implements Resour
         }
         
         File[] children = resourceDir.listFiles();
+        if (children == null) {
+            throw new IOException("No such resource directory: \""+path+"\"");
+        }
         Arrays.sort(children);
 
         List<String> retval = new ArrayList<String>();
@@ -366,22 +370,56 @@ public class JarResourceManager extends AbstractResourceLoader implements Resour
 
     /* docs come from interface */
     public void createDirectory(String targetDir, String newDirName) throws IOException {
+        if (!targetDir.endsWith("/")) {
+            throw new IOException(
+                    "Target directory name \""+targetDir+"\" must end with the / character.");
+        }
         if (newDirName.contains("/")) {
-            throw new IOException("New resource directory name not valid: it contains the / character.");
+            throw new IOException(
+                    "New resource directory name \""+newDirName+"\" not valid: it contains the / character.");
         }
         File parent = new File(dir, targetDir);
         if (!parent.exists()) {
             throw new IOException("Target resource directory \"" + targetDir + "\" does not exist.");
         }
         File newDir = new File(parent, newDirName);
+        String newDirPath = targetDir + newDirName;
         if (!newDir.mkdir()) {
-            throw new IOException("Could not create resource directory \"" + newDirName + "\".");
+            throw new IOException("Could not create resource directory \"" + newDirPath + "\".");
         }
+        fireResourceAdded(targetDir, newDirName + "/");
     }
     
     // ------------- Events! ----------------
     
+    /**
+     * All the listners of this resource manager.
+     */
     private final List<ResourceManagerListener> listeners = new ArrayList<ResourceManagerListener>();
-    
-    
+
+    /**
+     * Adds the given listener.  No attempt is made to prevent duplication
+     * in the listener list.
+     */
+    public void addResourceManagerListener(ResourceManagerListener listener) {
+        listeners.add(listener);
+    }
+
+    /**
+     * Removes the given listener from the list if it is present.  Otherwise,
+     * returns with no side effects.
+     */
+    public void removeResourceManagerListener(ResourceManagerListener listener) {
+        listeners.remove(listener);
+    }
+
+    /**
+     * Delivers a "resource added" event to all currently-registered listeners.
+     */
+    private void fireResourceAdded(String parentPath, String resourceName) {
+        ResourceManagerEvent evt = new ResourceManagerEvent(this, parentPath, resourceName);
+        for (int i = listeners.size() - 1; i >= 0; i--) {
+            listeners.get(i).resourceAdded(evt);
+        }
+    }
 }

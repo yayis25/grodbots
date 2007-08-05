@@ -37,7 +37,6 @@
 package net.bluecow.robot.explore;
 
 import java.awt.BorderLayout;
-import java.awt.FlowLayout;
 import java.awt.GridLayout;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Point2D;

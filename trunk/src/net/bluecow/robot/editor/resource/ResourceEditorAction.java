@@ -96,6 +96,7 @@ public abstract class ResourceEditorAction extends AbstractAction {
         JComboBox cb = new JComboBox(
                 new ResourcesComboBoxModel(resourceManager, ResourceUtils.directoryOnlyFilter()));
         if (defaultTargetDir != null) {
+            System.err.println("Setting target dir to \""+defaultTargetDir+"\"");
             cb.setSelectedItem(defaultTargetDir);
         }
         int choice = JOptionPane.showOptionDialog(

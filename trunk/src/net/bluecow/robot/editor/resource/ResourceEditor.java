@@ -133,7 +133,7 @@ public class ResourceEditor {
         mi.setActionCommand(getSelectedDirectory());
         m.add(mi);
         
-        m.add(new JMenuItem(createDirectoryAction));
+        mi = new JMenuItem(createDirectoryAction);
         mi.setActionCommand(getSelectedDirectory());
         m.add(mi);
 
