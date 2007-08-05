@@ -44,19 +44,41 @@
 
   <level name="Green means go!" size-x="15" size-y="10">
   <description><![CDATA[
-This level should be pretty easy to solve!  Just drag a connection from the correctly coloured sensor input to the correct directional motor output.
+Welcome to Grod's world!
 <p>
-Once you have made your connections, press the Start button.
+There are several pages of help available. To browse back and forth, use the buttons in the top right corner.
 <p>
-To make this message disappear, click on it!
+Click anywhere on this text to make it disappear, so you can get a better view of the playfield.  If you want to see the text again, just click on the playfield and it will come back.
+<pb>
+Look in the Circuit Editor window.
+<p>
+This is an output:
+<img src="resource:///ROBO-INF/doc/output-inactive.png">. Grod has three outputs. They tell you what colour Grod is standing on.
+<p>
+An output can become active. When it is, it turns orange:
+<img src="resource:///ROBO-INF/doc/output-active.png">.  The outputs in your circuit editor become active when Grod walks on certain colours of tiles.
+<pb>
+Try pressing the Start button and watch the outputs in the Circuit Editor.  Which one activates? Which ones stay inactive?
+<p>
+Now press the Reset button.  You can't make changes to your circuit while the level is in play.  That's what the "Locked" message in the circuit editor means. It's to remind you that your circuit is locked against changes.
+<pb>
+This is an input:
+<img src="resource:///ROBO-INF/doc/input-inactive.png">.
+An input is active when it is connected to an active output. When it is, it turns orange too:
+<img src="resource:///ROBO-INF/doc/input-active.png">.
+The inputs in your circuit editor control Grod's motors. When they are active, they make Grod move in a particular direction.
+<pb>
+You can connect inputs to outputs by dragging your mouse from one to the other.  Try it now.  Which connection can you make that will take Grod to the cake?
+<p>
+Once you have made your connection, press the Start button again.  If you made a mistake and want to try again, just press Reset.
   ]]></description>
     <grod id="grod" step-size="0.1" start-x="3.5" start-y="4.5" evals-per-step="1" label="Grod" label-direction="s" label-enabled="true">
       <graphic href="ROBO-INF/images/grod/grod.rsf" scale="0.4"/>
-      <gate-allowance type="NOT" value="0" />
-      <gate-allowance type="OR" value="0" />
-      <gate-allowance type="NAND" value="0" />
-      <gate-allowance type="AND" value="0" />
       <gate-allowance type="NOR" value="0" />
+      <gate-allowance type="NAND" value="0" />
+      <gate-allowance type="OR" value="0" />
+      <gate-allowance type="AND" value="0" />
+      <gate-allowance type="NOT" value="0" />
     </grod>
 
     <switch id="cake" loc-x="11" loc-y="4" on-enter="robot.setGoalReached(true); level.score += 200;" enabled="true" label="Cake" label-direction="s" label-enabled="true">
@@ -82,11 +104,11 @@ Ok, this one isn't much harder.  See if you can figure out the trick!
   ]]></description>
     <grod id="Grod" step-size="0.1" start-x="3.5" start-y="8.5" evals-per-step="1" label="Grod" label-direction="n" label-enabled="true">
       <graphic href="ROBO-INF/images/grod/grod.rsf" scale="0.4"/>
-      <gate-allowance type="NOT" value="0" />
-      <gate-allowance type="OR" value="0" />
-      <gate-allowance type="NAND" value="0" />
-      <gate-allowance type="AND" value="0" />
       <gate-allowance type="NOR" value="0" />
+      <gate-allowance type="NAND" value="0" />
+      <gate-allowance type="OR" value="0" />
+      <gate-allowance type="AND" value="0" />
+      <gate-allowance type="NOT" value="0" />
     </grod>
 
     <switch id="Cake" loc-x="11" loc-y="1" on-enter="robot.setGoalReached(true); level.score += 200;" enabled="true" label="Cake" label-direction="s" label-enabled="true">
@@ -113,11 +135,11 @@ wandering in the same direction all the time!
   ]]></description>
     <grod id="Grod" step-size="0.1" start-x="3.5" start-y="8.5" evals-per-step="1" label="Grod" label-direction="e" label-enabled="true">
       <graphic href="ROBO-INF/images/grod/grod.rsf" scale="0.4"/>
-      <gate-allowance type="NOT" value="0" />
-      <gate-allowance type="OR" value="0" />
-      <gate-allowance type="NAND" value="0" />
-      <gate-allowance type="AND" value="0" />
       <gate-allowance type="NOR" value="0" />
+      <gate-allowance type="NAND" value="0" />
+      <gate-allowance type="OR" value="0" />
+      <gate-allowance type="AND" value="0" />
+      <gate-allowance type="NOT" value="0" />
     </grod>
 
     <switch id="Cake" loc-x="11" loc-y="1" on-enter="robot.setGoalReached(true); level.score += 200;" enabled="true" label="Cake" label-direction="s" label-enabled="true">
@@ -139,15 +161,17 @@ XXXXXXXXXXXXXXX
   </level>
   <level name="Time to make more decisions" size-x="15" size-y="10">
   <description><![CDATA[
-Three directions, one after the other.  Can you handle it?
+Three colours, three directions.
+<p>
+Can you handle it?
   ]]></description>
     <grod id="Grod" step-size="0.1" start-x="3.5" start-y="8.5" evals-per-step="1" label="Grod" label-direction="e" label-enabled="true">
       <graphic href="ROBO-INF/images/grod/grod.rsf" scale="0.4"/>
-      <gate-allowance type="NOT" value="0" />
-      <gate-allowance type="OR" value="0" />
-      <gate-allowance type="NAND" value="0" />
-      <gate-allowance type="AND" value="0" />
       <gate-allowance type="NOR" value="0" />
+      <gate-allowance type="NAND" value="0" />
+      <gate-allowance type="OR" value="0" />
+      <gate-allowance type="AND" value="0" />
+      <gate-allowance type="NOT" value="0" />
     </grod>
 
     <switch id="Cake" loc-x="11" loc-y="8" on-enter="robot.setGoalReached(true); level.score += 200;" enabled="true" label="Cake" label-direction="w" label-enabled="true">
@@ -183,11 +207,11 @@ This is an OR gate:<br>
   ]]></description>
     <grod id="Grod" step-size="0.1" start-x="4.5" start-y="4.5" evals-per-step="1" label="Grod" label-direction="w" label-enabled="true">
       <graphic href="ROBO-INF/images/grod/grod.rsf" scale="0.4"/>
-      <gate-allowance type="NOT" value="0" />
-      <gate-allowance type="OR" value="1" />
-      <gate-allowance type="NAND" value="0" />
-      <gate-allowance type="AND" value="0" />
       <gate-allowance type="NOR" value="0" />
+      <gate-allowance type="NAND" value="0" />
+      <gate-allowance type="OR" value="1" />
+      <gate-allowance type="AND" value="0" />
+      <gate-allowance type="NOT" value="0" />
     </grod>
 
     <switch id="Cake" loc-x="10" loc-y="4" on-enter="robot.setGoalReached(true); level.score += 200;" enabled="true" label="Cake" label-direction="e" label-enabled="true">
@@ -213,11 +237,11 @@ Can you do the 3-way OR?
   ]]></description>
     <grod id="Grod" step-size="0.1" start-x="4.5" start-y="4.5" evals-per-step="1" label="Grod" label-direction="w" label-enabled="true">
       <graphic href="ROBO-INF/images/grod/grod.rsf" scale="0.4"/>
-      <gate-allowance type="NOT" value="0" />
-      <gate-allowance type="OR" value="2" />
-      <gate-allowance type="NAND" value="0" />
-      <gate-allowance type="AND" value="0" />
       <gate-allowance type="NOR" value="0" />
+      <gate-allowance type="NAND" value="0" />
+      <gate-allowance type="OR" value="2" />
+      <gate-allowance type="AND" value="0" />
+      <gate-allowance type="NOT" value="0" />
     </grod>
 
     <switch id="Cake" loc-x="10" loc-y="4" on-enter="robot.setGoalReached(true); level.score += 200;" enabled="true" label="Cake" label-direction="e" label-enabled="true">
@@ -237,17 +261,28 @@ XXXXXXXXXXXXXXX
 XXXXXXXXXXXXXXX
     </map>
   </level>
-  <level name="NOT The Same as Last Time" size-x="15" size-y="10">
+  <level name="NOT The Same" size-x="15" size-y="10">
   <description><![CDATA[
+This is a NOT gate:<br>
+<center>
+ <img src="resource:///ROBO-INF/doc/not.png">
+</center>
+When its input is active, its output is inactive (<b>not</b> active). When its input is inactive, its output is active (<b>not</b> inactive).
+<center>
+ <img src="resource:///ROBO-INF/doc/not-active.png">
+  &nbsp;&nbsp;
+ <img src="resource:///ROBO-INF/doc/not-inactive.png">
+</center>
+<pb>
 Now what will you do?
   ]]></description>
     <grod id="Grod" step-size="0.1" start-x="4.5" start-y="4.5" evals-per-step="1" label="Grod" label-direction="w" label-enabled="true">
       <graphic href="ROBO-INF/images/grod/grod.rsf" scale="0.4"/>
-      <gate-allowance type="NOT" value="1" />
-      <gate-allowance type="OR" value="0" />
-      <gate-allowance type="NAND" value="0" />
-      <gate-allowance type="AND" value="0" />
       <gate-allowance type="NOR" value="0" />
+      <gate-allowance type="NAND" value="0" />
+      <gate-allowance type="OR" value="0" />
+      <gate-allowance type="AND" value="0" />
+      <gate-allowance type="NOT" value="1" />
     </grod>
 
     <switch id="Cake" loc-x="10" loc-y="4" on-enter="robot.setGoalReached(true); level.score += 200;" enabled="true" label="Cake" label-direction="e" label-enabled="true">
@@ -275,11 +310,11 @@ Can you figure out how it works?
   ]]></description>
     <grod id="Grod" step-size="0.1" start-x="2.5" start-y="7.5" evals-per-step="1" label="Grod" label-direction="e" label-enabled="true">
       <graphic href="ROBO-INF/images/grod/grod.rsf" scale="0.4"/>
-      <gate-allowance type="NOT" value="0" />
-      <gate-allowance type="OR" value="0" />
-      <gate-allowance type="NAND" value="0" />
-      <gate-allowance type="AND" value="0" />
       <gate-allowance type="NOR" value="0" />
+      <gate-allowance type="NAND" value="0" />
+      <gate-allowance type="OR" value="0" />
+      <gate-allowance type="AND" value="0" />
+      <gate-allowance type="NOT" value="0" />
     </grod>
 
     <switch id="Cake" loc-x="2" loc-y="2" on-enter="robot.setGoalReached(true); level.score += 200;" enabled="true" label="Cake" label-direction="e" label-enabled="true">
@@ -305,11 +340,11 @@ This is a placeholder. Need to get actual level from Dallas.
   ]]></description>
     <grod id="Grod" step-size="0.1" start-x="4.5" start-y="4.5" evals-per-step="1" label="Grod" label-direction="sw" label-enabled="true">
       <graphic href="ROBO-INF/images/grod/grod.rsf" scale="0.4"/>
-      <gate-allowance type="NOT" value="0" />
-      <gate-allowance type="OR" value="0" />
-      <gate-allowance type="NAND" value="0" />
-      <gate-allowance type="AND" value="0" />
       <gate-allowance type="NOR" value="0" />
+      <gate-allowance type="NAND" value="0" />
+      <gate-allowance type="OR" value="0" />
+      <gate-allowance type="AND" value="0" />
+      <gate-allowance type="NOT" value="0" />
     </grod>
 
     <switch id="Cake" loc-x="10" loc-y="4" on-enter="robot.setGoalReached(true); level.score += 200;" enabled="true" label="Cake" label-direction="se" label-enabled="true">
@@ -335,11 +370,11 @@ Grod can go a bit haywire when you give him conflicting instructions, but he sor
   ]]></description>
     <grod id="Grod" step-size="0.1" start-x="2.5" start-y="7.5" evals-per-step="1" label="Grod" label-direction="e" label-enabled="true">
       <graphic href="ROBO-INF/images/grod/grod.rsf" scale="0.4"/>
-      <gate-allowance type="NOT" value="0" />
-      <gate-allowance type="OR" value="0" />
-      <gate-allowance type="NAND" value="0" />
       <gate-allowance type="NOR" value="0" />
+      <gate-allowance type="NAND" value="0" />
+      <gate-allowance type="OR" value="0" />
       <gate-allowance type="AND" value="1" />
+      <gate-allowance type="NOT" value="0" />
     </grod>
 
     <switch id="Cake" loc-x="8" loc-y="4" on-enter="robot.setGoalReached(true); level.score += 200;" enabled="true" label="Cake" label-direction="e" label-enabled="true">
@@ -367,11 +402,11 @@ This one's trickier.
   ]]></description>
     <grod id="Grod" step-size="0.1" start-x="2.5" start-y="7.5" evals-per-step="1" label="Grod" label-direction="e" label-enabled="true">
       <graphic href="ROBO-INF/images/grod/grod.rsf" scale="0.4"/>
-      <gate-allowance type="NOT" value="1" />
-      <gate-allowance type="OR" value="1" />
-      <gate-allowance type="NAND" value="0" />
-      <gate-allowance type="AND" value="0" />
       <gate-allowance type="NOR" value="0" />
+      <gate-allowance type="NAND" value="0" />
+      <gate-allowance type="OR" value="1" />
+      <gate-allowance type="AND" value="0" />
+      <gate-allowance type="NOT" value="1" />
     </grod>
 
     <switch id="Cake" loc-x="8" loc-y="4" on-enter="robot.setGoalReached(true); level.score += 200;" enabled="true" label="Cake" label-direction="e" label-enabled="true">
@@ -397,11 +432,11 @@ Is there more than one way to do it?
   ]]></description>
     <grod id="Grod" step-size="0.1" start-x="6.519999980926514" start-y="5.480000019073486" evals-per-step="1" label="Grod" label-direction="w" label-enabled="true">
       <graphic href="ROBO-INF/images/grod/grod.rsf" scale="0.4"/>
-      <gate-allowance type="NOT" value="1" />
-      <gate-allowance type="OR" value="1" />
-      <gate-allowance type="NAND" value="0" />
-      <gate-allowance type="AND" value="4" />
       <gate-allowance type="NOR" value="0" />
+      <gate-allowance type="NAND" value="0" />
+      <gate-allowance type="OR" value="1" />
+      <gate-allowance type="AND" value="4" />
+      <gate-allowance type="NOT" value="1" />
     </grod>
 
     <switch id="Cake" loc-x="10" loc-y="5" on-enter="robot.setGoalReached(true); level.score += 200;" enabled="true" label="Cake" label-direction="e" label-enabled="true">
@@ -427,11 +462,11 @@ There is a very useful construction that you can make with a single OR gate.  Yo
   ]]></description>
     <grod id="Grod" step-size="0.1" start-x="2.5" start-y="7.5" evals-per-step="1" label="Grod" label-direction="e" label-enabled="true">
       <graphic href="ROBO-INF/images/grod/grod.rsf" scale="0.4"/>
-      <gate-allowance type="NOT" value="0" />
-      <gate-allowance type="OR" value="1" />
-      <gate-allowance type="NAND" value="0" />
-      <gate-allowance type="AND" value="0" />
       <gate-allowance type="NOR" value="0" />
+      <gate-allowance type="NAND" value="0" />
+      <gate-allowance type="OR" value="1" />
+      <gate-allowance type="AND" value="0" />
+      <gate-allowance type="NOT" value="0" />
     </grod>
 
     <switch id="Cake" loc-x="12" loc-y="2" on-enter="robot.setGoalReached(true); level.score += 200;" enabled="true" label="Cake" label-direction="e" label-enabled="true">
@@ -457,11 +492,11 @@ The name says it all.
   ]]></description>
     <grod id="Grod" step-size="0.1" start-x="2.5" start-y="7.5" evals-per-step="1" label="Grod" label-direction="e" label-enabled="true">
       <graphic href="ROBO-INF/images/grod/grod.rsf" scale="0.4"/>
-      <gate-allowance type="NOT" value="0" />
-      <gate-allowance type="OR" value="2" />
-      <gate-allowance type="NAND" value="0" />
-      <gate-allowance type="AND" value="0" />
       <gate-allowance type="NOR" value="0" />
+      <gate-allowance type="NAND" value="0" />
+      <gate-allowance type="OR" value="2" />
+      <gate-allowance type="AND" value="0" />
+      <gate-allowance type="NOT" value="0" />
     </grod>
 
     <switch id="Cake" loc-x="12" loc-y="2" on-enter="robot.setGoalReached(true); level.score += 200;" enabled="true" label="Cake" label-direction="e" label-enabled="true">
@@ -487,11 +522,11 @@ The name still says it all.
   ]]></description>
     <grod id="Grod" step-size="0.1" start-x="2.5" start-y="7.5" evals-per-step="1" label="Grod" label-direction="e" label-enabled="true">
       <graphic href="ROBO-INF/images/grod/grod.rsf" scale="0.4"/>
-      <gate-allowance type="NOT" value="1" />
-      <gate-allowance type="OR" value="1" />
-      <gate-allowance type="NAND" value="0" />
-      <gate-allowance type="AND" value="0" />
       <gate-allowance type="NOR" value="0" />
+      <gate-allowance type="NAND" value="0" />
+      <gate-allowance type="OR" value="1" />
+      <gate-allowance type="AND" value="0" />
+      <gate-allowance type="NOT" value="1" />
     </grod>
 
     <switch id="Cake" loc-x="12" loc-y="2" on-enter="robot.setGoalReached(true); level.score += 200;" enabled="true" label="Cake" label-direction="w" label-enabled="true">
@@ -517,11 +552,11 @@ U-Turn permitted on green.
   ]]></description>
     <grod id="Grod" step-size="0.1" start-x="6.519999980926514" start-y="5.519999980926514" evals-per-step="1" label="Grod" label-direction="w" label-enabled="true">
       <graphic href="ROBO-INF/images/grod/grod.rsf" scale="0.4"/>
-      <gate-allowance type="NOT" value="1" />
-      <gate-allowance type="OR" value="2" />
-      <gate-allowance type="NAND" value="0" />
       <gate-allowance type="NOR" value="0" />
+      <gate-allowance type="NAND" value="0" />
+      <gate-allowance type="OR" value="2" />
       <gate-allowance type="AND" value="0" />
+      <gate-allowance type="NOT" value="1" />
     </grod>
 
     <switch id="Cake" loc-x="8" loc-y="5" on-enter="robot.setGoalReached(true); level.score += 200;" enabled="true" label="Cake" label-direction="e" label-enabled="true">
@@ -549,11 +584,11 @@ To make the gates smaller in the circuit editor, just press the - (minus) key on
   ]]></description>
     <grod id="Grod" step-size="0.1" start-x="1.559999942779541" start-y="8.520000457763672" evals-per-step="1" label="Grod" label-direction="e" label-enabled="true">
       <graphic href="ROBO-INF/images/grod/grod.rsf" scale="0.4"/>
-      <gate-allowance type="NOT" value="2" />
-      <gate-allowance type="OR" value="4" />
-      <gate-allowance type="NAND" value="0" />
       <gate-allowance type="NOR" value="0" />
+      <gate-allowance type="NAND" value="0" />
+      <gate-allowance type="OR" value="4" />
       <gate-allowance type="AND" value="9" />
+      <gate-allowance type="NOT" value="2" />
     </grod>
 
     <switch id="Cake" loc-x="1" loc-y="1" on-enter="robot.setGoalReached(true); level.score += 200;" enabled="true" label="Cake" label-direction="e" label-enabled="true">
@@ -579,11 +614,11 @@ Suddenly feeling blue again?
   ]]></description>
     <grod id="Grod" step-size="0.1" start-x="1.5" start-y="8.5" evals-per-step="1" label="Grod" label-direction="ne" label-enabled="true">
       <graphic href="ROBO-INF/images/grod/grod.rsf" scale="0.4"/>
-      <gate-allowance type="NOT" value="2" />
-      <gate-allowance type="OR" value="1" />
-      <gate-allowance type="NAND" value="0" />
       <gate-allowance type="NOR" value="0" />
+      <gate-allowance type="NAND" value="0" />
+      <gate-allowance type="OR" value="1" />
       <gate-allowance type="AND" value="1" />
+      <gate-allowance type="NOT" value="2" />
     </grod>
 
     <switch id="Cake" loc-x="8" loc-y="1" on-enter="robot.setGoalReached(true); level.score += 200;" enabled="true" label="Cake" label-direction="e" label-enabled="true">
@@ -609,11 +644,11 @@ Grod thinks he's a venus fly trap.
   ]]></description>
     <grod id="Grod" step-size="0.1" start-x="1.5" start-y="8.5" evals-per-step="1" label="Grod" label-direction="e" label-enabled="true">
       <graphic href="ROBO-INF/images/grod/grod.rsf" scale="0.4"/>
-      <gate-allowance type="NOT" value="2" />
-      <gate-allowance type="OR" value="3" />
-      <gate-allowance type="NAND" value="0" />
-      <gate-allowance type="AND" value="3" />
       <gate-allowance type="NOR" value="0" />
+      <gate-allowance type="NAND" value="0" />
+      <gate-allowance type="OR" value="3" />
+      <gate-allowance type="AND" value="3" />
+      <gate-allowance type="NOT" value="2" />
     </grod>
 
     <switch id="Cake" loc-x="8" loc-y="1" on-enter="robot.setGoalReached(true); level.score += 200;" enabled="true" label="Cake" label-direction="e" label-enabled="true">
@@ -639,11 +674,11 @@ Now for the biggest challenge.
   ]]></description>
     <grod id="Grod" step-size="0.1" start-x="1.5" start-y="8.5" evals-per-step="1" label="Grod" label-direction="n" label-enabled="true">
       <graphic href="ROBO-INF/images/grod/grod.rsf" scale="0.4"/>
-      <gate-allowance type="NOT" value="3" />
-      <gate-allowance type="OR" value="3" />
-      <gate-allowance type="NAND" value="0" />
-      <gate-allowance type="AND" value="2" />
       <gate-allowance type="NOR" value="0" />
+      <gate-allowance type="NAND" value="0" />
+      <gate-allowance type="OR" value="3" />
+      <gate-allowance type="AND" value="2" />
+      <gate-allowance type="NOT" value="3" />
     </grod>
 
     <switch id="Cake" loc-x="1" loc-y="1" on-enter="robot.setGoalReached(true); level.score += 200;" enabled="true" label="Cake" label-direction="s" label-enabled="true">
