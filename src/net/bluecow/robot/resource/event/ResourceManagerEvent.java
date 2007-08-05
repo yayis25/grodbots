@@ -36,6 +36,13 @@ package net.bluecow.robot.resource.event;
 
 import net.bluecow.robot.resource.ResourceManager;
 
+/**
+ * The ResourceManagerEvent represents some change (addition, removal, or modification)
+ * to a resource in a resource manager.
+ *
+ * @author fuerth
+ * @version $Id:$
+ */
 public class ResourceManagerEvent {
     
     /**
@@ -44,30 +51,59 @@ public class ResourceManagerEvent {
     private Object source;
     
     /**
-     * The path that was affected. This should probably become a collection or
-     * array in the future.
+     * The parent path of the resource that was affected.
      */
-    private Object path;
+    private final String parentPath;
 
+    /**
+     * The resource name (not a full path) that was added, removed, or changed.
+     * This should probably become a collection or array in the future.
+     */
+    private final String childName;
+    
     /**
      * Creates a new event with the given source resource manager and affected
      * path.  The actual type of event this object represents is determined
      * by which ResourceManagerListener method it is passed to.
      * 
      * @param source The resource manager that fired this event.
-     * @param path The path of the source resource manager that this event
-     * describes.
+     * @param parentPath The parent path of the resource that was affected.
+     * This string must always denote a directory (that is to say, it must
+     * end with a "/" character).
      */
-    public ResourceManagerEvent(ResourceManager source, String path) {
+    public ResourceManagerEvent(ResourceManager source, String parentPath, String childName) {
         this.source = source;
-        this.path = path;
+        if (!parentPath.endsWith("/")) {
+            throw new IllegalArgumentException("Invalid parent path \""+parentPath+"\" (trailing '/' is mandatory)");
+        }
+        this.parentPath = parentPath;
+        
+        final int childSlashIndex = childName.indexOf("/");
+        if ( (childSlashIndex != -1) && (childSlashIndex != childName.length() - 1) ) {
+            throw new IllegalArgumentException(
+                    "Invalid child name \""+childName+"\" (resource names can't" +
+                    " contain '/' except directories, which must end in '/')");
+        }
+        this.childName = childName;
     }
     
     public Object getSource() {
         return source;
     }
     
-    public Object getPath() {
-        return path;
+    /**
+     * Returns the parent path (whose direct children were affected by this event).
+     * This path name has a trailing slash.
+     */
+    public String getParentPath() {
+        return parentPath;
+    }
+    
+    /**
+     * Returns the resource name (not a full path, just the name) that is the
+     * subject of this event.
+     */
+    public String getChildName() {
+        return childName;
     }
 }

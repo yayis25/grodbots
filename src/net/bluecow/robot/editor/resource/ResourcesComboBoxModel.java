@@ -57,7 +57,9 @@ public class ResourcesComboBoxModel implements ComboBoxModel {
      * Creates a new combo box model with a snapshot of the resource manager's
      * resources.  The contents of the combo box do not currently change to
      * reflect changes in the resource manager, but this class might get that
-     * upgrade later on.
+     * upgrade later on. Currently, all the resource combo boxes are on short-
+     * lived popup dialogs, so it is largely unnecessary to track changes in
+     * the resource manager.
      * 
      * @param resourceManager The resource manager to populate resource names from
      * @param filter The filter to apply to resource names. Specifying a null

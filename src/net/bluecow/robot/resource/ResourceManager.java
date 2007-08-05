@@ -41,6 +41,8 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.util.List;
 
+import net.bluecow.robot.resource.event.ResourceManagerListener;
+
 /**
  * A ResourceManager is a ResourceLoader which also provides operations
  * for listing, adding, removing, and updating the resources it contains.
@@ -145,7 +147,7 @@ public interface ResourceManager extends ResourceLoader {
      *         Children that are themselves directories will have a trailing "/"
      *         in their names.
      */
-    List<String> list(String path);
+    List<String> list(String path) throws IOException;
 
     /**
      * Lists the resources directly contained under the given resource directory
@@ -166,7 +168,7 @@ public interface ResourceManager extends ResourceLoader {
      *         Children that are themselves directories will have a trailing "/"
      *         in their names.
      */
-    List<String> list(String path, ResourceNameFilter filter);
+    List<String> list(String path, ResourceNameFilter filter) throws IOException;
 
     /**
      * Creates a new directory with the given name as a direct child of the
@@ -183,4 +185,16 @@ public interface ResourceManager extends ResourceLoader {
      * @throws IOException if there is already a resource with the given path.
      */
     void createDirectory(String targetDir, String newDirName) throws IOException;
+    
+    /**
+     * Adds the given listener to this resource manager.
+     */
+    public void addResourceManagerListener(ResourceManagerListener listener);
+
+    /**
+     * Removes the given listener from the list if it is present.  Otherwise,
+     * returns with no side effects.
+     */
+    public void removeResourceManagerListener(ResourceManagerListener listener);
+
 }
