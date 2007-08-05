@@ -243,6 +243,7 @@ public class Playfield extends JPanel {
             @Override
             public void mousePressed(MouseEvent e) {
                 Point p = e.getPoint();
+                p.translate(0, -headerHeight);
                 if (isDescriptionOn() && prevDescriptionPageRegion != null && prevDescriptionPageRegion.contains(p)) {
                     switchToPrevPage();
                 } else if (isDescriptionOn() && nextDescriptionPageRegion != null && nextDescriptionPageRegion.contains(p)) {
