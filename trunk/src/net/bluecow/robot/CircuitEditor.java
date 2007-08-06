@@ -343,7 +343,7 @@ public class CircuitEditor extends JPanel {
                     new ZoomEffect(ZOOM_STEPS, hilightGate, zoomTo.getBounds(), zoomTo.getInputStickLength(), zoomTo.getOutputStickLength());
                     hilightGate = null;
                 } else {
-                    // TODO: get a "you suck" type sound
+                    playSound("delete_prohibited");
                 }
             }
         }
@@ -358,7 +358,7 @@ public class CircuitEditor extends JPanel {
         public void actionPerformed(ActionEvent e) {
             if (circuit.isLocked()) return;
             circuit.removeAllGates();
-            // TODO: play a sound
+            playSound("delete_all");
         }
     }
 
@@ -486,7 +486,7 @@ public class CircuitEditor extends JPanel {
             if (circuit.isLocked()) return;
             if (circuit.getGateAllowances().get(gc.getGateClass()) == 0) {
                 System.out.println("Not adding "+gc.getGateClass()+" because no more are allowed");
-                // TODO: play buzzer sound
+                playSound("create_prohibited");
                 return;
             }
             try {
