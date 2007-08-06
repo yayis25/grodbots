@@ -54,16 +54,13 @@ Sounds:
  -robot is confused about which direction to step
  -bonus points earned
  -teleport
--Circuit Editor
- -"you suck" sound (for trying to delete undeletable stuff)
- -entering a connectable region while dragging a wire
- -exiting a connectable region while dragging a wire
- -removing a wire
- -deleting all gates at once (clearing the circuit out)
 -music for circuit editor and running game
 -little ditties for the beginning of each level (maybe this would be better suited to the MIDI sequencer api)
 
 Completed:
+-New sounds for the Circuit Editor
+ -trying to delete undeletable stuff
+ -deleting all gates at once (clearing the circuit out)
 -Fix bug that clearing doesn't disconnect permanent inputs (motors) from permanent outputs (sensors)
 -Make the circuit editors white-on-black instead of OS defaults
 -it is now possible to include inline images (sourced from the level pack resources) in level descriptions

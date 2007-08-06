@@ -1,0 +1,44 @@
+Robot Sounds
+============
+
+All sounds created by Andrew Kilpatrick.
+
+Creating Gates:
+
+- create-AND.wav	- 0.199s	- two tone envelope
+- create-NOT.wav	- 0.237s	- two pulses
+- create-OR.wav		- 0.239s	- warble tone envelope
+
+Dragging Gates:
+
+- drag-AND.wav		- 0.598s	- low chord with space at end
+- drag-NOT.wav		- 0.675s	- low pulses with space at end
+- drag-OR.wav		- 0.536s	- low warble tone with space at end
+
+Gate Actions:
+
+- delete_gate.wav	- 0.180s	- sweep down
+- enter_gate.wav	- 0.022s	- short pulse envelope	
+- leave_gate.wav	- 0.057s	- short down pulse envelope
+
+Wiring Actions:
+
+- pull_wire.wav		 - 0.999s	- slow trill envelope (looped)
+- start_drawing_wire.wav - 0.200s	- two clicks
+- terminated_wire.wav	 - 0.092s	- fast sweep up
+- unterminated_wire.wav  - 0.092s	- fast sweep down
+
+Other Sounds:
+
+- win.wav		- 0.692s	- multi sweep tones
+
+
+New Sounds:
+
+- create_prohibited.wav - 0.199s	- bright saw beep
+- delete_prohibited.wav - 0.199s	- bright saw beep
+- remove_all.wav	- 0.897s	- fast saw sweep down
+
+- relay_clicking.wav	- 0.055s	- noise pulse
+- confused_robot.wav	- 0.492s	- noise pulses - rapid fire
+- teleport.wav		- 0.466s	- fast saw sweep up
