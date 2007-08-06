@@ -261,10 +261,18 @@ public class Circuit {
     
     public void removeAllGates() {
         if (locked) throw new LockedCircuitException();
+        
         // remove gates one at a time, so we can give back allowances
         for (Gate g : new ArrayList<Gate>(gates)) {
             remove(g);
         }        
+        
+        // also clear inputs to permanent gates, since they were unaffected by the previous loop
+        for (Gate g : gates) {
+            for (Gate.Input i : g.getInputs()) {
+                i.connect(null);
+            }
+        }
         
         fireChangeEvent();
     }
