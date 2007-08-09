@@ -37,6 +37,7 @@
 package net.bluecow.robot;
 
 import java.awt.BorderLayout;
+import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Point;
@@ -413,10 +414,10 @@ public class Main {
                 RobotUtils.getPrefs().getInt("PlayfieldFrame.x", 30),
                 RobotUtils.getPrefs().getInt("PlayfieldFrame.y", 30));
         
-        JMenuBar mb;
+        JMenuBar mb = new JMenuBar();
         JMenu menu;
         JMenuItem item;
-        playfieldFrame.setJMenuBar(mb = new JMenuBar());
+        playfieldFrame.setJMenuBar(mb);
         mb.add(menu = new JMenu("File"));
         menu.setMnemonic(KeyEvent.VK_F);
         menu.add(item = new JMenuItem(loadLevelsAction));
@@ -614,10 +615,13 @@ public class Main {
         pffcp.add(buttonPanel, BorderLayout.SOUTH);
         
         playfieldFrame.setTitle("GrodBots: Level "+newLevelNum);
+        playfieldFrame.setBackground(Color.BLACK);
+        playfieldFrame.setForeground(Color.WHITE);
         playfieldFrame.setContentPane(pffcp);
         playfieldFrame.pack();
         playfieldFrame.setVisible(true);
-
+        //GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice().setFullScreenWindow(playfieldFrame);
+        
         final Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
         Point newFrameLocation = new Point(
                 playfieldFrame.getX() + playfieldFrame.getWidth() + 5,
