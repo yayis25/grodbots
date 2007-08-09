@@ -56,7 +56,7 @@
       <gate-allowance type="AND" value="10" />
     </grod>
 
-    <switch id="cake" loc-x="11" loc-y="4" on-enter="robot.setGoalReached(true); level.increaseScore(200);" enabled="true" label="Cake" label-direction="s" label-enabled="true">
+    <switch id="cake" loc-x="11" loc-y="4" on-enter="robot.setGoalReached(true); level.score += 200;" enabled="true" label="Cake" label-direction="s" label-enabled="true">
       <graphic href="ROBO-INF/images/cake.png" scale="1.0"/>
     </switch>
 
