@@ -64,11 +64,11 @@ import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
 import javax.swing.KeyStroke;
 import javax.swing.Timer;
-import javax.swing.event.ChangeEvent;
-import javax.swing.event.ChangeListener;
 import javax.swing.event.MouseInputAdapter;
 
 import net.bluecow.robot.GameConfig.GateConfig;
+import net.bluecow.robot.event.CircuitEvent;
+import net.bluecow.robot.event.CircuitListener;
 import net.bluecow.robot.gate.Gate;
 
 public class CircuitEditor extends JPanel {
@@ -454,7 +454,7 @@ public class CircuitEditor extends JPanel {
     /**
 	 * The AddGateAction adds a new instance of a gate to the enclosing circuit editor. 
 	 */
-    public class AddGateAction extends AbstractAction implements Action, ChangeListener {
+    public class AddGateAction extends AbstractAction implements Action, CircuitListener {
         
         private GateConfig gc;
         
@@ -462,7 +462,7 @@ public class CircuitEditor extends JPanel {
             super();
             this.gc = gc;
             updateName();
-            circuit.addChangeListener(this);
+            circuit.addCircuitListener(this);
         }
         
         /** Updates this action's name to include the circuit's current allowance amount. */
@@ -475,11 +475,6 @@ public class CircuitEditor extends JPanel {
             }
             putValue(NAME, name.toString());
             setEnabled(allowance != null && allowance != 0);
-        }
-        
-        public void stateChanged(ChangeEvent e) {
-            // the number of gates available might have changed, so...
-            updateName();
         }
 
         public void actionPerformed(ActionEvent e) {
@@ -514,6 +509,24 @@ public class CircuitEditor extends JPanel {
                 e1.printStackTrace();
                 JOptionPane.showMessageDialog(CircuitEditor.this, "Couldn't access new Gate instance:\n"+e1.getMessage());
             }
+        }
+
+        public void gatesAdded(CircuitEvent evt) {
+            // the number of gates available might have changed, so...
+            updateName();
+        }
+
+        public void gatesChangedState(CircuitEvent evt) {
+            // don't care
+        }
+
+        public void gatesConnected(CircuitEvent evt) {
+            // don't care
+        }
+
+        public void gatesRemoved(CircuitEvent evt) {
+            // the number of gates available might have changed, so...
+            updateName();
         }
 	}
     
@@ -668,8 +681,26 @@ public class CircuitEditor extends JPanel {
         addMouseMotionListener(mouseListener);
         setLayout(new CircuitEditorLayout());
         
-        circuit.addChangeListener(new ChangeListener() {
-            public void stateChanged(ChangeEvent e) { repaint(); }
+        circuit.addCircuitListener(new CircuitListener() {
+
+            public void gatesAdded(CircuitEvent evt) {
+                repaint();
+            }
+
+            public void gatesChangedState(CircuitEvent evt) {
+                if (evt.getGatesAffected().size() > 0) {
+                    playSound("relay_clicking");
+                }
+                repaint();
+            }
+
+            public void gatesConnected(CircuitEvent evt) {
+                repaint();
+            }
+
+            public void gatesRemoved(CircuitEvent evt) {
+                repaint();
+            }
         });
 	}
 

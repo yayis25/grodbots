@@ -49,10 +49,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import javax.swing.event.ChangeEvent;
-import javax.swing.event.ChangeListener;
-
 import net.bluecow.robot.GameConfig.GateConfig;
+import net.bluecow.robot.event.CircuitEvent;
+import net.bluecow.robot.event.CircuitListener;
 import net.bluecow.robot.gate.Gate;
 
 /**
@@ -117,12 +116,11 @@ public class Circuit {
     private Set<Gate> permanentGates = new HashSet<Gate>();
 
     /**
-     * List of listeners to be notified when this circuit's state has changed.
-     * Changes include gates being added, removed, or repositioned; an evaluation
-     * happening (so some input and output states may have changed); or anything
-     * else that might cause a visualization of the circuit to need to be redrawn.
+     * List of listeners to be notified when this circuit has changed in
+     * some way (structural or gate states).  See the CircuitListener interface
+     * for documentation on which events are available.
      */
-    private List<ChangeListener> changeListeners = new ArrayList<ChangeListener>();
+    private List<CircuitListener> circuitListeners = new ArrayList<CircuitListener>();
 
     public Circuit(Gate inputs, Collection<? extends Gate> outputs,
             Collection<GateConfig> gateConfigs, Dimension defaultGateSize) {
@@ -252,17 +250,22 @@ public class Circuit {
             if (allowance != null && allowance >= 0) {
                 gateAllowances.put(g.getClass(), allowance + 1);
             }
-            fireChangeEvent();
+            fireRemoveEvent(Collections.singletonList(g));
             return true;
         } else {
             return false;
         }
     }
     
+    /**
+     * Removes all removable gates from this circuit and disconnects the
+     * non-removable gates from each other.
+     */
     public void removeAllGates() {
         if (locked) throw new LockedCircuitException();
         
         // remove gates one at a time, so we can give back allowances
+        // this also fires lots of events (would be better to save them up and fire all in one event!)
         for (Gate g : new ArrayList<Gate>(gates)) {
             remove(g);
         }        
@@ -273,8 +276,6 @@ public class Circuit {
                 i.connect(null);
             }
         }
-        
-        fireChangeEvent();
     }
 
     public void addGate(Gate g, Rectangle bounds) {
@@ -291,7 +292,7 @@ public class Circuit {
         
         g.setBounds(bounds);
         gates.add(g);
-        fireChangeEvent();
+        fireAddEvent(Collections.singletonList(g));
     }
 
     public Gate getGateAt(Point p) {
@@ -328,7 +329,10 @@ public class Circuit {
     public void addGateAllowance(Class<? extends Gate> gateClass, int count) {
         if (locked) throw new LockedCircuitException();
         gateAllowances.put(gateClass, count);
-        fireChangeEvent();
+        
+        // XXX probably should be property change event
+        List<Gate> empty = Collections.emptyList();
+        fireAddEvent(empty);
     }
 
     /**
@@ -339,25 +343,36 @@ public class Circuit {
     }
 
     /**
-     * Evaluates each gate in the circuit one time, then schedules a repaint.
+     * Evaluates each gate in the circuit one time, then fires the state change notification.
      */
     public void evaluateOnce() {
         for (Gate gate : gates) {
             gate.evaluateInput();
         }
+        
+        List<Gate> gatesThatChanged = new ArrayList<Gate>();
         for (Gate gate : gates) {
+            boolean oldState = gate.getOutputState();
             gate.latchOutput();
+            if (gate.getOutputState() != oldState) {
+                gatesThatChanged.add(gate);
+            }
         }
         
-        fireChangeEvent();
+        fireStateChangeEvent(gatesThatChanged);
     }
 
+    /**
+     * Resets all gate states in this circuit, then fires a notification.
+     */
     public void resetState() {
         for (Gate gate : gates) {
             gate.reset();
         }
         
-        fireChangeEvent();
+        // XXX not quite right. should have another event type for reset
+        List<Gate> empty = Collections.emptyList();
+        fireStateChangeEvent(empty);
     }
 
     /**
@@ -387,20 +402,44 @@ public class Circuit {
         return null;
     }
 
-    public void addChangeListener(ChangeListener l) {
-        changeListeners.add(l);
+    public void addCircuitListener(CircuitListener l) {
+        circuitListeners.add(l);
     }
 
-    public void removeChangeListener(ChangeListener l) {
-        changeListeners.remove(l);
+    public void removeCircuitListener(CircuitListener l) {
+        circuitListeners.remove(l);
     }
     
-    private void fireChangeEvent() {
-        ChangeEvent e = new ChangeEvent(this);
-        for (ChangeListener l : changeListeners) {
-            l.stateChanged(e);  // XXX: this will not support removing a listener while the event is being fired
+    private void fireAddEvent(List<Gate> gates) {
+        CircuitEvent e = new CircuitEvent(this, gates);
+        for (int i = circuitListeners.size() - 1; i >= 0; i--) {
+            circuitListeners.get(i).gatesAdded(e);
         }
     }
+    
+    private void fireRemoveEvent(List<Gate> gates) {
+        CircuitEvent e = new CircuitEvent(this, gates);
+        for (int i = circuitListeners.size() - 1; i >= 0; i--) {
+            circuitListeners.get(i).gatesRemoved(e);
+        }
+    }
+    
+    private void fireStateChangeEvent(List<Gate> gates) {
+        CircuitEvent e = new CircuitEvent(this, gates);
+        for (int i = circuitListeners.size() - 1; i >= 0; i--) {
+            circuitListeners.get(i).gatesChangedState(e);
+        }
+    }
+    
+    // TODO find out when gates in this circuit get connected and fire the event
+    /*
+    private void fireConnectEvent(List<Gate> gates) {
+        CircuitEvent e = new CircuitEvent(this, gates);
+        for (int i = circuitListeners.size() - 1; i >= 0; i--) {
+            circuitListeners.get(i).gatesConnected(e);
+        }
+    }
+    */
 
     /**
      * Returns an unmodifiable view of this circuit's collection of gates.
@@ -419,7 +458,10 @@ public class Circuit {
         if (locked != v) {
             debug("Changing locked to "+v);
             locked = v;
-            fireChangeEvent();
+            
+            // XXX not quite right. should have another event type for lock/unlock
+            List<Gate> empty = Collections.emptyList();
+            fireStateChangeEvent(empty);
         }
     }
     
