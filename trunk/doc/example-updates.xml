@@ -1,0 +1,23 @@
+<?xml version="1.0"?>
+<products version="1.0">
+  
+  <product id="grodbots">
+    <product-name>GrodBots</product-name>
+    <product-description>Help the robot get his cake!</product-description>
+    <version ver="1.0.0" href="GrodBots-1.0.0.jar" date="20070809T100200">
+      <version-description>First official release.</version-description>
+    </version>
+  </product>
+  
+  <product id="editor">
+    <product-name>GrodBots Level Editor</product-name>
+    <product-description>GrodBots level editor - make your own levels for fun and profit!</product-description>
+    <version ver="1.0.0" href="GrodBots_Editor-1.0.0.jar" date="20070809T100200">
+      <version-description>First official release.</version-description>
+      <dependencies>
+        <depend refid="grodbots" version="1.0.0" />
+      </dependencies>
+    </version>
+  </product>
+  
+</products>

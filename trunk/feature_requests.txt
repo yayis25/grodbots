@@ -2,7 +2,7 @@ Game Features:
 -os x integration (menus, hooks for about and exit)
 -create a set of tutorial levels for learning the game
 -Make real game UI:
- -be able to page through the HTML in the level intro (there's too much to say!)
+ -single-window interface for gameplay (with the option of full screen)
  -preinit the bsh interpreters so there's not a lag during gameplay
  -explain that unterminated inputs are always off
  -explain that there's an invisible global clock and everything takes one tick
@@ -22,7 +22,6 @@ Game Features:
  -implement a GUI resource manager (for adding and removing files in the project)
  -make an animated sprite creator thing
  -make a sound preview thing so you can play audio resorces that exist in the project
- -make a music pattern editor thing (like a 1-track mod)
  -factor out each makeXXXProps.. editor into its own class, and add validate methods
  -in config files, add a version attribute to top-level element and autobackup old versions
  -effect for the "cursor" box to fade in and out and change colours and stuff
@@ -62,6 +61,7 @@ Completed:
  -trying to delete undeletable stuff
  -deleting all gates at once (clearing the circuit out)
 -Fix bug that clearing doesn't disconnect permanent inputs (motors) from permanent outputs (sensors)
+-be able to page through the HTML in the level intro (there's too much to say!)
 -Make the circuit editors white-on-black instead of OS defaults
 -it is now possible to include inline images (sourced from the level pack resources) in level descriptions
 -explain grod spinning wildly on conflicting inputs (this was done a while ago)
@@ -233,4 +233,5 @@ Dismissed/Changed/Bad Ideas:
    (it fixed itself...?)
  -fix the File->Open bug where the level chooser is empty after opening new project
    (problem went away on its own!?)
- 
+ -make a music pattern editor thing (like a 1-track mod)
+   (going to use real mods and/or midi now)
