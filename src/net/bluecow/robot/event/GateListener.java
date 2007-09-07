@@ -1,5 +1,5 @@
 /*
- * Created on Aug 6, 2007
+ * Created on Aug 31, 2007
  *
  * Copyright (c) 2007, Jonathan Fuerth
  * 
@@ -35,45 +35,37 @@
 package net.bluecow.robot.event;
 
 /**
- * The CircuitListener interface offers implementers a way of
- * being notified when certain aspects of a circuit change.
+ * The GateListener is an interface for receiving notifications about
+ * changes to individual gates.
+ * <p>
+ * Note that there is also a {@link CircuitListener}
+ * interface, which reports changes to a circuit as a whole.  Some gate
+ * events, such as a gate within a circuit being connected or repositioned,
+ * are refired by the circuit as CircuitEvents.  If you are only interested
+ * in when it is necessary to repaint a circuit, the CircuitListener
+ * of the circuit is sufficient; you do not need to attach a GateListener
+ * on each gate in the circuit.
  *
  * @author fuerth
  * @version $Id:$
  */
-public interface CircuitListener {
+public interface GateListener {
 
     /**
-     * Messaged when one or more gates have been added to the circuit.
-     * The event object's list of gates is the list of added gates.
+     * Notification that one of the gate's inputs has been connected
+     * or disconnected.  If the notification is for a disconnection event,
+     * <tt>e.getSourceInput().getConnectedGate()</tt> will return null.
+     * 
+     * @param e The event object associated with the event. Its source input
+     * will be the input that has been connected or disconnected.
      */
-    void gatesAdded(CircuitEvent evt);
+    public void inputConnected(GateEvent e);
     
     /**
-     * Messaged when one or more gates have been removed from the circuit.
-     * The event object's list of gates is the list of removed gates.
+     * Notification that the gate's position has changed.
+     * 
+     * @param e The event object associated with the event. The source input
+     * property will be null.
      */
-    void gatesRemoved(CircuitEvent evt);
-    
-    /**
-     * Messaged when gates are connected or disconnected.  The list of
-     * gates in the event object is the list of gates whose inputs
-     * were affected. There is presently no way of knowing which gate(s)
-     * the inputs were disconnected from if this is a disconnection notification.
-     */
-    void gatesConnected(CircuitEvent evt);
-    
-    /**
-     * Messaged when gates change their output state. This message is sent once
-     * per circuit clock cycle, and only if at least one gate changed state. The
-     * list of gates in the event object are the gates whose output state has
-     * just flipped on this circuit clock cycle.
-     */
-    void gatesChangedState(CircuitEvent evt);
-
-    /**
-     * Messaged when a gate's visual position within the circuit has changed.
-     */
-    void gatesRepositioned(CircuitEvent evt);
-    
+    public void gateRepositioned(GateEvent e);
 }

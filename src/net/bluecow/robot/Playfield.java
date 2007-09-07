@@ -111,6 +111,9 @@ public class Playfield extends JPanel {
      */
     private GameConfig game;
     
+    /**
+     * The level this playfield is currently displaying.  Must belong to {@link #game}.
+     */
     private LevelConfig level;
     
     private int squareWidth = 25;
@@ -206,23 +209,6 @@ public class Playfield extends JPanel {
     private double spotlightRadius;
     
     /**
-     * When this field is true, the paintComponent() method will paint the
-     * "overall score" label.
-     */
-    private boolean paintingOverallScore = true;
-
-    /**
-     * When this field is true, the paintComponent() method will paint the
-     * "score for this level" label.
-     */
-    private boolean paintingLevelScore = true;
-    
-    /**
-     * The amount of space the header bar takes up (for the score display).
-     */
-    private int headerHeight;
-
-    /**
      * The current page number of the HTML description text to display.  See
      * {@link #getDescriptionPage(int)}.
      */
@@ -243,7 +229,6 @@ public class Playfield extends JPanel {
             @Override
             public void mousePressed(MouseEvent e) {
                 Point p = e.getPoint();
-                p.translate(0, -headerHeight);
                 if (isDescriptionOn() && prevDescriptionPageRegion != null && prevDescriptionPageRegion.contains(p)) {
                     switchToPrevPage();
                 } else if (isDescriptionOn() && nextDescriptionPageRegion != null && nextDescriptionPageRegion.contains(p)) {
@@ -263,9 +248,6 @@ public class Playfield extends JPanel {
         int y = getSquareWidth();
         prevDescriptionPageRegion = new Rectangle(x, y, buttonLength, buttonLength);
         nextDescriptionPageRegion = new Rectangle(x + buttonLength, y, buttonLength, buttonLength);
-        
-        // double the font height because the height on its own isn't enough (?)
-        headerHeight = getFont().getSize() * 2;
     }
 
     public final void setGame(GameConfig game) {
@@ -342,24 +324,6 @@ public class Playfield extends JPanel {
         g.fillRect(0, 0, getWidth(), getHeight());
         Graphics2D g2 = (Graphics2D) g.create();
         FontMetrics fm = getFontMetrics(getFont());
-        
-        if (paintingOverallScore) {
-            String score = String.format("Overall Score: %06d", game.getScore());
-            int x = getWidth() / 2;
-            int y = fm.getHeight();
-            g2.setColor(Color.WHITE);
-            g2.drawString(score, x, y);
-        }
-
-        if (paintingLevelScore) {
-            String levelScore = String.format("This Level's Score: %06d", level.getScore());
-            int x = 0;
-            int y = fm.getHeight();
-            g2.setColor(Color.WHITE);
-            g2.drawString(levelScore, x, y);
-        }
-
-        g2.translate(0, headerHeight);
         
         Square[][] squares = level.getMap();
         for (int i = 0; i < squares.length; i++) {
@@ -693,7 +657,7 @@ public class Playfield extends JPanel {
     
     public Dimension getPreferredSize() {
         return new Dimension(level.getWidth() * getSquareWidth(),
-                			 level.getHeight() * getSquareWidth() + headerHeight);
+                			 level.getHeight() * getSquareWidth());
     }
     
     // ACCESSORS AND MUTATORS
@@ -810,22 +774,6 @@ public class Playfield extends JPanel {
         }
     }
 
-    public boolean isPaintingLevelScore() {
-        return paintingLevelScore;
-    }
-
-    public void setPaintingLevelScore(boolean paintingLevelScore) {
-        this.paintingLevelScore = paintingLevelScore;
-    }
-
-    public boolean isPaintingOverallScore() {
-        return paintingOverallScore;
-    }
-
-    public void setPaintingOverallScore(boolean paintingOverallScore) {
-        this.paintingOverallScore = paintingOverallScore;
-    }
-    
     public Point2D getSpotlightLocation() {
         return spotlightLocation;
     }
@@ -878,14 +826,5 @@ public class Playfield extends JPanel {
         if ( (getDescriptionPageNumber() + 1) < level.getDescriptionPages().size()) {
             descriptionPageNumber++;
         }
-    }
-
-    
-    public void setHeaderHeight(int headerHeight) {
-        this.headerHeight = headerHeight;
-    }
-    
-    public int getHeaderHeight() {
-        return headerHeight;
     }
 }

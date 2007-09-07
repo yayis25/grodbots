@@ -52,6 +52,8 @@ import java.util.Set;
 import net.bluecow.robot.GameConfig.GateConfig;
 import net.bluecow.robot.event.CircuitEvent;
 import net.bluecow.robot.event.CircuitListener;
+import net.bluecow.robot.event.GateEvent;
+import net.bluecow.robot.event.GateListener;
 import net.bluecow.robot.gate.Gate;
 
 /**
@@ -122,19 +124,39 @@ public class Circuit {
      */
     private List<CircuitListener> circuitListeners = new ArrayList<CircuitListener>();
 
+    /**
+     * Handles GateEvents from the gates in this circuit by refiring them as
+     * circuit events.
+     */
+    private GateListener gateEventHandler = new GateListener() {
+
+        public void inputConnected(GateEvent e) {
+            fireConnectEvent(Collections.singletonList(e.getSourceGate()));
+        }
+
+        public void gateRepositioned(GateEvent e) {
+            fireRepositionEvent(Collections.singletonList(e.getSourceGate()));
+        }
+        
+    };
+    
     public Circuit(Gate inputs, Collection<? extends Gate> outputs,
             Collection<GateConfig> gateConfigs, Dimension defaultGateSize) {
+        
         gates = new HashSet<Gate>();
+        
         inputsGate = inputs;
         gates.add(inputsGate);
         permanentGates.add(inputsGate);
         inputsGate.setBounds(new Rectangle(0, 0, defaultGateSize.width, defaultGateSize.height));
+        inputsGate.addGateListener(gateEventHandler);
         
         this.outputs = new ArrayList<Gate>(outputs);
         for (Gate output : outputs) {
             gates.add(output);
             permanentGates.add(output);
             output.setBounds(new Rectangle(0, 0, output.getOutputStickLength(), defaultGateSize.height));
+            output.addGateListener(gateEventHandler);
         }
         
         this.gateConfigs = new HashMap<Class<Gate>, GateConfig>();
@@ -167,6 +189,7 @@ public class Circuit {
         this.gateConfigs = new HashMap<Class<Gate>, GateConfig>(src.gateConfigs);
         this.gates = new HashSet<Gate>();
         this.inputsGate = inputs;
+        inputsGate.addGateListener(gateEventHandler);
         this.locked = src.locked;
         this.outputs = new ArrayList<Gate>(outputs);
         
@@ -209,6 +232,11 @@ public class Circuit {
         // now populate the permanentGates list
         for (Gate srcGate : src.permanentGates) {
             permanentGates.add(oldNew.get(srcGate));
+        }
+        
+        // add the event handler to all gates in this copy (includes inputs and outputs)
+        for (Gate g : oldNew.values()) {
+            g.addGateListener(gateEventHandler);
         }
         
         debug("Gate allowances after copy: "+gateAllowances);
@@ -292,6 +320,7 @@ public class Circuit {
         
         g.setBounds(bounds);
         gates.add(g);
+        g.addGateListener(gateEventHandler);
         fireAddEvent(Collections.singletonList(g));
     }
 
@@ -431,15 +460,25 @@ public class Circuit {
         }
     }
     
-    // TODO find out when gates in this circuit get connected and fire the event
-    /*
     private void fireConnectEvent(List<Gate> gates) {
         CircuitEvent e = new CircuitEvent(this, gates);
+        if (debugOn) {
+            debug("Circuit: Firing connect event " + e + " to " + circuitListeners.size() + " listeners:");
+            for (CircuitListener l : circuitListeners) {
+                debug("  " + l);
+            }
+        }
         for (int i = circuitListeners.size() - 1; i >= 0; i--) {
             circuitListeners.get(i).gatesConnected(e);
         }
     }
-    */
+
+    private void fireRepositionEvent(List<Gate> gates) {
+        CircuitEvent e = new CircuitEvent(this, gates);
+        for (int i = circuitListeners.size() - 1; i >= 0; i--) {
+            circuitListeners.get(i).gatesRepositioned(e);
+        }
+    }
 
     /**
      * Returns an unmodifiable view of this circuit's collection of gates.

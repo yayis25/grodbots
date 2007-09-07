@@ -375,6 +375,7 @@ public class Robot implements Labelable {
 	    
 		public void connect(Gate g) {
 			inputGate = g;
+            robotInputsGate.fireInputConnected(this);
 		}
 		
 		public boolean getState() {
@@ -490,6 +491,15 @@ public class Robot implements Labelable {
             // this gate always outputs false
         }
 
+        /**
+         * Override is here to make this method visible to the RobotInput class.
+         * This method behaves identically to the AbstractGate implementation.
+         */
+        @Override
+        protected void fireInputConnected(Input input) {
+            super.fireInputConnected(input);
+        }
+        
         @Override
         protected boolean isInputInverted() {
             return false;

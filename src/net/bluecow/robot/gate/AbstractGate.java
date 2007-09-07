@@ -36,6 +36,11 @@ import java.awt.Font;
 import java.awt.Graphics2D;
 import java.awt.Point;
 import java.awt.Rectangle;
+import java.util.ArrayList;
+import java.util.List;
+
+import net.bluecow.robot.event.GateEvent;
+import net.bluecow.robot.event.GateListener;
 
 /**
  * A generic gate implementation that can do everything except evaluate its
@@ -86,6 +91,11 @@ public abstract class AbstractGate implements Gate {
 	 */
 	protected Gate.Input inputs[];
 
+    /**
+     * The list of listeners on this gate instance.
+     */
+    private final List<GateListener> listeners = new ArrayList<GateListener>();
+    
 	/**
 	 * Creates a new gate with the given label.
 	 * 
@@ -128,9 +138,14 @@ public abstract class AbstractGate implements Gate {
 		/**
 		 * Connects this input to the output of the given gate. If this input
 		 * was already connected, the existing connection is broken.
+         * <p>
+         * This method will cause an inputConnected event unless the given
+         * gate is the same as the one this input was already connected to.
 		 */
 		public void connect(Gate g) {
+            if (g == inputGate) return;
 			inputGate = g;
+            fireInputConnected(this);
 		}
 
 		/**
@@ -171,24 +186,7 @@ public abstract class AbstractGate implements Gate {
             return calcInputPosition(this);
         }
 	}
-
-    /**
-     * A utility method for calculating the position of a particular input of a gate.
-     * This was factored out from DefaultInput.getPosition so that other Gate.Input
-     * implementations can use it.
-     * 
-     * @param g The gate in question
-     * @param i Which input of <tt>g</tt> to get the position of
-     */
-    public static Point calcInputPosition(Input i) {
-        Gate g = i.getGate();
-        Input[] siblings = g.getInputs();
-        Rectangle r = g.getBounds();
-        int inputNum;
-        double spacing = ((double) r.height) / ((double) siblings.length);
-        for (inputNum = 0; inputNum < siblings.length && i != siblings[inputNum]; inputNum++);
-        return new Point(r.x, r.y + (int) ( ((double) inputNum) * spacing + (spacing / 2.0)));
-    }
+    
 	/**
 	 * Returns the list of inputs.
 	 */
@@ -211,7 +209,42 @@ public abstract class AbstractGate implements Gate {
             System.out.println("Gate.reset(): warning: output="+getOutputState()+"; next="+nextOutputState+" after reset (both should be false!)");
         }
     }
+
     
+    // -------------- EVENT STUFF ---------------
+    
+    public void addGateListener(GateListener l) {
+        listeners.add(l);
+    }
+
+    public void removeGateListener(GateListener l) {
+        listeners.remove(l);
+    }
+
+    /**
+     * Fires a gateConnected event, with this gate as the source,
+     * to all listeners.
+     */
+    protected void fireInputConnected(Input input) {
+        GateEvent e = new GateEvent(input);
+        debug(this + ": Firing connect event to " + listeners.size() + " listeners");
+        for (int i = listeners.size() - 1; i >= 0; i--) {
+            listeners.get(i).inputConnected(e);
+        }
+    }
+    
+    /**
+     * Fires a gateConnected event, with this gate as the source,
+     * to all listeners.
+     */
+    protected void fireGateRepositioned() {
+        GateEvent e = new GateEvent(this);
+        debug(this + ": Firing reposition event to " + listeners.size() + " listeners");
+        for (int i = listeners.size() - 1; i >= 0; i--) {
+            listeners.get(i).gateRepositioned(e);
+        }
+    }
+
 	// -------------- ACCESSORS and MUTATORS ------------------
 	
 	public String getLabel() {
@@ -233,6 +266,24 @@ public abstract class AbstractGate implements Gate {
     
     private Rectangle bounds;
     
+    /**
+     * A utility method for calculating the position of a particular input of a gate.
+     * This was factored out from DefaultInput.getPosition so that other Gate.Input
+     * implementations can use it.
+     * 
+     * @param g The gate in question
+     * @param i Which input of <tt>g</tt> to get the position of
+     */
+    public static Point calcInputPosition(Input i) {
+        Gate g = i.getGate();
+        Input[] siblings = g.getInputs();
+        Rectangle r = g.getBounds();
+        int inputNum;
+        double spacing = ((double) r.height) / ((double) siblings.length);
+        for (inputNum = 0; inputNum < siblings.length && i != siblings[inputNum]; inputNum++);
+        return new Point(r.x, r.y + (int) ( ((double) inputNum) * spacing + (spacing / 2.0)));
+    }
+
     /**
      * The colour of a highlighted gate.
      * FIXME: this is also defined in CircuitEditor!
@@ -453,6 +504,7 @@ public abstract class AbstractGate implements Gate {
     
     public void setBounds(Rectangle v) {
         bounds = new Rectangle(v);
+        fireGateRepositioned();
     }
     
     public int getInputStickLength() {

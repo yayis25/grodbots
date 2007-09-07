@@ -154,7 +154,6 @@ public class CircuitEditor extends JPanel {
             
             if (progress == 1.0) {
                 timer.stop();
-                repaint();
             } else {
                 progress += frameStep;
             }
@@ -336,7 +335,6 @@ public class CircuitEditor extends JPanel {
 
             } else if (hilightGate != null) {
                 boolean baleted = circuit.remove(hilightGate);
-                repaint();
                 if (baleted) {
                     playSound("delete_gate");
                     Gate zoomTo = toolbox.getGateForClass(hilightGate.getClass());
@@ -528,6 +526,10 @@ public class CircuitEditor extends JPanel {
             // the number of gates available might have changed, so...
             updateName();
         }
+
+        public void gatesRepositioned(CircuitEvent evt) {
+            // don't care
+        }
 	}
     
     private class SetGateSizeAction extends AbstractAction {
@@ -556,7 +558,6 @@ public class CircuitEditor extends JPanel {
                 g.setOutputStickLength((int) (defaultOutputStickLength * gateSizeCoefficient));
                 g.setInputStickLength((int) (defaultInputStickLength * gateSizeCoefficient));
             }
-            repaint();
         }
     }
 
@@ -701,6 +702,10 @@ public class CircuitEditor extends JPanel {
             public void gatesRemoved(CircuitEvent evt) {
                 repaint();
             }
+
+            public void gatesRepositioned(CircuitEvent evt) {
+                repaint();
+            }
         });
 	}
 
@@ -840,7 +845,6 @@ public class CircuitEditor extends JPanel {
 	    } catch (Exception e) {
 	        JOptionPane.showMessageDialog(this, "Couldn't connect gates:\n"+e.getMessage());
 	    }
-        repaint();
 	}
 	
     private Toolbox toolbox;
@@ -892,7 +896,6 @@ public class CircuitEditor extends JPanel {
 		        r.x = p.x - dragOffset.x;
 		        r.y = p.y - dragOffset.y;
                 movingGate.setBounds(r);
-		        repaint();
 		    }
 		}
 

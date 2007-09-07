@@ -1,5 +1,5 @@
 /*
- * Created on Aug 6, 2007
+ * Created on Aug 25, 2007
  *
  * Copyright (c) 2007, Jonathan Fuerth
  * 
@@ -32,48 +32,27 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package net.bluecow.robot.event;
+package net.bluecow.robot;
+
+import java.awt.event.ActionEvent;
+import java.awt.event.KeyEvent;
+
+import javax.swing.AbstractAction;
 
 /**
- * The CircuitListener interface offers implementers a way of
- * being notified when certain aspects of a circuit change.
+ * The QuitAction, when invoked, quits the game by terminating the JVM.
  *
  * @author fuerth
  * @version $Id:$
  */
-public interface CircuitListener {
+class QuitAction extends AbstractAction {
 
-    /**
-     * Messaged when one or more gates have been added to the circuit.
-     * The event object's list of gates is the list of added gates.
-     */
-    void gatesAdded(CircuitEvent evt);
+    public QuitAction() {
+        super("Exit");
+        putValue(MNEMONIC_KEY, KeyEvent.VK_X);
+    }
     
-    /**
-     * Messaged when one or more gates have been removed from the circuit.
-     * The event object's list of gates is the list of removed gates.
-     */
-    void gatesRemoved(CircuitEvent evt);
-    
-    /**
-     * Messaged when gates are connected or disconnected.  The list of
-     * gates in the event object is the list of gates whose inputs
-     * were affected. There is presently no way of knowing which gate(s)
-     * the inputs were disconnected from if this is a disconnection notification.
-     */
-    void gatesConnected(CircuitEvent evt);
-    
-    /**
-     * Messaged when gates change their output state. This message is sent once
-     * per circuit clock cycle, and only if at least one gate changed state. The
-     * list of gates in the event object are the gates whose output state has
-     * just flipped on this circuit clock cycle.
-     */
-    void gatesChangedState(CircuitEvent evt);
-
-    /**
-     * Messaged when a gate's visual position within the circuit has changed.
-     */
-    void gatesRepositioned(CircuitEvent evt);
-    
+    public void actionPerformed(ActionEvent e) {
+        System.exit(0);
+    }
 }

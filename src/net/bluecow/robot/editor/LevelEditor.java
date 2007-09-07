@@ -182,9 +182,6 @@ public class LevelEditor extends Playfield {
     
     public LevelEditor(GameConfig game, LevelConfig level) {
         super(game, level);
-        setPaintingLevelScore(false);
-        setPaintingOverallScore(false);
-        setHeaderHeight(0);
         setDescriptionOn(false);
         setClickToToggleDescription(false);
         addMouseListener(mouseAdapter);
