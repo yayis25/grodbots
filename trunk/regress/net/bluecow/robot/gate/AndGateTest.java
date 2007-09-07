@@ -10,6 +10,8 @@ import java.awt.Graphics2D;
 import java.awt.Point;
 import java.awt.Rectangle;
 
+import net.bluecow.robot.event.GateListener;
+
 import junit.framework.TestCase;
 
 public class AndGateTest extends TestCase {
@@ -126,6 +128,14 @@ public class AndGateTest extends TestCase {
 
         public boolean isDrawingTerminations() {
             return false;
+        }
+        
+        public void addGateListener(GateListener l) {
+            throw new UnsupportedOperationException("No listener support in this stub class");
+        }
+        
+        public void removeGateListener(GateListener l) {
+            throw new UnsupportedOperationException("No listener support in this stub class");
         }
     };
     

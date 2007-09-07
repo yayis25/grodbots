@@ -36,6 +36,8 @@ import java.awt.Graphics2D;
 import java.awt.Point;
 import java.awt.Rectangle;
 
+import net.bluecow.robot.event.GateListener;
+
 public interface Gate {
     
     /**
@@ -74,6 +76,10 @@ public interface Gate {
      */
     public void latchOutput();
     
+    /**
+     * Returns the inputs to this gate.  There will always be the same number of inputs
+     * arranged in the same order for the lifetime of this gate instance.
+     */
     public Gate.Input[] getInputs();
 
     /**
@@ -89,13 +95,27 @@ public interface Gate {
     public Gate createDisconnectedCopy();
 
     /**
+     * Adds the given listener to this gate's listener list.  Gate listeners
+     * are notified every time certain events occur on this gate until removed
+     * from the listener list.
+     */
+    public void addGateListener(GateListener l);
+    
+    /**
+     * Removed the given listener from this gate's listener list.  Once a listener
+     * has been removed, it will no longer receive event notifications.
+     */
+    public void removeGateListener(GateListener l);
+    
+    /**
      * The input interface represents an input to a gate.  A gate will
      * have 0 or more inputs.
      */
     public interface Input {
         
         /**
-         * Connects this input to the given gate's output.
+         * Connects this input to the given gate's output.  This operation causes
+         * an inputConnected event on the gate this input belongs to.
          */
         public void connect(Gate g);
         
@@ -135,9 +155,6 @@ public interface Gate {
      * Renders a visual depiction of this gate's body to the given graphics.
      *
      * @param g2 The graphics to draw this gate with.
-     * @param r The bounds of the entire gate, including input and output sitcks.
-     * @param inputStickLength The length of the input sticks.
-     * @param outputStickLength The length of the output sticks.
      */
     public void drawBody(Graphics2D g2);
 
@@ -153,7 +170,11 @@ public interface Gate {
     public void setDrawingTerminations(boolean v);
 
     /**
-     * Sets the position and size of this gate's visual manifestation.
+     * Sets the position and size of this gate's visual manifestation. A call to this
+     * method results in a gateRepositioned event.
+     * 
+     * @param The new bounding rectangle for this gate's visual appearance.  Must
+     * not be null.
      */
     public void setBounds(Rectangle rectangle);
     

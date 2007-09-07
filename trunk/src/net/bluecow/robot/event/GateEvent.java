@@ -1,5 +1,5 @@
 /*
- * Created on Aug 6, 2007
+ * Created on Aug 31, 2007
  *
  * Copyright (c) 2007, Jonathan Fuerth
  * 
@@ -34,46 +34,56 @@
 
 package net.bluecow.robot.event;
 
+import net.bluecow.robot.gate.Gate;
+
 /**
- * The CircuitListener interface offers implementers a way of
- * being notified when certain aspects of a circuit change.
+ * The GateEvent represents some change to a Gate object or one of
+ * its inputs.
  *
  * @author fuerth
  * @version $Id:$
  */
-public interface CircuitListener {
+public class GateEvent {
+
+    private final Gate sourceGate;
+
+    private final Gate.Input sourceInput;
 
     /**
-     * Messaged when one or more gates have been added to the circuit.
-     * The event object's list of gates is the list of added gates.
+     * Creates a new gate event which pertains to the given gate.
+     * 
+     * @param source The gate this event is about.
      */
-    void gatesAdded(CircuitEvent evt);
+    public GateEvent(Gate source) {
+        this.sourceGate = source;
+        this.sourceInput = null;
+    }
     
     /**
-     * Messaged when one or more gates have been removed from the circuit.
-     * The event object's list of gates is the list of removed gates.
+     * Creates a new gate event which pertains to the given input. The
+     * gate source of this event will be the gate the given input is
+     * attached to.
+     * 
+     * @param source The input this event is about.
      */
-    void gatesRemoved(CircuitEvent evt);
+    public GateEvent(Gate.Input source) {
+        this.sourceGate = source.getGate();
+        this.sourceInput = source;
+    }
     
     /**
-     * Messaged when gates are connected or disconnected.  The list of
-     * gates in the event object is the list of gates whose inputs
-     * were affected. There is presently no way of knowing which gate(s)
-     * the inputs were disconnected from if this is a disconnection notification.
+     * Returns the gate that this event pertains to.
      */
-    void gatesConnected(CircuitEvent evt);
+    public Gate getSourceGate() {
+        return sourceGate;
+    }
     
     /**
-     * Messaged when gates change their output state. This message is sent once
-     * per circuit clock cycle, and only if at least one gate changed state. The
-     * list of gates in the event object are the gates whose output state has
-     * just flipped on this circuit clock cycle.
+     * Returns the input that this event pertains to.  For events
+     * that don't pertain to one particular input, this will be
+     * null.
      */
-    void gatesChangedState(CircuitEvent evt);
-
-    /**
-     * Messaged when a gate's visual position within the circuit has changed.
-     */
-    void gatesRepositioned(CircuitEvent evt);
-    
+    public Gate.Input getSourceInput() {
+        return sourceInput;
+    }
 }

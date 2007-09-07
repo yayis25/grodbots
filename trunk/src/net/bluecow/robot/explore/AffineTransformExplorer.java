@@ -111,7 +111,6 @@ public class AffineTransformExplorer {
 
         gc.addLevel(level);
         Playfield playfield = new Playfield(gc, level);
-        playfield.setHeaderHeight(0);
         
         component.add(playfield, BorderLayout.CENTER);
         component.add(makeTransformPanel(), BorderLayout.EAST);

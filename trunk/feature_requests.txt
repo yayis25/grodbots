@@ -3,6 +3,10 @@ Game Features:
 -create a set of tutorial levels for learning the game
 -Make real game UI:
  -single-window interface for gameplay (with the option of full screen)
+  -user pref (and menu item) for full-screen vs. not
+  -the editors in the editors panel have to work like radio buttons, switching the current editor
+  -only show the editors panel when there are multiple robots
+  -use gord's new button graphics
  -preinit the bsh interpreters so there's not a lag during gameplay
  -explain that unterminated inputs are always off
  -explain that there's an invisible global clock and everything takes one tick
@@ -57,6 +61,9 @@ Sounds:
 -little ditties for the beginning of each level (maybe this would be better suited to the MIDI sequencer api)
 
 Completed:
+-pull the scorebar out of the playfield and make it its own component across the top of the whole screen
+-circuit editors repaint after every circuit structural change (so the preview tracks the current editor) -- this will allow some explicit repaint calls in the circuit editor to be removed
+-create editors panel to show thumbnail versions of multiple editors
 -New sounds for the Circuit Editor
  -trying to delete undeletable stuff
  -deleting all gates at once (clearing the circuit out)
