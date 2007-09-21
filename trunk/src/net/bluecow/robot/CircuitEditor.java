@@ -59,6 +59,8 @@ import java.util.Set;
 
 import javax.swing.AbstractAction;
 import javax.swing.Action;
+import javax.swing.ActionMap;
+import javax.swing.InputMap;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
@@ -73,7 +75,16 @@ import net.bluecow.robot.gate.Gate;
 
 public class CircuitEditor extends JPanel {
 
-    private class ZoomEffect implements ActionListener {
+    /**
+     * A special visual effect that smoothly translates and scales a Gate from a
+     * starting position and size to a finishing position and size, over the
+     * course of a number of frames.  There is a similar generic ZoomEffect that
+     * can work with any Sprite, but this one is special-purpose because the gate
+     * input and output sticks have to be scaled at the same time as the body.
+     * 
+     * @see net.bluecow.robot.fx.ZoomEffect
+     */
+    private class GateZoomEffect implements ActionListener {
         
         /**
          * The timer that periodically triggers rendering of the next frame.
@@ -108,7 +119,7 @@ public class CircuitEditor extends JPanel {
 
         private int endOutputStickLength;
         
-        ZoomEffect(int nframes, Gate gate, Rectangle end,
+        GateZoomEffect(int nframes, Gate gate, Rectangle end,
                 int endInputStickLength, int endOutputStickLength) {
             frameStep = 1.0/nframes;
             this.gate = gate;
@@ -338,7 +349,7 @@ public class CircuitEditor extends JPanel {
                 if (baleted) {
                     playSound("delete_gate");
                     Gate zoomTo = toolbox.getGateForClass(hilightGate.getClass());
-                    new ZoomEffect(ZOOM_STEPS, hilightGate, zoomTo.getBounds(), zoomTo.getInputStickLength(), zoomTo.getOutputStickLength());
+                    new GateZoomEffect(ZOOM_STEPS, hilightGate, zoomTo.getBounds(), zoomTo.getInputStickLength(), zoomTo.getOutputStickLength());
                     hilightGate = null;
                 } else {
                     playSound("delete_prohibited");
@@ -499,7 +510,7 @@ public class CircuitEditor extends JPanel {
                 newGate.setBounds(zoomFrom.getBounds());
                 newGate.setInputStickLength(zoomFrom.getInputStickLength());
                 newGate.setOutputStickLength(zoomFrom.getOutputStickLength());
-                new ZoomEffect(ZOOM_STEPS, newGate, zoomTo, nisl, nosl);
+                new GateZoomEffect(ZOOM_STEPS, newGate, zoomTo, nisl, nosl);
             } catch (InstantiationException e1) {
                 e1.printStackTrace();
                 JOptionPane.showMessageDialog(CircuitEditor.this, "Couldn't create new Gate instance:\n"+e1.getMessage());
@@ -718,30 +729,32 @@ public class CircuitEditor extends JPanel {
      * <code>addGate(fully.qualified.gate.class.name)</code>.
      */
     private void setupActions() {
+        InputMap inputMap = getInputMap(WHEN_IN_FOCUSED_WINDOW);
+        ActionMap actionMap = getActionMap();
         for (GateConfig gc : circuit.getGateConfigs().values()) {
             String actionKey = "addGate("+gc.getName()+")";
-            getInputMap().put(gc.getAccelerator(), actionKey);
+            inputMap.put(gc.getAccelerator(), actionKey);
             Action addGateAction = new AddGateAction(gc);
-            getActionMap().put(actionKey, addGateAction);
+            actionMap.put(actionKey, addGateAction);
         }
 
-        getInputMap().put(KeyStroke.getKeyStroke(KeyEvent.VK_DELETE, 0), "remove");
-        getInputMap().put(KeyStroke.getKeyStroke(KeyEvent.VK_BACK_SPACE, 0), "remove");
+        inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_DELETE, 0), "remove");
+        inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_BACK_SPACE, 0), "remove");
         removeAction = new RemoveAction("Remove");
-        getActionMap().put("remove", removeAction);
+        actionMap.put("remove", removeAction);
 
-        getInputMap().put(KeyStroke.getKeyStroke('!'), "removeAll");
+        inputMap.put(KeyStroke.getKeyStroke('!'), "removeAll");
         removeAllAction = new RemoveAllAction();
-        getActionMap().put("removeAll", removeAllAction);
+        actionMap.put("removeAll", removeAllAction);
         
-        getInputMap().put(KeyStroke.getKeyStroke('-'), "shrinkGates");
+        inputMap.put(KeyStroke.getKeyStroke('-'), "shrinkGates");
         shrinkAction = new SetGateSizeAction("Ensmallen Gates", -0.1);
-        getActionMap().put("shrinkGates", shrinkAction);
+        actionMap.put("shrinkGates", shrinkAction);
         
-        getInputMap().put(KeyStroke.getKeyStroke('+'), "growGates");
-        getInputMap().put(KeyStroke.getKeyStroke('='), "growGates");
+        inputMap.put(KeyStroke.getKeyStroke('+'), "growGates");
+        inputMap.put(KeyStroke.getKeyStroke('='), "growGates");
         growAction = new SetGateSizeAction("Embiggen Gates", 0.1);
-        getActionMap().put("growGates", growAction);
+        actionMap.put("growGates", growAction);
     }
 
     /**

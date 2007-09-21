@@ -77,10 +77,21 @@ import org.xml.sax.helpers.DefaultHandler;
  */
 public class LevelStore {
     
+    /**
+     * The path within a resource manager where the game configuration
+     * XML file is expected to be found.
+     */
     public static final String DEFAULT_MAP_RESOURCE_PATH = "ROBO-INF/default.map";
 
+    /**
+     * The attribute name of a <tt>square</tt> element that indicates it is
+     * a wall (and therefore not occupiable by the player).
+     */
     public static final String WALL_FLAG = "WALL";
 
+    /**
+     * Enables and disables the debugging features of this class.
+     */
     private static boolean debugging = false;
     
     /**
@@ -611,7 +622,7 @@ public class LevelStore {
                     checkMandatory(qName, "start-x", startx);
                     checkMandatory(qName, "start-y", starty);
                     
-                    robot = new Robot(id, "Grod", level, config.getSensorTypes(), config.getGateTypes(), null, new Point2D.Float(startx, starty), stepSize, null, evalsPerStep);
+                    robot = new Robot(id, "Setting name is deferred to setupLabel()", level, config.getSensorTypes(), config.getGateTypes(), null, new Point2D.Float(startx, starty), stepSize, null, evalsPerStep);
 
                     setupLabel(robot, attributes);
                     

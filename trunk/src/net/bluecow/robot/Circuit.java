@@ -80,7 +80,11 @@ public class Circuit {
      */
     private boolean locked = false;
     
-
+    /**
+     * This circuit's name as it should be displayed to the user.
+     */
+    private String name;
+    
     /**
      * The special set of gates that provide input to the circuit (typically,
      * the robot's sensor outputs).
@@ -140,11 +144,25 @@ public class Circuit {
         
     };
     
-    public Circuit(Gate inputs, Collection<? extends Gate> outputs,
+    /**
+     * Creates a new circuit with the given inputs and outputs.  The collection
+     * of GateConfig objects determines which gates can exist in the circuit.
+     * 
+     * @param name The user-visible name of this circuit.
+     * @param inputs The gate whose inputs are the ultimate target of this
+     * circuit. Visually, a circuit's inputs will typically be arranged at the extreme
+     * right-hand side of the circuit.
+     * @param outputs The set of gates that provide input to the circuit. Visually, they
+     * typically appear along the left-hand side of the circuit.
+     * @param gateConfigs All of the gate types this circuit can contain.
+     * @param defaultGateSize The visual size assigned to new gates within this circuit. 
+     */
+    public Circuit(String name, Gate inputs, Collection<? extends Gate> outputs,
             Collection<GateConfig> gateConfigs, Dimension defaultGateSize) {
         
         gates = new HashSet<Gate>();
         
+        this.name = name;
         inputsGate = inputs;
         gates.add(inputsGate);
         permanentGates.add(inputsGate);
@@ -185,6 +203,7 @@ public class Circuit {
      * the source circuit.
      */
     public Circuit(Circuit src, Gate inputs, Collection<? extends Gate> outputs) {
+        this.name = src.name;
         this.gateAllowances = new HashMap<Class<? extends Gate>, Integer>(src.gateAllowances);
         this.gateConfigs = new HashMap<Class<Gate>, GateConfig>(src.gateConfigs);
         this.gates = new HashSet<Gate>();
@@ -506,6 +525,20 @@ public class Circuit {
     
     public boolean isLocked() {
         return locked;
+    }
+    
+    /**
+     * Returns this circuit's name.
+     */
+    public String getName() {
+        return name;
+    }
+    
+    /**
+     * Changes the name of this circuit.
+     */
+    public void setName(String name) {
+        this.name = name;
     }
 
     private static void debug(String msg) {

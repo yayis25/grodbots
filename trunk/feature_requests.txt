@@ -3,10 +3,8 @@ Game Features:
 -create a set of tutorial levels for learning the game
 -Make real game UI:
  -single-window interface for gameplay (with the option of full screen)
-  -user pref (and menu item) for full-screen vs. not
-  -the editors in the editors panel have to work like radio buttons, switching the current editor
-  -only show the editors panel when there are multiple robots
   -use gord's new button graphics
+  -reset robot direction when resetting level (specify initial heading in level config)
  -preinit the bsh interpreters so there's not a lag during gameplay
  -explain that unterminated inputs are always off
  -explain that there's an invisible global clock and everything takes one tick
@@ -61,6 +59,13 @@ Sounds:
 -little ditties for the beginning of each level (maybe this would be better suited to the MIDI sequencer api)
 
 Completed:
+-only show the editors panel when there are multiple robots
+-key bindings 1, 2, 3 ... for switching between circuits to edit
+-animated transtitions between circuit editors (actually just an effect on the selection frame.. the zoom effect was too slow)
+-label the editors in the editors panel
+-editors in the editors panel work like radio buttons, switching the current editor
+-title section with robot names in editors panel
+-make the hotkeys for the circuit editor work again
 -pull the scorebar out of the playfield and make it its own component across the top of the whole screen
 -circuit editors repaint after every circuit structural change (so the preview tracks the current editor) -- this will allow some explicit repaint calls in the circuit editor to be removed
 -create editors panel to show thumbnail versions of multiple editors
@@ -228,6 +233,9 @@ Completed:
 -Multi-frame robot sprite
 
 Dismissed/Changed/Bad Ideas:
+-user pref (and menu item) for full-screen vs. not
+ --- I still like the full screen idea, but this would require reimplementing the frame's menubar
+     or redoing the UI so it doesn't use menu bars since the full screen window can't have a menu bar
 -Different floor textures that the robot can detect (metal, carpet, dirt, tile, ...)
 -Random gate delays in "hard" mode
 -In the level editor,

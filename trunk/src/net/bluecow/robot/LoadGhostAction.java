@@ -62,7 +62,7 @@ import javax.swing.JOptionPane;
 class LoadGhostAction extends AbstractAction {
             
     /**
-     * TODO: Comment for <code>session</code>
+     * The session this action belongs to.
      */
     private final Main session;
 

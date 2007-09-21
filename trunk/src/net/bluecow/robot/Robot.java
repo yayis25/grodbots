@@ -164,7 +164,7 @@ public class Robot implements Labelable {
         }
         
         this.circuit = new Circuit(
-                robotInputsGate, outputs.values(),
+                name, robotInputsGate, outputs.values(),
                 gateConfigs, DEFAULT_GATE_SIZE);
         if (circuit != null) {
             for (Map.Entry<Class<? extends Gate>, Integer> allowance :
@@ -578,6 +578,7 @@ public class Robot implements Labelable {
     }
     
     public void setLabel(String l) {
+        circuit.setName(l);
         labelText = l;
     }
 
