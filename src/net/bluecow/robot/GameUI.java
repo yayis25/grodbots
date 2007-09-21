@@ -37,6 +37,8 @@ package net.bluecow.robot;
 import java.awt.BorderLayout;
 import java.awt.FlowLayout;
 import java.awt.event.KeyEvent;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -63,6 +65,12 @@ import javax.swing.JPanel;
  */
 public class GameUI {
 
+    private static final boolean debugOn = false;
+
+    private static void debug(String msg) {
+        if (debugOn) System.out.println(msg);
+    }
+    
     /**
      * This is the panel that all the UI components live in.  Its contents and layout
      * are managed by this class.
@@ -125,6 +133,22 @@ public class GameUI {
     private QuitAction quitAction = new QuitAction();
 
     /**
+     * Handles circuit selection changes in the editors panel by switching
+     * the current editor in the main part of the GUI.
+     */
+    private PropertyChangeListener circuitSelectionHandler = new PropertyChangeListener() {
+        public void propertyChange(PropertyChangeEvent evt) {
+            if (currentEditor != null) {
+                panel.remove(currentEditor);
+            }
+            debug("Changing current editor component from "+currentEditor+" to "+editorsPanel.getSelectedEditor());
+            currentEditor = editorsPanel.getSelectedEditor();
+            panel.add(currentEditor, BorderLayout.EAST);
+            panel.revalidate();
+        }
+    };
+
+    /**
      * Creates a new game UI for the given panel.
      * 
      * @param level
@@ -133,6 +157,7 @@ public class GameUI {
         this.level = level;
         panel = new JPanel(new BorderLayout());
         editorsPanel = new EditorsPanel(sm);
+        editorsPanel.addPropertyChangeListener("selectedCircuit", circuitSelectionHandler);
         scoreBar = new ScoreBar(session.getGameConfig(), level);
         
         playfield = new Playfield(session.getGameConfig(), level);
@@ -141,11 +166,6 @@ public class GameUI {
         for (Robot robot : level.getRobots()) {
             CircuitEditor ce = editorsPanel.addCircuit(robot.getCircuit());
             robots.put(robot, ce);
-            
-            // XXX temporary. editors panel will manage current editor selection
-            if (currentEditor == null) {
-                currentEditor = new CircuitEditor(robot.getCircuit(), sm);
-            }
         }
         final GameLoop gameLoop = new GameLoop(robots.keySet(), level, playfield);
 
@@ -186,15 +206,16 @@ public class GameUI {
         floaterPanel.add(playfield);
         
         JComponent pffcp = new JPanel(new BorderLayout());
-        pffcp.add(new JLabel(level.getName(), JLabel.CENTER), BorderLayout.NORTH);
+        pffcp.add(buttonPanel, BorderLayout.NORTH);
         pffcp.add(floaterPanel, BorderLayout.CENTER);
-        pffcp.add(buttonPanel, BorderLayout.SOUTH);
+        pffcp.add(new JLabel(level.getName(), JLabel.CENTER), BorderLayout.SOUTH);
         
         panel.add(scoreBar, BorderLayout.NORTH);
         panel.add(pffcp, BorderLayout.CENTER);
-        panel.add(editorsPanel, BorderLayout.SOUTH);
-        panel.add(currentEditor, BorderLayout.EAST);
-        // TODO add the game state buttons
+        if (level.getRobots().size() > 1) {
+            panel.add(editorsPanel, BorderLayout.SOUTH);
+        }
+        // current editor gets placed in EAST by the property change listener
     }
     
     /**

@@ -56,14 +56,33 @@ import net.bluecow.robot.sprite.Sprite;
 import net.bluecow.robot.sprite.SpriteLoadException;
 import net.bluecow.robot.sprite.SpriteManager;
 
+/**
+ * The GameConfig class holds configuration information for an instance of
+ * the GrodBots game.  Although a GameConfig can be created from scratch
+ * programmatically, every aspect of the configuration defaults to being
+ * empty or unspecified.  The easiest way to create a configured GameConfig
+ * object is by using the LevelStore class. It can read a configuration file
+ * and return a fully-set-up GameConfig.
+ * 
+ * @see LevelStore
+ * @author fuerth
+ * @version $Id:$
+ */
 public class GameConfig {
 
+    /**
+     * GateConfig represents a type, or class, of gate that can be used in
+     * circuits in this game.  Instances of this class are immutable, so they
+     * are safe to share between objects without first making a copy.
+     */
     public static class GateConfig {
         private String name;
         private KeyStroke accelerator;
         private Class<Gate> gateClass;
         
         /**
+         * Creates a new gate configuration with the given properties.
+         * 
          * @param name The gate's identifier in this config
          * @param accelerator The accelerator key for creating a gate of this type
          * @param clazz The class whose instances represent a gate of this type

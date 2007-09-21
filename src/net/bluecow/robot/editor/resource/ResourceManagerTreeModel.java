@@ -70,7 +70,7 @@ public class ResourceManagerTreeModel implements TreeModel {
     /**
      * Controls the debugging features of this class.
      */
-    private static final boolean debugOn = true;
+    private static final boolean debugOn = false;
     
     /**
      * Prints the given message to System.out if debugOn is true.
