@@ -66,7 +66,7 @@ import net.bluecow.robot.resource.SystemResourceLoader;
  * game.
  *
  * @author fuerth
- * @version $Id:$
+ * @version $Id$
  */
 public class Main {
 
@@ -248,7 +248,13 @@ public class Main {
             }
         };
 
-        gameUI = new GameUI(this, level, sm, nextLevelAction);
+        try {
+            gameUI = new GameUI(this, level, sm, nextLevelAction);
+        } catch (IOException ex) {
+            RobotUtils.showException("Failed to create game UI", ex);
+            playfieldFrame.dispose();
+            return;
+        }
         
         System.out.println("Starting level "+level.getName());
         
@@ -281,10 +287,21 @@ public class Main {
         playfieldFrame.setContentPane(gameUI.getPanel());
         playfieldFrame.pack();
         playfieldFrame.setVisible(true);
+        playfieldFrame.requestFocus();
     }
     
+    /**
+     * Returns this session's current game configuration.
+     */
     public GameConfig getGameConfig() {
         return config;
     }
 
+    /**
+     * Returns the resource loader associated with this session's current
+     * game config.  This is a convenience method for getGameConfig().getResourceLoader().
+     */
+    public ResourceLoader getResourceLoader() {
+        return getGameConfig().getResourceLoader();
+    }
 }

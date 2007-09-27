@@ -2,9 +2,8 @@ Game Features:
 -os x integration (menus, hooks for about and exit)
 -create a set of tutorial levels for learning the game
 -Make real game UI:
- -single-window interface for gameplay (with the option of full screen)
-  -use gord's new button graphics
-  -reset robot direction when resetting level (specify initial heading in level config)
+ -get new button graphics from Gord (start, pause, reset, step, next level)
+ -play in-game music
  -preinit the bsh interpreters so there's not a lag during gameplay
  -explain that unterminated inputs are always off
  -explain that there's an invisible global clock and everything takes one tick
@@ -18,7 +17,6 @@ Game Features:
  -Create a hint system where you can buy hints for points (if you have enough)
  -Move position information from Switch and Robot into Sprite, then make the obviouis fixes in LevelEditor
  -init sound manager with a gameconfig argument, and add sound configuration to the game file
- -save the "playtest" circuits with the project, but not with the exported level packs
  -accelerators for close, quit, save
  -have resource managers fire events when resources are added, removed, and modified.
  -implement a GUI resource manager (for adding and removing files in the project)
@@ -31,6 +29,7 @@ Game Features:
 -be able to save all circuits in the entire game into one file, and load it back later
  -ED: use this to remember the circuit associated with each level, and save with project
       (will need a check that the restored circuit hasn't gone over gate limits)
+      also, create an "export" feature that doesn't include the saved editor circuits
 -make an effects API for switch scripts: int getNumFrames() and void doFrame(int).
 -Batteries
 -Radio Communication between robots
@@ -59,6 +58,9 @@ Sounds:
 -little ditties for the beginning of each level (maybe this would be better suited to the MIDI sequencer api)
 
 Completed:
+-use gord's new button graphics
+-make sure keyboard focus is not lost when switching levels
+-reset robot direction when resetting level (specify initial heading in level config)
 -only show the editors panel when there are multiple robots
 -key bindings 1, 2, 3 ... for switching between circuits to edit
 -animated transtitions between circuit editors (actually just an effect on the selection frame.. the zoom effect was too slow)

@@ -338,14 +338,28 @@ public class EditorMain {
                 windowsToDispose.add(d);
             }
 
-            final GameStateHandler gsh = new GameStateHandler(gameLoop, soundManager, editors);
-            JButton quitPlaytestButton = new JButton("Quit Playtest");
-
             JPanel tb = new JPanel(new FlowLayout());
-            tb.add(gsh.getStartButton());
-            tb.add(gsh.getStepButton());
-            tb.add(gsh.getResetButton());
-            tb.add(quitPlaytestButton);
+            try {
+                final GameStateHandler gsh = new GameStateHandler(gameLoop, soundManager, project.getResourceManager(), editors);
+                JButton quitPlaytestButton = new JButton("Quit Playtest");
+
+                tb.add(gsh.getStartButton());
+                tb.add(gsh.getStepButton());
+                tb.add(gsh.getResetButton());
+                tb.add(quitPlaytestButton);
+                
+                quitPlaytestButton.addActionListener(new ActionListener() {
+                    public void actionPerformed(ActionEvent e) {
+                        for (Window w : windowsToDispose) {
+                            w.dispose();
+                        }
+                        gsh.setState(GameState.RESET);
+                        frame.setVisible(true);
+                    }
+                });
+            } catch (IOException ex) {
+                RobotUtils.showException("Could not create game UI", ex);
+            }
             
             playtestFrame.add(playfield, BorderLayout.CENTER);
             playtestFrame.add(tb, BorderLayout.SOUTH);
@@ -357,15 +371,6 @@ public class EditorMain {
             
             RobotUtils.tileWindows(windowsToDispose);
             
-            quitPlaytestButton.addActionListener(new ActionListener() {
-                public void actionPerformed(ActionEvent e) {
-                    for (Window w : windowsToDispose) {
-                        w.dispose();
-                    }
-                    gsh.setState(GameState.RESET);
-                    frame.setVisible(true);
-                }
-            });
         }
     };
     
@@ -716,6 +721,7 @@ public class EditorMain {
         final JComboBox labelDirectionBox = new JComboBox(Direction.values());
         final JSpinner xPosition = new JSpinner(new SpinnerNumberModel(0.0, 0.0, level.getWidth(), robot.getStepSize()));
         final JSpinner yPosition = new JSpinner(new SpinnerNumberModel(0.0, 0.0, level.getHeight(), robot.getStepSize()));
+        final JSpinner initialHeading = new JSpinner(new SpinnerNumberModel(0.0, 0.0, 359.999, 1.0));
         final JComboBox spritePathField = new JComboBox(
                 new ResourcesComboBoxModel(project.getResourceManager(), new SpriteFileFilter()));
         final JSpinner spriteScaleSpinner = new JSpinner(new SpinnerNumberModel(1.0, 0.0, 1000.0, 0.01));
@@ -738,6 +744,7 @@ public class EditorMain {
                 labelDirectionBox.setSelectedItem(robot.getLabelDirection());
                 xPosition.setValue(robot.getX());
                 yPosition.setValue(robot.getY());
+                initialHeading.setValue(RobotUtils.radToDeg(robot.getInitialHeading()));
                 if (robot.getSprite() != null) {
                     spritePathField.setSelectedItem(robot.getSprite().getAttributes().get(Sprite.KEY_HREF));
                     spriteScaleSpinner.setValue(robot.getSprite().getScale());
@@ -803,6 +810,7 @@ public class EditorMain {
                     robot.setLabelEnabled(labelEnabledBox.isSelected());
                     robot.setPosition(pos);
                     robot.setStartPosition(pos);
+                    robot.setInitialHeading(RobotUtils.degToRad((Double) initialHeading.getValue()));
                     
                     Sprite sprite = SpriteManager.load(
                             gameConfig.getResourceLoader(),
@@ -876,6 +884,17 @@ public class EditorMain {
         gbc.anchor = GridBagConstraints.LINE_END;
         cp.add(new JLabel("You can also reposition a robot by dragging it"), gbc);
         
+        gbc.weightx = 0.0;
+        gbc.gridwidth = 1;
+        gbc.fill = GridBagConstraints.NONE;
+        gbc.anchor = GridBagConstraints.LINE_END;
+        cp.add(new JLabel("Initial Heading:"), gbc);
+
+        gbc.weightx = 1.0;
+        gbc.gridwidth = GridBagConstraints.REMAINDER;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        cp.add(initialHeading, gbc);
+
         gbc.weightx = 0.0;
         gbc.gridwidth = 1;
         gbc.fill = GridBagConstraints.NONE;

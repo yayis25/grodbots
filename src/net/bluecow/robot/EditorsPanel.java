@@ -77,7 +77,7 @@ import net.bluecow.robot.event.CircuitListener;
  */
 public class EditorsPanel extends JPanel {
 
-    private static final boolean debugOn = true;
+    private static final boolean debugOn = false;
 
     private static void debug(String msg) {
         if (debugOn) System.out.println(msg);
