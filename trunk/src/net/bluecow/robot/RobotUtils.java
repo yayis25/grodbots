@@ -65,8 +65,6 @@ public class RobotUtils {
         throw new UnsupportedOperationException("This utility class is not instantiable");
     }
     
-    //TODO: seems to only keep the latest item!  should keep MAX_PATHS items
-
     public static Preferences getPrefs() {
         return prefs;
     }
@@ -263,6 +261,26 @@ public class RobotUtils {
             sb.append(item);
         }
         return sb.toString();
+    }
+
+    /**
+     * Converts an angle in radians to the equivalent angle measured
+     * in degrees.
+     * 
+     * @param radians The angle measured in radians
+     */
+    public static double radToDeg(double radians) {
+        return 180.0 * (radians / Math.PI);
+    }
+
+    /**
+     * Converts an angle in radians to the equivalent angle measured
+     * in degrees.
+     * 
+     * @param radians The angle measured in radians
+     */
+    public static double degToRad(double degrees) {
+        return Math.PI * (degrees / 180.0);
     }
 
 }

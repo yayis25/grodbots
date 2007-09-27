@@ -71,6 +71,8 @@ public class Robot implements Labelable {
 	
     /**
      * A bitmask of the directions this robot is currently moving.
+     * Possible values to OR together are <tt>MOVING_UP</tt>,
+     * <tt>MOVING_RIGHT</tt>, <tt>MOVING_LEFT</tt>, and <tt>MOVING_DOWN</tt>.
      */
     private int movingDirection = 0;
     
@@ -112,14 +114,28 @@ public class Robot implements Labelable {
     /** This robot's user-visible name */
     private String labelText;
 
+    /**
+     * True if this robot's label should be visible.
+     */
     private boolean labelEnabled;
+    
+    /**
+     * The position of this robot's label, relative to the robot.
+     */
     private Direction labelDirection = Direction.EAST;
 
     /**
-     * The previous direction the robot was heading in. This is the most recent
-     * value returned by {@link #getIconHeading()}.
+     * The previous direction, in radians, that the robot was heading in. This
+     * is the most recent value returned by {@link #getIconHeading()}.
      */
     private double prevHeading;
+    
+    /**
+     * The original heading that the robot should start off facing (and revert
+     * to after a reset).
+     */
+    private double initialHeading;
+    
     private static final Dimension DEFAULT_GATE_SIZE = new Dimension(22,20);
 	
     /**
@@ -215,6 +231,7 @@ public class Robot implements Labelable {
         this.movingDirection = src.movingDirection;
         this.movingFrame = src.movingFrame;
         this.prevHeading = src.prevHeading;
+        this.initialHeading = src.initialHeading;
         
         outputs = new LinkedHashMap<SensorConfig, RobotSensorOutput>();
         for (Map.Entry<SensorConfig, RobotSensorOutput> entry : src.outputs.entrySet()) {
@@ -534,7 +551,7 @@ public class Robot implements Labelable {
 	// ACCESSORS and MUTATORS
 
     /**
-     * Tells the icon's appropriate heading (in radians) based in its current direction
+     * Tells the icon's appropriate heading (in radians) based on its current direction
      * of travel.
      */
     public double getIconHeading() {
@@ -651,6 +668,31 @@ public class Robot implements Labelable {
     }
 
     /**
+     * Sets this robot's initial heading, as well as this robot's
+     * internal idea of its previous heading.  This is the direction
+     * this robot will be facing initially, as well as after
+     * every reset.
+     * 
+     * @param initialHeadingRadians The heading measured in radians.
+     * 0 is north (up), and positive values rotate in the clockwise
+     * direction.
+     */
+    public void setInitialHeading(double initialHeadingRadians) {
+        this.initialHeading = initialHeadingRadians;
+        this.prevHeading = initialHeadingRadians;
+    }
+
+    /**
+     * Returns this robot's initial heading, in radians.  0 is north (up),
+     * and positive values rotate in the clockwise direction.  This is
+     * the direction the robot will be facing initially, as well as after
+     * every reset.
+     */
+    public double getInitialHeading() {
+        return initialHeading;
+    }
+    
+    /**
      * Reports this robot's x position.
      * 
      * <p>Note: this bean property is expressed as a double so that it will work
@@ -731,11 +773,21 @@ public class Robot implements Labelable {
         goalReached = v;
     }
 
+    /**
+     * Resets this robot's position and heading to their initial values,
+     * as well as resetting the circuit to its default state.
+     */
     public void resetState() {
         debugf("Reset State for %s: start position=(%2.1f,%2.1f)\n",
                 getId(), startPosition.getX(), startPosition.getY());
         setGoalReached(false);
         setPosition(startPosition);
+        
+        // This sets the robot's absolute heading.  It depends on the
+        // internal implementation of getSpriteHeading().
+        movingDirection = 0;
+        prevHeading = initialHeading;
+        
         circuit.resetState();
     }
 

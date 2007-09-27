@@ -39,6 +39,7 @@ import java.awt.FlowLayout;
 import java.awt.event.KeyEvent;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
+import java.io.IOException;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -151,9 +152,9 @@ public class GameUI {
     /**
      * Creates a new game UI for the given panel.
      * 
-     * @param level
+     * @throws IOException If there is trouble loading game UI skin resources
      */
-    public GameUI(Main session, LevelConfig level, SoundManager sm, Action nextLevelAction) {
+    public GameUI(Main session, LevelConfig level, SoundManager sm, Action nextLevelAction) throws IOException {
         this.level = level;
         panel = new JPanel(new BorderLayout());
         editorsPanel = new EditorsPanel(sm);
@@ -178,7 +179,7 @@ public class GameUI {
         loadGhostAction.setPlayfield(playfield);
         loadGhostAction.setRobots(robots.keySet());
 
-        gameStateHandler = new GameStateHandler(gameLoop, sm, robots);
+        gameStateHandler = new GameStateHandler(gameLoop, sm, session.getResourceLoader(), robots);
 
         // have to handle next level events ourselves; all others are handled
         // by the GameStateHandler.

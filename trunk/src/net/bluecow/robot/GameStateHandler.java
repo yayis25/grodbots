@@ -40,11 +40,16 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
+import java.io.IOException;
 import java.util.Collection;
 import java.util.Map;
 
+import javax.swing.Icon;
+import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.SwingUtilities;
+
+import net.bluecow.robot.resource.ResourceLoader;
 
 /**
  * The GameStateHandler class encapsulates the correct game state logic
@@ -116,25 +121,34 @@ public class GameStateHandler implements ActionListener {
     
     private final Map<Robot,CircuitEditor> robots;
 
+    private final Icon startIcon;
+    private final Icon restartIcon;
+    private final Icon pauseIcon;
+    private final Icon resumeIcon;
+    private final Icon stepIcon;
+    private final Icon restepIcon;
+    private final Icon resetIcon;
+    private final Icon nextLevelIcon;
+    
     /**
      * The button that will start the level running.  This
      * GameStateHandler will react to the button press automatically. You
      * don't need to react to this button being pressed in your own code.
      */
-    private final JButton startButton = new JButton("Start");
+    private final JButton startButton;
     
     /**
      * The button that causes a single step in the level.  You
      * don't need to react to this button being pressed in your own code.
      */
-    private final JButton stepButton = new JButton("Step");
+    private final JButton stepButton;
     
     /**
      * The button that causes the level, game loop, and playfield to reset.
      * to their initial states.  You don't need to react to this button
      * being pressed in your own code.
      */
-    private final JButton resetButton = new JButton("Reset");
+    private final JButton resetButton;
     
     /**
      * The button that becomes enabled when the player has successfully
@@ -143,7 +157,7 @@ public class GameStateHandler implements ActionListener {
      * code has to add an ActionListener to it which does the appropriate
      * thing.
      */
-    private final JButton nextLevelButton = new JButton("Next Level");
+    private final JButton nextLevelButton;
 
     /**
      * Creates a game state handler for the given GameLoop instance.
@@ -162,17 +176,38 @@ public class GameStateHandler implements ActionListener {
      * @param resetButton The button that will reset the GameLoop and Playfield
      * to their initial states.
      * @param robots The robots involved in this level.
+     * @throws IOException If the button graphics can't be loaded from the ResourceLoader
      */
-    public GameStateHandler(GameLoop gameLoop, SoundManager sm,
-                            Map<Robot,CircuitEditor> robots) {
+    public GameStateHandler(GameLoop gameLoop, SoundManager sm, ResourceLoader resourceLoader,
+                            Map<Robot,CircuitEditor> robots) throws IOException {
         this.loop = gameLoop;
         this.playfield = loop.getPlayfield();
         this.sm = sm;
         this.robots = robots;
 
+        startIcon = new ImageIcon(resourceLoader.getResourceBytes("ROBO-INF/skin/play_button.png"));
+        restartIcon = startIcon;
+        pauseIcon = new ImageIcon(resourceLoader.getResourceBytes("ROBO-INF/skin/pause_button.png"));
+        stepIcon = new ImageIcon(resourceLoader.getResourceBytes("ROBO-INF/skin/step_button.png"));
+        restepIcon = stepIcon;
+        resumeIcon = new ImageIcon(resourceLoader.getResourceBytes("ROBO-INF/skin/play_button.png"));
+        resetIcon = new ImageIcon(resourceLoader.getResourceBytes("ROBO-INF/skin/stop_button.png"));
+        nextLevelIcon = new ImageIcon(resourceLoader.getResourceBytes("ROBO-INF/skin/next_level_button.png"));
+        
+        startButton = new JButton(startIcon);
+        startButton.setBorderPainted(false);
         startButton.addActionListener(this);
+        
+        stepButton = new JButton(stepIcon);
+        stepButton.setBorderPainted(false);
         stepButton.addActionListener(this);
+        
+        resetButton = new JButton(resetIcon);
+        resetButton.setBorderPainted(false);
         resetButton.addActionListener(this);
+        
+        nextLevelButton = new JButton(nextLevelIcon);
+        nextLevelButton.setBorderPainted(false);
         nextLevelButton.addActionListener(this);
 
         nextLevelButton.setEnabled(false);
@@ -221,16 +256,16 @@ public class GameStateHandler implements ActionListener {
             state = newState;
             loop.setStopRequested(true);
             lockEditors(true);
-            startButton.setText("Resume");
-            stepButton.setText("Step");
-            resetButton.setText("Reset");
+            startButton.setIcon(resumeIcon);
+            stepButton.setIcon(stepIcon);
+            resetButton.setIcon(resetIcon);
             playfield.setLabellingOn(false);
         } else if (newState == GameState.NOT_STARTED) {
             state = newState;
             lockEditors(false);
-            startButton.setText("Start");
-            stepButton.setText("Step");
-            resetButton.setText("Reset");
+            startButton.setIcon(startIcon);
+            stepButton.setIcon(stepIcon);
+            resetButton.setIcon(resetIcon);
             playfield.setLabellingOn(true);
         } else if (newState == GameState.RUNNING) {
             if (state == GameState.WON) {
@@ -241,9 +276,9 @@ public class GameStateHandler implements ActionListener {
                 lockEditors(true);
                 loop.setStopRequested(false);
                 new Thread(loop).start();
-                startButton.setText("Pause");
-                stepButton.setText("Step");
-                resetButton.setText("Reset");
+                startButton.setIcon(pauseIcon);
+                stepButton.setIcon(stepIcon);
+                resetButton.setIcon(resetIcon);
                 playfield.setLabellingOn(false);
             }
         } else if (newState == GameState.STEP) {
@@ -267,9 +302,9 @@ public class GameStateHandler implements ActionListener {
             lockEditors(true);
             playfield.setWinMessage("You Win!");
             sm.play("win");
-            startButton.setText("Restart");
-            stepButton.setText("Restep");
-            resetButton.setText("Reset");
+            startButton.setIcon(restartIcon);
+            stepButton.setIcon(restepIcon);
+            resetButton.setIcon(resetIcon);
             nextLevelButton.setEnabled(true);
             playfield.setLabellingOn(false);
         }

@@ -160,6 +160,7 @@ public class LevelStore {
                              "step-size=\""+r.getStepSize()+"\" " +
                                "start-x=\""+r.getPosition().getX()+"\" " +
                                "start-y=\""+r.getPosition().getY()+"\" " +
+                       "initial-heading=\""+RobotUtils.radToDeg(r.getInitialHeading())+"\" " +
                         "evals-per-step=\""+r.getEvalsPerStep()+"\" " +
                        makeLabelAttributes(r) +
                        ">\n");
@@ -581,6 +582,7 @@ public class LevelStore {
                     Float startx = null;
                     Float starty = null;
                     int evalsPerStep = 1;
+                    Double initialHeading = null;
                     
                     for (int i = 0; i < attributes.getLength(); i++) {
                         String aname = attributes.getQName(i);
@@ -606,6 +608,12 @@ public class LevelStore {
                             } catch (NumberFormatException ex) {
                                 throw new FileFormatException("Couldn't parse Y coordinate of starting point", loc.getLineNumber(), line, loc.getColumnNumber());
                             }
+                        } else if (aname.equals("initial-heading")) {
+                            try {
+                                initialHeading = Double.parseDouble(aval);
+                            } catch (NumberFormatException ex) {
+                                throw new FileFormatException("Couldn't parse initial heading value", loc.getLineNumber(), line, loc.getColumnNumber());
+                            }
                         } else if (aname.equals("evals-per-step")) {
                             try {
                                 evalsPerStep = Integer.parseInt(aval);
@@ -623,7 +631,12 @@ public class LevelStore {
                     checkMandatory(qName, "start-y", starty);
                     
                     robot = new Robot(id, "Setting name is deferred to setupLabel()", level, config.getSensorTypes(), config.getGateTypes(), null, new Point2D.Float(startx, starty), stepSize, null, evalsPerStep);
-
+                    if (initialHeading != null) {
+                        double initialHeadingRadians = RobotUtils.degToRad(initialHeading);
+                        debug("initial heading: deg=%f rad=%f\n", initialHeading, initialHeadingRadians);
+                        robot.setInitialHeading(initialHeadingRadians);
+                    }
+                    
                     setupLabel(robot, attributes);
                     
                 } else if (qName.equals("gate-allowance")) { // XXX: ensure we're inside a grod element
