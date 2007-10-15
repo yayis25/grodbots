@@ -1,4 +1,6 @@
 /*
+ * Created on Sep 27, 2007
+ *
  * Copyright (c) 2007, Jonathan Fuerth
  * 
  * All rights reserved.
@@ -29,26 +31,49 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-/*
- * Created on Sep 25, 2006
- *
- * This code belongs to SQL Power Group Inc.
- */
+
 package net.bluecow.robot.resource;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 
-public class SystemResourceLoader extends AbstractResourceLoader {
+/**
+ * The CompoundResourceLoader composes two other resource loaders, treating
+ * one as the primary and the other as a backup.  If a certain resource
+ * exists only in the primary resource loader or in both the primary and
+ * backup loaders, this resource loader will deal with the resource in the
+ * primary loader.  Otherwise, if a resource exists only in the backup
+ * resource loader and not in the primary, this resource loader will return
+ * that resource.  Finally, if a resource exists in neither loader, this
+ * resource loader will behave as if the resource does not exist.
+ *
+ * @author fuerth
+ * @version $Id:$
+ */
+public class CompoundResourceLoader implements ResourceLoader {
 
-    public InputStream getResourceAsStream(String resourceName) throws IOException {
-        InputStream resourceStream = ClassLoader.getSystemResourceAsStream(resourceName);
-        if (resourceStream == null) {
-            throw new FileNotFoundException("Can't locate resource '"+resourceName+
-                    "' on system classpath");
-        }
-        return resourceStream;
+    private final ResourceLoader primary;
+    private final ResourceLoader backup;
+    
+    public CompoundResourceLoader(ResourceLoader primary, ResourceLoader backup) {
+        this.primary = primary;
+        this.backup = backup;
     }
 
+    public InputStream getResourceAsStream(String resourceName) throws IOException {
+        try {
+            return primary.getResourceAsStream(resourceName);
+        } catch (FileNotFoundException ex) {
+            return backup.getResourceAsStream(resourceName);
+        }
+    }
+
+    public byte[] getResourceBytes(String resourceName) throws IOException {
+        try {
+            return primary.getResourceBytes(resourceName);
+        } catch (FileNotFoundException ex) {
+            return backup.getResourceBytes(resourceName);
+        }
+    }
 }

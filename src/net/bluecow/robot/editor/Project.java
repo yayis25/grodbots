@@ -55,6 +55,7 @@ import net.bluecow.robot.Robot;
 import net.bluecow.robot.LevelConfig.Switch;
 import net.bluecow.robot.editor.event.LifecycleEvent;
 import net.bluecow.robot.editor.event.LifecycleListener;
+import net.bluecow.robot.resource.CompoundResourceManager;
 import net.bluecow.robot.resource.JarResourceManager;
 import net.bluecow.robot.resource.ResourceManager;
 import net.bluecow.robot.resource.ResourceUtils;
@@ -78,6 +79,21 @@ import net.bluecow.robot.resource.ResourceUtils;
  * manager cleanup.
  */
 public class Project {
+
+    /**
+     * The path to the resource jar that holds all the resources built into the
+     * game. This is likely to change to a pre-listed read-only resource manager
+     * in the near future.
+     */
+    private static final String BUILTIN_RESOURCES_PATH = "net/bluecow/robot/builtin_resources.jar";
+
+    /**
+     * The path to the resource jar that should be copied into new projects. As
+     * of this writing, the only resource is the ROBO-INF/default.map file which
+     * itself depends on the built-in resources. This is likely to change to a
+     * pre-listed read-only resource manager in the near future.
+     */
+    private static final String DEFAULT_RESOURCES_PATH = "net/bluecow/robot/default_resources.jar";
 
     private static final boolean debugOn = false;
 
@@ -142,7 +158,8 @@ public class Project {
 
         // now copy the default project to the user's selected location
         // then load it like a regular project
-        InputStream in = Project.class.getClassLoader().getResourceAsStream("net/bluecow/robot/default_resources.jar");
+        // This code assumes the resource is a JAR file.
+        InputStream in = Project.class.getClassLoader().getResourceAsStream(DEFAULT_RESOURCES_PATH);
         ResourceUtils.copyToFile(in, file);
         
         Project proj = load(file);
@@ -163,16 +180,22 @@ public class Project {
      * @throws IOException
      */
     public static Project load(File jar) throws IOException {
-        final ResourceManager resources = new JarResourceManager(jar);
+        ResourceManager projResources = new JarResourceManager(jar);
+        ResourceManager builtinResources =
+            new JarResourceManager(Project.class.getClassLoader(), BUILTIN_RESOURCES_PATH);
+        
+        final ResourceManager compoundResources =
+            new CompoundResourceManager(projResources, builtinResources);
+        
         Project proj = new Project();
-        proj.gameConfig = LevelStore.loadLevels(resources);
+        proj.gameConfig = LevelStore.loadLevels(compoundResources);
         proj.fileLocation = jar;
-        ResourceUtils.initResourceURLHandler(resources);
+        ResourceUtils.initResourceURLHandler(compoundResources);
         
         proj.addLifecycleListener(new LifecycleListener() {
             public void lifecycleEnding(LifecycleEvent evt) {
                 try {
-                    resources.close();
+                    compoundResources.close();
                 } catch (IOException ex) {
                     System.err.println("Couldn't close project resource manager!");
                     ex.printStackTrace();
@@ -223,7 +246,13 @@ public class Project {
         if (location == null) {
             throw new NullPointerException("Don't know where to save the project (both locations are null)");
         }
-        ResourceUtils.createResourceJar(getResourceManager(), location);
+        ResourceManager saveThisOne = getResourceManager();
+        if (saveThisOne instanceof CompoundResourceManager) {
+            saveThisOne = ((CompoundResourceManager) saveThisOne).getPrimary();
+        } else {
+            throw new IllegalStateException("The project's resource manager is not what it used to be!");
+        }
+        ResourceUtils.createResourceJar(saveThisOne, location);
         fileLocation = location;
     }
     

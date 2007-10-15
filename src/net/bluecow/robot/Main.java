@@ -56,6 +56,8 @@ import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
 
+import net.bluecow.robot.resource.CompoundResourceLoader;
+import net.bluecow.robot.resource.PrefixResourceLoader;
 import net.bluecow.robot.resource.ResourceLoader;
 import net.bluecow.robot.resource.ResourceUtils;
 import net.bluecow.robot.resource.SystemResourceLoader;
@@ -165,10 +167,15 @@ public class Main {
         }
         
         try {
-            ResourceLoader builtInResourceLoader = new SystemResourceLoader();
-            loadGameConfig(builtInResourceLoader);
+            ResourceLoader defaultLevelsResourceLoader =
+                new SystemResourceLoader();
+            ResourceLoader builtinResourceLoader =
+                new PrefixResourceLoader(new SystemResourceLoader(), "builtin_resources/");
+            CompoundResourceLoader compoundResourceLoader =
+                new CompoundResourceLoader(defaultLevelsResourceLoader, builtinResourceLoader);
+            loadGameConfig(compoundResourceLoader);
             
-            sm = new SoundManager(builtInResourceLoader);
+            sm = new SoundManager(compoundResourceLoader);
             
             // this could be moved into a section of the game config xml file, then the
             // levelstore could init the sound manager and stash it in the gameconfig
@@ -208,15 +215,27 @@ public class Main {
     }
 
     /**
-     * Reads in a new game config, replacing the currently-loaded one with
-     * the one in the given ResourceLoader.
+     * Reads in a new game config, replacing the currently-loaded one with the
+     * one in the given ResourceLoader.
      * 
      * @param resourceLoader
+     *            The resource loader to load the level and its associated
+     *            resources from. Resources in this loader will be supplemented
+     *            by the system resource loader, so that level packs need not
+     *            include copies of the default sprites and skins (although they
+     *            may provide overrides to the defaults if they want to alter
+     *            the look and feel of the game UI).
      * @throws IOException
+     *             If there are problems loading or parsing any the game
+     *             resources.
      */
     void loadGameConfig(ResourceLoader resourceLoader) throws IOException {
-        config = LevelStore.loadLevels(resourceLoader);
-        ResourceUtils.initResourceURLHandler(resourceLoader);
+        ResourceLoader builtinResourceLoader =
+            new PrefixResourceLoader(new SystemResourceLoader(), "builtin_resources/");
+        ResourceLoader loader =
+            new CompoundResourceLoader(resourceLoader, builtinResourceLoader );
+        config = LevelStore.loadLevels(loader);
+        ResourceUtils.initResourceURLHandler(loader);
     }
 
     void setLevel(int newLevelNum) {

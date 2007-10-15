@@ -60,6 +60,8 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.io.Writer;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -125,6 +127,7 @@ import net.bluecow.robot.editor.resource.ResourcesComboBoxModel;
 import net.bluecow.robot.gate.Gate;
 import net.bluecow.robot.sprite.Sprite;
 import net.bluecow.robot.sprite.SpriteFileFilter;
+import net.bluecow.robot.sprite.SpriteLoadException;
 import net.bluecow.robot.sprite.SpriteManager;
 
 public class EditorMain {
@@ -183,12 +186,11 @@ public class EditorMain {
         }
         
         public void actionPerformed(ActionEvent e) {
-            Preferences recentFiles = RobotUtils.getPrefs().node("recentGameFiles");
             Writer out = null;
             if (saveAs || project.getFileLocation() == null) {
                 JFileChooser fc = new JFileChooser();
                 fc.setDialogTitle("Save Project");
-                fc.setCurrentDirectory(new File(recentFiles.get("0", System.getProperty("user.home"))));
+                fc.setCurrentDirectory(new File(recentProjects.get("0", System.getProperty("user.home"))));
                 int choice = fc.showSaveDialog(frame);
                 if (choice == JFileChooser.APPROVE_OPTION) {
                     project.setFileLocation(fc.getSelectedFile());
@@ -199,7 +201,8 @@ public class EditorMain {
             try {
                 project.saveLevelPack(null);
                 setFrameTitle(project.getFileLocation().getName());
-                RobotUtils.updateRecentFiles(recentFiles, project.getFileLocation());
+                RobotUtils.updateRecentFiles(recentProjects, project.getFileLocation());
+                recentProjects.put("autoLoadOk", "true");
             } catch (IOException ex) {
                 JOptionPane.showMessageDialog(frame, "Save Failed: "+ex.getMessage());
             } catch (BackingStoreException ex) {
@@ -214,6 +217,7 @@ public class EditorMain {
                 }
             }
         }
+
     }
 
     private Action addSquareTypeAction = new AbstractAction("Add Square Type") {
@@ -305,41 +309,43 @@ public class EditorMain {
     private Action playLevelAction = new AbstractAction("Play Test") {
         public void actionPerformed(ActionEvent e) {
             
-            LevelConfig realLevel = (LevelConfig) levelChooser.getSelectedItem();
-            if (realLevel == null) {
-                JOptionPane.showMessageDialog(frame, "Can't play test: No level selected.", "Error", JOptionPane.ERROR_MESSAGE);
-                return;
-            }
-            
-            final LevelConfig level = new LevelConfig(realLevel);
-            final JFrame playtestFrame = new JFrame("Playtest");
-            final Playfield playfield = new Playfield(project.getGameConfig(), level);
-            final List<Window> windowsToDispose = new ArrayList<Window>();
-            final SoundManager soundManager = new SoundManager(project.getResourceManager());
-            
-            // This makes the reset feature of GameStateHandler work properly.
-            level.snapshotState();
-            
-            windowsToDispose.add(playtestFrame);
-
-            List<Robot> robots = level.getRobots();
-            
-            GameLoop gameLoop = new GameLoop(robots, level, playfield);
-            Map<Robot, CircuitEditor> editors = new HashMap<Robot, CircuitEditor>();
-            for (Robot r : robots) {
-                CircuitEditor ce = new CircuitEditor(
-                        r.getCircuit(),
-                        soundManager);
-                editors.put(r, ce);
-                JDialog d = new JDialog(playtestFrame, "Circuit for "+r.getLabel());
-                d.add(ce);
-                d.pack();
-                d.setVisible(true);
-                windowsToDispose.add(d);
-            }
-
-            JPanel tb = new JPanel(new FlowLayout());
             try {
+
+                LevelConfig realLevel = (LevelConfig) levelChooser.getSelectedItem();
+                if (realLevel == null) {
+                    JOptionPane.showMessageDialog(frame, "Can't play test: No level selected.", "Error", JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
+
+                final LevelConfig level = new LevelConfig(realLevel);
+                final JFrame playtestFrame = new JFrame("Playtest");
+                final Playfield playfield = new Playfield(project.getGameConfig(), level);
+                final List<Window> windowsToDispose = new ArrayList<Window>();
+                final SoundManager soundManager = new SoundManager(project.getResourceManager());
+
+                // This makes the reset feature of GameStateHandler work properly.
+                level.snapshotState();
+
+                windowsToDispose.add(playtestFrame);
+
+                List<Robot> robots = level.getRobots();
+
+                GameLoop gameLoop = new GameLoop(robots, level, playfield);
+                Map<Robot, CircuitEditor> editors = new HashMap<Robot, CircuitEditor>();
+                for (Robot r : robots) {
+                    CircuitEditor ce = new CircuitEditor(
+                            r.getCircuit(),
+                            soundManager);
+                    editors.put(r, ce);
+                    JDialog d = new JDialog(playtestFrame, "Circuit for "+r.getLabel());
+                    d.add(ce);
+                    d.pack();
+                    d.setVisible(true);
+                    windowsToDispose.add(d);
+                }
+
+                JPanel tb = new JPanel(new FlowLayout());
+
                 final GameStateHandler gsh = new GameStateHandler(gameLoop, soundManager, project.getResourceManager(), editors);
                 JButton quitPlaytestButton = new JButton("Quit Playtest");
 
@@ -347,7 +353,7 @@ public class EditorMain {
                 tb.add(gsh.getStepButton());
                 tb.add(gsh.getResetButton());
                 tb.add(quitPlaytestButton);
-                
+
                 quitPlaytestButton.addActionListener(new ActionListener() {
                     public void actionPerformed(ActionEvent e) {
                         for (Window w : windowsToDispose) {
@@ -357,20 +363,20 @@ public class EditorMain {
                         frame.setVisible(true);
                     }
                 });
+
+                playtestFrame.add(playfield, BorderLayout.CENTER);
+                playtestFrame.add(tb, BorderLayout.SOUTH);
+                
+                playtestFrame.pack();
+                playtestFrame.setVisible(true);
+                
+                frame.setVisible(false);
+                
+                RobotUtils.tileWindows(windowsToDispose);
+                
             } catch (IOException ex) {
                 RobotUtils.showException("Could not create game UI", ex);
             }
-            
-            playtestFrame.add(playfield, BorderLayout.CENTER);
-            playtestFrame.add(tb, BorderLayout.SOUTH);
-            
-            playtestFrame.pack();
-            playtestFrame.setVisible(true);
-            
-            frame.setVisible(false);
-            
-            RobotUtils.tileWindows(windowsToDispose);
-            
         }
     };
     
@@ -1399,6 +1405,15 @@ public class EditorMain {
         // divider location is calculated relative to its height
         levelChooser.setSelectedIndex(0);
         
+        if (System.getProperty("os.name").indexOf("Mac OS X") >= 0) {
+            try {
+                doOSXRegistration();
+            } catch (Exception ex) {
+                System.err.println("OS X registration failed. Continuing anyway.");
+                ex.printStackTrace();
+            }
+        }
+
         frame.setVisible(true);
     }
 
@@ -1570,7 +1585,11 @@ public class EditorMain {
             JSplitPane splitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT);
             splitPane.setContinuousLayout(true);
             levelEditPanel = splitPane;
-            editor = new LevelEditor(project.getGameConfig(), level);
+            try {
+                editor = new LevelEditor(project.getGameConfig(), level);
+            } catch (SpriteLoadException ex) {
+                throw new RuntimeException(ex);
+            }
 
             final JCheckBox showDescriptionBox = new JCheckBox("Show Level Description", editor.isDescriptionOn());
             showDescriptionBox.addActionListener(new ActionListener() {
@@ -1819,6 +1838,7 @@ public class EditorMain {
      * @param args The command-line arguments are ignored
      */
     public static void main(String[] args) {
+        System.setProperty("apple.laf.useScreenMenuBar", "true");
         SwingUtilities.invokeLater(new Runnable() {
             public void run() {
                 try {
@@ -1833,6 +1853,12 @@ public class EditorMain {
                 }
             }
         });
+    }
+
+    private void doOSXRegistration() throws ClassNotFoundException, SecurityException, NoSuchMethodException, IllegalArgumentException, IllegalAccessException, InvocationTargetException {
+        Class cl = Class.forName("net.bluecow.osx.OSXAdapter");
+        Method m = cl.getDeclaredMethod("registerMacOSXApplication", new Class[] {Action.class, Action.class, Action.class});
+        m.invoke(null, exitAction, null, null);
     }
 
     /**
@@ -1899,7 +1925,7 @@ public class EditorMain {
      */
     protected static void presentWelcomeMenu() {
         Project proj = null;
-
+        
         while (proj == null) try {
             int choice = JOptionPane.showOptionDialog(
                     null, 
@@ -1920,10 +1946,13 @@ public class EditorMain {
                 // create new
                 JFileChooser fc = new JFileChooser();
                 fc.setDialogTitle("Where do you want to save your project?");
+                fc.setCurrentDirectory(new File(recentProjects.get("0", System.getProperty("user.home"))));
                 int fcChoice = fc.showSaveDialog(null);
                 if (fcChoice == JFileChooser.APPROVE_OPTION) {
                     File projFile = fc.getSelectedFile();
                     proj = Project.createNewProject(projFile);
+                    RobotUtils.updateRecentFiles(recentProjects, proj.getFileLocation());
+                    recentProjects.put("autoLoadOk", "true");
                 }
             }
         } catch (Exception ex) {

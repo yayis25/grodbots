@@ -76,6 +76,26 @@ import net.bluecow.robot.gate.Gate;
 public class CircuitEditor extends JPanel {
 
     /**
+     * Controls the debugging features of this class.
+     */
+    private static final boolean debugOn = true;
+    
+    /**
+     * Prints the given message to System.out if debugOn is true.
+     */
+    private static void debug(String msg) {
+        if (debugOn) System.out.println(msg);
+    }
+
+    /**
+     * Prints the given printf-formatted message, followed by a newline,
+     * to the console if debugOn == true.
+     */
+    private static void debugf(String fmt, Object ... args) {
+        if (debugOn) debug(String.format(fmt, args));
+    }
+
+    /**
      * A special visual effect that smoothly translates and scales a Gate from a
      * starting position and size to a finishing position and size, over the
      * course of a number of frames.  There is a similar generic ZoomEffect that
@@ -156,14 +176,13 @@ public class CircuitEditor extends JPanel {
             gate.setBounds(r);
             gate.setInputStickLength((int) (startInputStickLength + progress * (endInputStickLength - startInputStickLength)));
             gate.setOutputStickLength((int) (startOutputStickLength + progress * (endOutputStickLength - startOutputStickLength)));
+
+            debugf("GateZoomEffect: zooming gate is at %s", r);
             
-            Graphics2D g2 = (Graphics2D) getGraphics();
-            g2.setColor(gate.getNormalColor());
-            g2.translate(r.x, r.y);
-            gate.drawBody(g2);
-            g2.translate(-r.x, -r.y);
+            repaint();
             
             if (progress == 1.0) {
+                zoomingGate = null;
                 timer.stop();
             } else {
                 progress += frameStep;
@@ -347,10 +366,11 @@ public class CircuitEditor extends JPanel {
             } else if (hilightGate != null) {
                 boolean baleted = circuit.remove(hilightGate);
                 if (baleted) {
-                    playSound("delete_gate");
-                    Gate zoomTo = toolbox.getGateForClass(hilightGate.getClass());
-                    new GateZoomEffect(ZOOM_STEPS, hilightGate, zoomTo.getBounds(), zoomTo.getInputStickLength(), zoomTo.getOutputStickLength());
+                    zoomingGate = hilightGate;
                     hilightGate = null;
+                    playSound("delete_gate");
+                    Gate zoomTo = toolbox.getGateForClass(zoomingGate.getClass());
+                    new GateZoomEffect(ZOOM_STEPS, zoomingGate, zoomTo.getBounds(), zoomTo.getInputStickLength(), zoomTo.getOutputStickLength());
                 } else {
                     playSound("delete_prohibited");
                 }
@@ -590,6 +610,15 @@ public class CircuitEditor extends JPanel {
 	 * has keyboard and mouse focus.
 	 */
 	private Gate hilightGate;
+    
+    /**
+     * If there is a gate which is currently being animated by the zoom effect,
+     * but is not currently part of the circuit, it will be referenced here
+     * so that the paintComponent method knows to paint it.
+     * <p>
+     * The ZoomEffect always sets this variable back to null when it has completed.
+     */
+    private Gate zoomingGate;
 
 	/**
 	 * The Input that the user wants to connect to an output.  This is set to 
@@ -821,6 +850,10 @@ public class CircuitEditor extends JPanel {
 		for (Gate gate : circuit.getGates()) {
 			paintGate(g2, gate);
 		}
+        
+        if (zoomingGate != null) {
+            paintGate(g2, zoomingGate);
+        }
         
         Stroke backupStroke = g2.getStroke();
         if (pendingConnectionLine != null) {

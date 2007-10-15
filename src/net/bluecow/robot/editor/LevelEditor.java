@@ -55,6 +55,7 @@ import net.bluecow.robot.Robot;
 import net.bluecow.robot.GameConfig.SquareConfig;
 import net.bluecow.robot.LevelConfig.Switch;
 import net.bluecow.robot.sprite.Sprite;
+import net.bluecow.robot.sprite.SpriteLoadException;
 
 /**
  * The Level Editor for GrodBots.  This is an extended version of the Playfield
@@ -180,7 +181,7 @@ public class LevelEditor extends Playfield {
         }
     };
     
-    public LevelEditor(GameConfig game, LevelConfig level) {
+    public LevelEditor(GameConfig game, LevelConfig level) throws SpriteLoadException {
         super(game, level);
         setDescriptionOn(false);
         setClickToToggleDescription(false);

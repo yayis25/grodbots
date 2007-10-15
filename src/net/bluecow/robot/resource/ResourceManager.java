@@ -197,4 +197,14 @@ public interface ResourceManager extends ResourceLoader {
      */
     public void removeResourceManagerListener(ResourceManagerListener listener);
 
+    /**
+     * Returns true if the given resource path represents an existing resource
+     * (either file or directory) in this resource manager.
+     * 
+     * @param path The path to check for existence
+     * @return True if the path exists in this resource manager; false if it
+     * does not.
+     */
+    boolean resourceExists(String path);
+
 }
