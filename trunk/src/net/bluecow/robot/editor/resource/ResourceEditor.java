@@ -52,6 +52,7 @@ import javax.swing.SwingUtilities;
 import javax.swing.tree.TreeModel;
 import javax.swing.tree.TreePath;
 
+import net.bluecow.robot.resource.CompoundResourceManager;
 import net.bluecow.robot.resource.JarResourceManager;
 import net.bluecow.robot.resource.ResourceManager;
 
@@ -172,8 +173,11 @@ public class ResourceEditor {
                     
                     // this only exists if you have run the default_resoruces_jar build target
                     // (and if using eclipse, make sure to refresh the project) 
-                    ResourceManager rm = new JarResourceManager(
+                    ResourceManager defaultResources = new JarResourceManager(
                             new File("build/net/bluecow/robot/default_resources.jar"));
+                    ResourceManager builtinResources = new JarResourceManager(
+                            new File("build/net/bluecow/robot/builtin_resources.jar"));
+                    ResourceManager rm = new CompoundResourceManager(defaultResources, builtinResources);
                     ResourceEditor re = new ResourceEditor(rm);
                     JSplitPane sp = new JSplitPane(JSplitPane.VERTICAL_SPLIT);
                     f.add(sp);

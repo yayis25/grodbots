@@ -68,6 +68,8 @@ import net.bluecow.robot.GameConfig.SquareConfig;
 import net.bluecow.robot.LevelConfig.Switch;
 import net.bluecow.robot.fx.Effect;
 import net.bluecow.robot.sprite.Sprite;
+import net.bluecow.robot.sprite.SpriteLoadException;
+import net.bluecow.robot.sprite.SpriteManager;
 
 /**
  * Playfield
@@ -177,11 +179,25 @@ public class Playfield extends JPanel {
     private Rectangle prevDescriptionPageRegion;
     
     /**
+     * The visual appearance of the "previous page" button.  If sprites supported
+     * location as well as size, we wouldn't need the rectangle in addition
+     * to this sprite.
+     */
+    private Sprite prevDescriptionPageSprite;
+    
+    /**
      * The "hot zone" for the button that goes to the next description page.
      * Gets initialized to a reasonable value in the constructor.
      */
     private Rectangle nextDescriptionPageRegion;
     
+    /**
+     * The visual appearance of the "next page" button.  If sprites supported
+     * location as well as size, we wouldn't need the rectangle in addition
+     * to this sprite.
+     */
+    private Sprite nextDescriptionPageSprite;
+
     /**
      * The colour that drawLabel() will use to paint the box underneath labels.
      */
@@ -218,8 +234,9 @@ public class Playfield extends JPanel {
      * Creates a new playfield with the specified map.
      * 
      * @param map The map.
+     * @throws SpriteLoadException If the skin resources can't be loaded.
      */
-    public Playfield(GameConfig game, LevelConfig level) {
+    public Playfield(GameConfig game, LevelConfig level) throws SpriteLoadException {
         debug("Creating new Playfield "+System.identityHashCode(this)+" for level "+level.getName());
         setGame(game);
         setLevel(level);
@@ -243,11 +260,14 @@ public class Playfield extends JPanel {
         setBackground(Color.BLACK);
         
         // set up the default location for the description page flipper buttons
-        int buttonLength = 30;
-        int x = level.getWidth() * getSquareWidth() - buttonLength * 3;
+        prevDescriptionPageSprite = SpriteManager.load(game.getResourceLoader(), "ROBO-INF/skin/prev_page_button.png");
+        nextDescriptionPageSprite = SpriteManager.load(game.getResourceLoader(), "ROBO-INF/skin/next_page_button.png");
+        int x = (level.getWidth() * getSquareWidth())
+                - (int) ((prevDescriptionPageSprite.getWidth() + nextDescriptionPageSprite.getWidth()) * 1.5);
         int y = getSquareWidth();
-        prevDescriptionPageRegion = new Rectangle(x, y, buttonLength, buttonLength);
-        nextDescriptionPageRegion = new Rectangle(x + buttonLength, y, buttonLength, buttonLength);
+        prevDescriptionPageRegion = new Rectangle(x, y, prevDescriptionPageSprite.getWidth(), prevDescriptionPageSprite.getHeight());
+        x += prevDescriptionPageRegion.width;
+        nextDescriptionPageRegion = new Rectangle(x, y, nextDescriptionPageSprite.getWidth(), nextDescriptionPageSprite.getHeight());
     }
 
     public final void setGame(GameConfig game) {
@@ -475,11 +495,13 @@ public class Playfield extends JPanel {
             // Page flipper
             if (pages.size() > 1) {
                 g2.setColor(Color.RED);
-                if (prevDescriptionPageRegion != null) {
-                    g2.draw(prevDescriptionPageRegion);
+                if (prevDescriptionPageSprite != null) {
+                    prevDescriptionPageSprite.paint(
+                            g2, prevDescriptionPageRegion.x, prevDescriptionPageRegion.y);
                 }
-                if (nextDescriptionPageRegion != null) {
-                    g2.draw(nextDescriptionPageRegion);
+                if (nextDescriptionPageSprite != null) {
+                    nextDescriptionPageSprite.paint(
+                            g2, nextDescriptionPageRegion.x, nextDescriptionPageRegion.y);
                 }
 
                 g2.setColor(Color.WHITE);

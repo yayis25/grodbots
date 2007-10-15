@@ -52,10 +52,7 @@ import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.jar.JarInputStream;
 
-import net.bluecow.robot.resource.event.ResourceManagerEvent;
-import net.bluecow.robot.resource.event.ResourceManagerListener;
-
-public class JarResourceManager extends AbstractResourceLoader implements ResourceManager {
+public class JarResourceManager extends AbstractResourceManager {
 
     /**
      * Controls the debugging features of this class.
@@ -79,11 +76,6 @@ public class JarResourceManager extends AbstractResourceLoader implements Resour
         new RegexResourceNameFilter("META-INF/MANIFEST.MF", true);
     
     /**
-     * Indicates whether or not this resource manager has been closed.
-     */
-    private boolean closed = false;
-    
-    /**
      * The temporary directory where the jar file contents have been
      * unpacked so we can manipulate them.
      */
@@ -103,11 +95,6 @@ public class JarResourceManager extends AbstractResourceLoader implements Resour
     }
 
     /**
-     * WARNING: The code for this constructor was transplanted from Project,
-     * but due to other circumstances, it is not in use any more. I'm keeping
-     * it in case I need to create a resource manager from a jar input stream
-     * in the future.
-     * <p>
      * Creates a new ResourceManager whose contents are populated initially from
      * a JAR file which is available as a classloader resource.
      * 
@@ -149,19 +136,11 @@ public class JarResourceManager extends AbstractResourceLoader implements Resour
     
     // ------------------ Interface Methods ----------------------
     
-    public List<String> listAll() throws IOException {
-        return listAll(null);
-    }
-    
     public List<String> listAll(ResourceNameFilter filter) throws IOException {
         checkClosed();
         return recursiveListResources("", dir, filter, new ArrayList<String>());
     }
 
-    public List<String> list(String path) throws IOException {
-        return list(path, null);
-    }
-    
     public List<String> list(String path, ResourceNameFilter filter) throws IOException {
         File resourceDir = new File(dir, path);
         debug("Listing children of " + resourceDir.getAbsolutePath());
@@ -225,19 +204,12 @@ public class JarResourceManager extends AbstractResourceLoader implements Resour
         return new FileInputStream(new File(dir, path));
     }
     
-    public void close() {
+    public void close() throws IOException {
+        super.close();
         recursiveRmdir(dir);
     }
     
     // ------------------ Helper Methods ----------------------
-    
-    /**
-     * Throws an IOException with an appropriate message if this resource manager
-     * is closed. Otherwise returns with no side effects.
-     */
-    private void checkClosed() throws IOException {
-        if (closed) throw new IOException("This resource manager is closed");
-    }
     
     /**
      * Deletes the given directory and all of its contents, including
@@ -389,37 +361,9 @@ public class JarResourceManager extends AbstractResourceLoader implements Resour
         }
         fireResourceAdded(targetDir, newDirName + "/");
     }
-    
-    // ------------- Events! ----------------
-    
-    /**
-     * All the listners of this resource manager.
-     */
-    private final List<ResourceManagerListener> listeners = new ArrayList<ResourceManagerListener>();
 
-    /**
-     * Adds the given listener.  No attempt is made to prevent duplication
-     * in the listener list.
-     */
-    public void addResourceManagerListener(ResourceManagerListener listener) {
-        listeners.add(listener);
-    }
-
-    /**
-     * Removes the given listener from the list if it is present.  Otherwise,
-     * returns with no side effects.
-     */
-    public void removeResourceManagerListener(ResourceManagerListener listener) {
-        listeners.remove(listener);
-    }
-
-    /**
-     * Delivers a "resource added" event to all currently-registered listeners.
-     */
-    private void fireResourceAdded(String parentPath, String resourceName) {
-        ResourceManagerEvent evt = new ResourceManagerEvent(this, parentPath, resourceName);
-        for (int i = listeners.size() - 1; i >= 0; i--) {
-            listeners.get(i).resourceAdded(evt);
-        }
+    public boolean resourceExists(String path) {
+        File f = new File(dir, path);
+        return f.exists();
     }
 }

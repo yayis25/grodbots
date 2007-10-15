@@ -203,4 +203,26 @@ public class ResourceUtils {
             }
         }
     }
+    
+    /**
+     * Creates the given directory path and any intermediate directories
+     * as required.  No error will be reported if the given path already
+     * exists as a directory.
+     * 
+     * @param resourceManager The resource manager in which to create
+     * the given directories
+     * @param path The directory or directories to create
+     * @throws IOException If the resource manager cannot create the specified
+     * path as a directory
+     */
+    public static void mkdirs(ResourceManager resourceManager, String path) throws IOException {
+        if (path.endsWith("/")) {
+            throw new IllegalArgumentException("Illegal path \""+path+"\" (must not end with slash)");
+        }
+        if (resourceManager.resourceExists(path)) return;
+        String parentPath = path.substring(0, path.lastIndexOf('/'));
+        mkdirs(resourceManager, parentPath);
+        String newDirName = path.substring(path.lastIndexOf('/') + 1);
+        resourceManager.createDirectory(parentPath, newDirName);
+    }
 }

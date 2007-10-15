@@ -1,8 +1,14 @@
 Game Features:
+-make a preIndexedResourceManager that can read its list of entries from an
+ index file in the system classpath. It would be read-only, but that's fine
+ for a secondary resource manager within a compound resource manager.
+ This would be used as the secondary in an editor project. The build process
+ would have to create the list file.
+-automatic updates
 -os x integration (menus, hooks for about and exit)
 -create a set of tutorial levels for learning the game
 -Make real game UI:
- -get new button graphics from Gord (start, pause, reset, step, next level)
+ -get new button graphics from Gord (start, pause, reset, step, next level, prev page, next page)
  -play in-game music
  -preinit the bsh interpreters so there's not a lag during gameplay
  -explain that unterminated inputs are always off
@@ -58,6 +64,16 @@ Sounds:
 -little ditties for the beginning of each level (maybe this would be better suited to the MIDI sequencer api)
 
 Completed:
+-ED: fixed the recent project file system in several ways:
+      -it no longer confuses recent game files with recent editor projects
+      -it works for recently-saved and recently-created projects in addition to recently-loaded ones
+-ED: changed the default level pack resources to only include the map file, and use a compound
+     resource manager to supplement it with the built-in resources. Then make sure that
+     saving the project only saves back new and modified resources, not those that were just
+     used as-is
+-made the game work with the resources that have been moved under builtin_resources, using the new PrefixResourceLoader
+-changed the delete gate effect to work now that the circuit editor is getting constantly repainted
+-now loading levels within a compound resource manager so level packs don't need to include copies of all the built-in sprites, sounds, and skins
 -use gord's new button graphics
 -make sure keyboard focus is not lost when switching levels
 -reset robot direction when resetting level (specify initial heading in level config)
