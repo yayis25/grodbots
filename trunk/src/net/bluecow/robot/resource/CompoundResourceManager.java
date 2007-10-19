@@ -126,9 +126,9 @@ public class CompoundResourceManager extends AbstractResourceManager {
      * The secondary resource manager within this one (see class-level comment
      * for details).
      */
-    private final ResourceManager secondary;
+    private final ListableResourceLoader secondary;
     
-    public CompoundResourceManager(ResourceManager primary, ResourceManager secondary) {
+    public CompoundResourceManager(ResourceManager primary, ListableResourceLoader secondary) {
         debug("Creating new resource manager");
         this.primary = primary;
         this.secondary = secondary;
@@ -249,7 +249,7 @@ public class CompoundResourceManager extends AbstractResourceManager {
      * manager. This may not be useful in most cases, but it is provided for
      * symmetry with {@link #getPrimary()}.
      */
-    public ResourceManager getSecondary() {
+    public ListableResourceLoader getSecondary() {
         return secondary;
     }
 }

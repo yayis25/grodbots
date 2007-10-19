@@ -153,6 +153,11 @@ public class JarResourceManager extends AbstractResourceManager {
             path += "/";
         }
         
+        // ensure the root directory does not have a leading slash
+        if (path.equals("/")) {
+            path = "";
+        }
+        
         File[] children = resourceDir.listFiles();
         if (children == null) {
             throw new IOException("No such resource directory: \""+path+"\"");
