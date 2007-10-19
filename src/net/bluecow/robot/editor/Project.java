@@ -57,8 +57,11 @@ import net.bluecow.robot.editor.event.LifecycleEvent;
 import net.bluecow.robot.editor.event.LifecycleListener;
 import net.bluecow.robot.resource.CompoundResourceManager;
 import net.bluecow.robot.resource.JarResourceManager;
+import net.bluecow.robot.resource.PreListedResourceLoader;
+import net.bluecow.robot.resource.PrefixResourceLoader;
 import net.bluecow.robot.resource.ResourceManager;
 import net.bluecow.robot.resource.ResourceUtils;
+import net.bluecow.robot.resource.SystemResourceLoader;
 
 /**
  * The Project class represents a project in the robot's level editor.
@@ -81,12 +84,14 @@ import net.bluecow.robot.resource.ResourceUtils;
 public class Project {
 
     /**
-     * The path to the resource jar that holds all the resources built into the
-     * game. This is likely to change to a pre-listed read-only resource manager
-     * in the near future.
+     * The prefix within the system resource loader under which all the
+     * resources built into the game can be found. In order to make a listable
+     * resource loader from this information, you must use the {@link PreListedResourceLoader}
+     * together with a listing resource of 
      */
-    private static final String BUILTIN_RESOURCES_PATH = "net/bluecow/robot/builtin_resources.jar";
+    private static final String BUILTIN_RESOURCES_PREFIX = "builtin_resources/";
 
+    private static final String BUILTIN_RESOURCES_LIST = "resources.list";
     /**
      * The path to the resource jar that should be copied into new projects. As
      * of this writing, the only resource is the ROBO-INF/default.map file which
@@ -181,8 +186,9 @@ public class Project {
      */
     public static Project load(File jar) throws IOException {
         ResourceManager projResources = new JarResourceManager(jar);
-        ResourceManager builtinResources =
-            new JarResourceManager(Project.class.getClassLoader(), BUILTIN_RESOURCES_PATH);
+        PreListedResourceLoader builtinResources = new PreListedResourceLoader(
+                new PrefixResourceLoader(new SystemResourceLoader(), BUILTIN_RESOURCES_PREFIX),
+                BUILTIN_RESOURCES_LIST);
         
         final ResourceManager compoundResources =
             new CompoundResourceManager(projResources, builtinResources);

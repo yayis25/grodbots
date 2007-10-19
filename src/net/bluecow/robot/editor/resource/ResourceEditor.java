@@ -54,7 +54,12 @@ import javax.swing.tree.TreePath;
 
 import net.bluecow.robot.resource.CompoundResourceManager;
 import net.bluecow.robot.resource.JarResourceManager;
+import net.bluecow.robot.resource.ListableResourceLoader;
+import net.bluecow.robot.resource.PreListedResourceLoader;
+import net.bluecow.robot.resource.PrefixResourceLoader;
+import net.bluecow.robot.resource.ResourceLoader;
 import net.bluecow.robot.resource.ResourceManager;
+import net.bluecow.robot.resource.SystemResourceLoader;
 
 /**
  * The ResourceEditor is a GUI for manipulating and browsing a
@@ -175,8 +180,10 @@ public class ResourceEditor {
                     // (and if using eclipse, make sure to refresh the project) 
                     ResourceManager defaultResources = new JarResourceManager(
                             new File("build/net/bluecow/robot/default_resources.jar"));
-                    ResourceManager builtinResources = new JarResourceManager(
-                            new File("build/net/bluecow/robot/builtin_resources.jar"));
+                    ResourceLoader prefixLoader = new PrefixResourceLoader(new SystemResourceLoader(), "builtin_resources/");
+                    ListableResourceLoader builtinResources = new PreListedResourceLoader(prefixLoader, "resources.list");
+                    System.out.println("Root: " + builtinResources.list(""));
+                    System.out.println("doc: " + builtinResources.list("ROBO-INF/doc/"));
                     ResourceManager rm = new CompoundResourceManager(defaultResources, builtinResources);
                     ResourceEditor re = new ResourceEditor(rm);
                     JSplitPane sp = new JSplitPane(JSplitPane.VERTICAL_SPLIT);
