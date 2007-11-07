@@ -1,5 +1,4 @@
 Game Features:
--Make the build process create the builtin-resources list file.
 -automatic updates
 -create a set of tutorial levels for learning the game
 -Make real game UI:
@@ -59,6 +58,8 @@ Sounds:
 -little ditties for the beginning of each level (maybe this would be better suited to the MIDI sequencer api)
 
 Completed:
+-Add the AND gate explanation to the level that introduces it
+-Make the build process create the builtin-resources list file.
 -Split the ResourceLoader/ResourceManager system, creating a middle level that supports
  listing directories in addition to loading files. It's essentially a read-only resource
  manager.  It's called ListableResourceLoader.
