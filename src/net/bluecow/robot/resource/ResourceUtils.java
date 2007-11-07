@@ -44,6 +44,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URL;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.jar.JarEntry;
 import java.util.jar.JarOutputStream;
@@ -63,7 +65,7 @@ public class ResourceUtils {
     /**
      * Controls debugging features of this class.
      */
-    private static final boolean debugOn = true;
+    private static final boolean debugOn = false;
     
     /**
      * Prints the given message to the system console.
@@ -224,5 +226,56 @@ public class ResourceUtils {
         mkdirs(resourceManager, parentPath);
         String newDirName = path.substring(path.lastIndexOf('/') + 1);
         resourceManager.createDirectory(parentPath, newDirName);
+    }
+
+    public static List<String> recursiveListResources(File dir, ResourceNameFilter filter) {
+        return recursiveListResources("", dir, filter, new ArrayList<String>());
+    }
+    
+    /**
+     * Recursive subroutine that appends the names of all files
+     * at and below the given directory.
+     * 
+     * @param resources The list to append to.
+     * @return The <code>resources</code> list.
+     */
+    private static List<String> recursiveListResources(
+            String pathName, File dir, ResourceNameFilter filter, List<String> resources) {
+        
+        File[] files = dir.listFiles();
+        Arrays.sort(files);
+        
+        //debug("rlr: pathName="+pathName+"; files="+Arrays.toString(files));
+        
+        for (File file : files) {
+            String newPath;
+            if (pathName.length() == 0) {
+                newPath = file.getName();  // this prevents a leading slash in entry name
+            } else {
+                newPath = pathName + file.getName();
+            }
+            
+            String resourceName;
+            if (file.isDirectory()) {
+                resourceName = newPath + "/";
+            } else {
+                resourceName = newPath;
+            }
+            
+            boolean accepted;
+            if (filter == null || filter.accepts(resourceName)) {
+                accepted = true;
+                resources.add(resourceName);
+            } else {
+                accepted = false;
+            }
+            
+            debug("rlr:   newPath="+newPath+"; resourceName="+resourceName+"; accepted="+accepted);
+            
+            if (file.isDirectory()) {
+                recursiveListResources(resourceName, file, filter, resources);
+            }
+        }
+        return resources;
     }
 }

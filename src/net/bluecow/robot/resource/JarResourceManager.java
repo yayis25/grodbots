@@ -138,7 +138,7 @@ public class JarResourceManager extends AbstractResourceManager {
     
     public List<String> listAll(ResourceNameFilter filter) throws IOException {
         checkClosed();
-        return recursiveListResources("", dir, filter, new ArrayList<String>());
+        return ResourceUtils.recursiveListResources(dir, filter);
     }
 
     public List<String> list(String path, ResourceNameFilter filter) throws IOException {
@@ -229,53 +229,6 @@ public class JarResourceManager extends AbstractResourceManager {
             }
         }
         dir.delete();
-    }
-    
-    /**
-     * Recursive subroutine that appends the names of all files
-     * at and below the given directory.
-     * 
-     * @param resources The list to append to.
-     * @return The resources list.
-     */
-    private List<String> recursiveListResources(
-            String pathName, File dir, ResourceNameFilter filter, List<String> resources) {
-        
-        File[] files = dir.listFiles();
-        Arrays.sort(files);
-        
-        //debug("rlr: pathName="+pathName+"; files="+Arrays.toString(files));
-        
-        for (File file : files) {
-            String newPath;
-            if (pathName.length() == 0) {
-                newPath = file.getName();  // this prevents a leading slash in entry name
-            } else {
-                newPath = pathName + file.getName();
-            }
-            
-            String resourceName;
-            if (file.isDirectory()) {
-                resourceName = newPath + "/";
-            } else {
-                resourceName = newPath;
-            }
-            
-            boolean accepted;
-            if (filter == null || filter.accepts(resourceName)) {
-                accepted = true;
-                resources.add(resourceName);
-            } else {
-                accepted = false;
-            }
-            
-            debug("rlr:   newPath="+newPath+"; resourceName="+resourceName+"; accepted="+accepted);
-            
-            if (file.isDirectory()) {
-                recursiveListResources(resourceName, file, filter, resources);
-            }
-        }
-        return resources;
     }
     
     /**
