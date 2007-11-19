@@ -1,19 +1,19 @@
 There are three resource trees under this directory.  Each of the subdirectories
 found here is treated as the root of a resource tree in certain situations:
 
-builtin_resources
+builtin/
    This is a set of all the resources required by the built-in user interface
    (button graphics, sound effects) as well as the built-in levels and level
    editor projects (robot and background graphics).  Note that the built-in
    level config file itself is not in this resource tree.
 
-default_resources 
+default/
    Contains the built-in levels that you get when starting the game itself.
    As of this writing, the level config file (at ROBO-INF/default.map) is the
    only resource in this collection.  All other resources are expected to be
    provided by builtin_resources.
 
-new_project_resources
+new_project/
    Contains the resources given to a newly-created level editor project.  As
    of this writing, the only resource in here is a ROBO-INF/default.map which
    relies on the resources found in the builtin_resources collection. Authors
