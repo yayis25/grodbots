@@ -59,6 +59,7 @@ import net.bluecow.robot.resource.PreListedResourceLoader;
 import net.bluecow.robot.resource.PrefixResourceLoader;
 import net.bluecow.robot.resource.ResourceLoader;
 import net.bluecow.robot.resource.ResourceManager;
+import net.bluecow.robot.resource.ResourceUtils;
 import net.bluecow.robot.resource.SystemResourceLoader;
 
 /**
@@ -176,11 +177,20 @@ public class ResourceEditor {
                 try {
                     JFrame f = new JFrame("Test resource editor");
                     
-                    // this only exists if you have run the default_resoruces_jar build target
-                    // (and if using eclipse, make sure to refresh the project) 
-                    ResourceManager defaultResources = new JarResourceManager(
-                            new File("build/net/bluecow/robot/default_resources.jar"));
-                    ResourceLoader prefixLoader = new PrefixResourceLoader(new SystemResourceLoader(), "builtin_resources/");
+                    ListableResourceLoader defaultResourceLoader = new PreListedResourceLoader(
+                            new PrefixResourceLoader(new SystemResourceLoader(), "default/"),
+                            "resources.list");
+                    
+                    // XXX this is a bit dumb: if there was a MemoryResourceManager, there
+                    //     would be no need to create this actual JAR file
+                    File defaultResourceJar = new File(System.getProperty("java.io.tmpdir"), "temp");
+                    ResourceUtils.createResourceJar(defaultResourceLoader, defaultResourceJar);
+                    ResourceManager defaultResources = new JarResourceManager(defaultResourceJar);
+                    
+                    ResourceLoader prefixLoader = new PrefixResourceLoader(
+                            new SystemResourceLoader(),
+                            "builtin/");
+                    
                     ListableResourceLoader builtinResources = new PreListedResourceLoader(prefixLoader, "resources.list");
                     System.out.println("Root: " + builtinResources.list(""));
                     System.out.println("doc: " + builtinResources.list("ROBO-INF/doc/"));

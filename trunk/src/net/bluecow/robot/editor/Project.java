@@ -41,7 +41,6 @@ import java.awt.geom.Point2D;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
@@ -57,6 +56,7 @@ import net.bluecow.robot.editor.event.LifecycleEvent;
 import net.bluecow.robot.editor.event.LifecycleListener;
 import net.bluecow.robot.resource.CompoundResourceManager;
 import net.bluecow.robot.resource.JarResourceManager;
+import net.bluecow.robot.resource.ListableResourceLoader;
 import net.bluecow.robot.resource.PreListedResourceLoader;
 import net.bluecow.robot.resource.PrefixResourceLoader;
 import net.bluecow.robot.resource.ResourceManager;
@@ -87,18 +87,24 @@ public class Project {
      * The prefix within the system resource loader under which all the
      * resources built into the game can be found. In order to make a listable
      * resource loader from this information, you must use the {@link PreListedResourceLoader}
-     * together with a listing resource of 
+     * together with a listing resource of {@link #RESOURCE_LIST_PATH}.
      */
-    private static final String BUILTIN_RESOURCES_PREFIX = "builtin_resources/";
+    private static final String BUILTIN_RESOURCES_PREFIX = "builtin/";
 
-    private static final String BUILTIN_RESOURCES_LIST = "resources.list";
     /**
-     * The path to the resource jar that should be copied into new projects. As
-     * of this writing, the only resource is the ROBO-INF/default.map file which
-     * itself depends on the built-in resources. This is likely to change to a
-     * pre-listed read-only resource manager in the near future.
+     * The standard filename within a resource loader that lists its contents.
+     * If a resource loader has this file inside its root directory, that
+     * resource loader can be upgraded to a {@link ListableResourceLoader}.
      */
-    private static final String DEFAULT_RESOURCES_PATH = "net/bluecow/robot/default_resources.jar";
+    private static final String RESOURCE_LIST_PATH = "resources.list";
+
+    /**
+     * The prefix within the system classpath that contains the resource
+     * collection that should be copied into new projects. As of this writing,
+     * the only resource is the ROBO-INF/default.map file which itself depends
+     * on the built-in resources.
+     */
+    private static final String NEW_PROJECT_RESOURCES_PREFIX = "new_project/";
 
     private static final boolean debugOn = false;
 
@@ -164,8 +170,11 @@ public class Project {
         // now copy the default project to the user's selected location
         // then load it like a regular project
         // This code assumes the resource is a JAR file.
-        InputStream in = Project.class.getClassLoader().getResourceAsStream(DEFAULT_RESOURCES_PATH);
-        ResourceUtils.copyToFile(in, file);
+        ListableResourceLoader newProjectResources =
+            new PreListedResourceLoader(
+                    new PrefixResourceLoader(new SystemResourceLoader(), NEW_PROJECT_RESOURCES_PREFIX),
+                    RESOURCE_LIST_PATH);
+        ResourceUtils.createResourceJar(newProjectResources, file);
         
         Project proj = load(file);
         
@@ -188,7 +197,7 @@ public class Project {
         ResourceManager projResources = new JarResourceManager(jar);
         PreListedResourceLoader builtinResources = new PreListedResourceLoader(
                 new PrefixResourceLoader(new SystemResourceLoader(), BUILTIN_RESOURCES_PREFIX),
-                BUILTIN_RESOURCES_LIST);
+                RESOURCE_LIST_PATH);
         
         final ResourceManager compoundResources =
             new CompoundResourceManager(projResources, builtinResources);

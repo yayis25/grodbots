@@ -11,11 +11,11 @@ default/
    Contains the built-in levels that you get when starting the game itself.
    As of this writing, the level config file (at ROBO-INF/default.map) is the
    only resource in this collection.  All other resources are expected to be
-   provided by builtin_resources.
+   provided by the builtin resources.
 
 new_project/
    Contains the resources given to a newly-created level editor project.  As
    of this writing, the only resource in here is a ROBO-INF/default.map which
-   relies on the resources found in the builtin_resources collection. Authors
+   relies on the resources found in the builtin resources collection. Authors
    of individual level packs can override any or all of the default resources
    by including their own resources with the same paths in their level pack.

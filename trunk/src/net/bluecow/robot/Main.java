@@ -168,9 +168,9 @@ public class Main {
         
         try {
             ResourceLoader defaultLevelsResourceLoader =
-                new SystemResourceLoader();
+                new PrefixResourceLoader(new SystemResourceLoader(), "default/");
             ResourceLoader builtinResourceLoader =
-                new PrefixResourceLoader(new SystemResourceLoader(), "builtin_resources/");
+                new PrefixResourceLoader(new SystemResourceLoader(), "builtin/");
             CompoundResourceLoader compoundResourceLoader =
                 new CompoundResourceLoader(defaultLevelsResourceLoader, builtinResourceLoader);
             loadGameConfig(compoundResourceLoader);
@@ -231,9 +231,9 @@ public class Main {
      */
     void loadGameConfig(ResourceLoader resourceLoader) throws IOException {
         ResourceLoader builtinResourceLoader =
-            new PrefixResourceLoader(new SystemResourceLoader(), "builtin_resources/");
+            new PrefixResourceLoader(new SystemResourceLoader(), "builtin/");
         ResourceLoader loader =
-            new CompoundResourceLoader(resourceLoader, builtinResourceLoader );
+            new CompoundResourceLoader(resourceLoader, builtinResourceLoader);
         config = LevelStore.loadLevels(loader);
         ResourceUtils.initResourceURLHandler(loader);
     }
