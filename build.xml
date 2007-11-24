@@ -21,30 +21,24 @@
 		</javac>
 	</target>
 
-	<target name="copyresources" depends="init,builtin_resources_list">
-		<!-- TODO just put all the resources under one "resources" folder. It will make the copy simpler. -->
+	<target name="copy_resources" depends="init,index_resources">
 		<copy todir="${build}">
-			<fileset dir="." includes="ROBO-INF/**" />
-		</copy>
-		<copy todir="${build}">
-			<fileset dir="src" includes="builtin_resources/**" />
+			<fileset dir="resources" includes="**" excludes="README" />
 		</copy>
 	</target>
 
-	<target name="default_resources_jar">
-		<!-- note, for Eclipse to see this jar at runtime, you have to copy it from
-		     the build dir into the source dir -->
-		<jar destfile="${build}/net/bluecow/robot/default_resources.jar" basedir="default_resources"/>
-	</target>
-
-    <target name="builtin_resources_list" depends="compile">
-    	<!-- remove the list file so it won't show up in the list -->
-    	<delete file="src/builtin_resources/resources.list"/>
+    <target name="index_resources" depends="compile">
+    	<!-- remove the list files so they won't show up in the lists -->
+    	<delete file="resources/builtin/resources.list"/>
+    	<delete file="resources/default/resources.list"/>
+       	<delete file="resources/new_project/resources.list"/>
     	<taskdef name="resourcelist" classpath="${build}" classname="net.bluecow.robot.ant.ResourceListTask"/>
-    	<resourcelist basedir="src/builtin_resources" targetfile="src/builtin_resources/resources.list"/>
+		<resourcelist basedir="resources/builtin" targetfile="resources/builtin/resources.list"/>
+		<resourcelist basedir="resources/default" targetfile="resources/default/resources.list"/>
+		<resourcelist basedir="resources/new_project" targetfile="resources/new_project/resources.list"/>
 	</target>
 
-	<target name="jar" depends="compile,copyresources,default_resources_jar">
+	<target name="jar" depends="compile,copy_resources">
 		<unjar src="lib/bsh.jar" dest="build"/>
 		<jar destfile="robot.jar" basedir="build" manifest="robot_jar_manifest" />
 		

@@ -108,14 +108,14 @@ public class ResourceUtils {
         }
     }
     /**
-     * Packs all resources in the given resource manager into a JAR file.
+     * Packs all resources in the given resource loader into a JAR file.
      * 
      * @param rm
-     *            The resource manager whose contents should be jarred
+     *            The resource loader whose contents should be jarred
      * @param location
      *            The location to store the created JAR file
      */
-    public static void createResourceJar(ResourceManager rm, File location) throws IOException {
+    public static void createResourceJar(ListableResourceLoader rm, File location) throws IOException {
         JarOutputStream jout = new JarOutputStream(new BufferedOutputStream(new FileOutputStream(location)));
         List<String> resources = rm.listAll();
         debug("About to create resource JAR. Entries:\n" + RobotUtils.listOnSeparateLines(resources));

@@ -7,5 +7,6 @@
 	<classpathentry sourcepath="/BeanShell/src" kind="lib" path="lib/bsh.jar"/>
 	<classpathentry sourcepath="/JUNIT_SRC_HOME" kind="var" path="JUNIT_HOME/junit.jar"/>
 	<classpathentry kind="var" path="ANT_HOME/lib/ant.jar"/>
+	<classpathentry kind="lib" path="resources"/>
 	<classpathentry kind="output" path="eclipse_build"/>
 </classpath>
