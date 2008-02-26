@@ -116,7 +116,7 @@ class LoadGhostAction extends AbstractAction {
                 if (!ghostLevel.getRobots().contains(ghost)) {
                     throw new IllegalStateException("ghostLevel doesn't contain ghost "+ghost);
                 }
-                CircuitEditor ghostCE = new CircuitEditor(ghost.getCircuit(), session.sm);
+                CircuitEditor ghostCE = new CircuitEditor(ghost.getCircuit(), session.getGameConfig().getSoundManager());
                 ghost.getCircuit().setLocked(true);
                 JFrame ghostFrame = new JFrame("Ghost of "+ghost.getLabel()+" from "+f.getName());
                 ghostFrame.addWindowListener(new BuffyTheGhostKiller(ghost));

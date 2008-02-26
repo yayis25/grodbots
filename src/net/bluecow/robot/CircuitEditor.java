@@ -72,13 +72,14 @@ import net.bluecow.robot.GameConfig.GateConfig;
 import net.bluecow.robot.event.CircuitEvent;
 import net.bluecow.robot.event.CircuitListener;
 import net.bluecow.robot.gate.Gate;
+import net.bluecow.robot.sound.SoundManager;
 
 public class CircuitEditor extends JPanel {
 
     /**
      * Controls the debugging features of this class.
      */
-    private static final boolean debugOn = true;
+    private static final boolean debugOn = false;
     
     /**
      * Prints the given message to System.out if debugOn is true.

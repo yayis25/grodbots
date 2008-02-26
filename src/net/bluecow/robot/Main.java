@@ -121,12 +121,6 @@ public class Main {
      * The index (within the current game config) of which level is currently active.
      */
     int levelNumber;
-
-    /**
-     * The sound manager for this session. This object will be moved into the GameConfig
-     * soon.
-     */
-    SoundManager sm;
     
     /**
      * Whether or not to start in full screen mode.
@@ -174,31 +168,6 @@ public class Main {
             CompoundResourceLoader compoundResourceLoader =
                 new CompoundResourceLoader(defaultLevelsResourceLoader, builtinResourceLoader);
             loadGameConfig(compoundResourceLoader);
-            
-            sm = new SoundManager(compoundResourceLoader);
-            
-            // this could be moved into a section of the game config xml file, then the
-            // levelstore could init the sound manager and stash it in the gameconfig
-            sm.addClip("confused_robot", "ROBO-INF/sounds/confused_robot.wav");
-            sm.addClip("create_prohibited", "ROBO-INF/sounds/create_prohibited.wav");
-            sm.addClip("create-AND", "ROBO-INF/sounds/create-AND.wav");
-            sm.addClip("create-OR",  "ROBO-INF/sounds/create-OR.wav");
-            sm.addClip("create-NOT", "ROBO-INF/sounds/create-NOT.wav");
-            sm.addClip("delete_all", "ROBO-INF/sounds/delete_all.wav");
-            sm.addClip("delete_gate", "ROBO-INF/sounds/delete_gate.wav");
-            sm.addClip("delete_prohibited", "ROBO-INF/sounds/delete_prohibited.wav");
-            sm.addClip("drag-AND", "ROBO-INF/sounds/drag-AND.wav");
-            sm.addClip("drag-OR",  "ROBO-INF/sounds/drag-OR.wav");
-            sm.addClip("drag-NOT", "ROBO-INF/sounds/drag-NOT.wav");
-            sm.addClip("enter_gate", "ROBO-INF/sounds/enter_gate.wav");
-            sm.addClip("leave_gate", "ROBO-INF/sounds/leave_gate.wav");
-            sm.addClip("pull_wire", "ROBO-INF/sounds/pull_wire.wav");
-            sm.addClip("relay_clicking", "ROBO-INF/sounds/relay_clicking.wav");
-            sm.addClip("start_drawing_wire", "ROBO-INF/sounds/start_drawing_wire.wav");
-            sm.addClip("teleport", "ROBO-INF/sounds/teleport.wav");
-            sm.addClip("unterminated_wire", "ROBO-INF/sounds/unterminated_wire.wav");
-            sm.addClip("terminated_wire", "ROBO-INF/sounds/terminated_wire.wav");
-            sm.addClip("win", "ROBO-INF/sounds/win.wav");
         } catch (FileFormatException ex) {
             ex.printStackTrace();
             RobotUtils.showFileFormatException(ex);
@@ -268,7 +237,7 @@ public class Main {
         };
 
         try {
-            gameUI = new GameUI(this, level, sm, nextLevelAction);
+            gameUI = new GameUI(this, level, config.getSoundManager(), nextLevelAction);
         } catch (IOException ex) {
             RobotUtils.showException("Failed to create game UI", ex);
             playfieldFrame.dispose();

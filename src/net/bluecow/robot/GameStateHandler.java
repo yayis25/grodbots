@@ -50,6 +50,7 @@ import javax.swing.JButton;
 import javax.swing.SwingUtilities;
 
 import net.bluecow.robot.resource.ResourceLoader;
+import net.bluecow.robot.sound.SoundManager;
 
 /**
  * The GameStateHandler class encapsulates the correct game state logic

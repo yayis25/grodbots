@@ -52,6 +52,8 @@ import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.JPanel;
 
+import net.bluecow.robot.sound.SoundManager;
+
 /**
  * Manages the user interface for the game.  The user interface components themselves
  * (the playfield and all the circuit editors) live in a JPanel, and are laid out with
