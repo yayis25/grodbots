@@ -52,6 +52,7 @@ import javax.swing.KeyStroke;
 
 import net.bluecow.robot.gate.Gate;
 import net.bluecow.robot.resource.ResourceLoader;
+import net.bluecow.robot.sound.SoundManager;
 import net.bluecow.robot.sprite.Sprite;
 import net.bluecow.robot.sprite.SpriteLoadException;
 import net.bluecow.robot.sprite.SpriteManager;
@@ -208,6 +209,12 @@ public class GameConfig {
      */
     private PropertyChangeSupport pcs = new PropertyChangeSupport(this);
     
+    /**
+     * The sound manager for this game config. It uses the same resource
+     * loader as this game config.
+     */
+    private final SoundManager sm;
+    
     private Map<String, GateConfig> gateTypes = new HashMap<String, GateConfig>();
     private Map<Character, SquareConfig> squareTypes = new HashMap<Character, SquareConfig>();
     private Map<String, SensorConfig> sensorTypes = new LinkedHashMap<String, SensorConfig>();
@@ -217,11 +224,12 @@ public class GameConfig {
      * The resource loader that is responsible for loading all the auxiliary resources
      * for this game config (images, sounds, the config file, and so on).
      */
-    private ResourceLoader resourceLoader;
+    private final ResourceLoader resourceLoader;
     
     
     public GameConfig(ResourceLoader resourceLoader) {
         this.resourceLoader = resourceLoader;
+        sm = new SoundManager(resourceLoader);
     }
     
     
@@ -391,5 +399,9 @@ public class GameConfig {
 
     public ResourceLoader getResourceLoader() {
         return resourceLoader;
+    }
+    
+    public SoundManager getSoundManager() {
+        return sm;
     }
 }

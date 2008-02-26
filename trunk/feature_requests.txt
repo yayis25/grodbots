@@ -1,4 +1,9 @@
 Game Features:
+-ensure the game can still exit cleanly now that IBXM is on the scene (it seems to do
+ something to JavaSound that prevents the VM from halting when the main thread terminates)
+-make a close() method for SoundManager that closes all its clips.
+ This may solve the halting problem. (No, not THAT halting problem...)
+-add sound management to the level editor
 -automatic updates
 -create a set of tutorial levels for learning the game
 -Make real game UI:
@@ -16,7 +21,6 @@ Game Features:
  -bonus points for left-over gates
  -Create a hint system where you can buy hints for points (if you have enough)
  -Move position information from Switch and Robot into Sprite, then make the obviouis fixes in LevelEditor
- -init sound manager with a gameconfig argument, and add sound configuration to the game file
  -accelerators for close, quit, save
  -have resource managers fire events when resources are added, removed, and modified.
  -implement a GUI resource manager (for adding and removing files in the project)
@@ -58,6 +62,13 @@ Sounds:
 -little ditties for the beginning of each level (maybe this would be better suited to the MIDI sequencer api)
 
 Completed:
+-unified the handling of clips and music in the SoundManager
+ (renamed BackgroundMusic to something better, have a Clip-based
+ implementation, and using it instead of Clip in the sound manager)
+-implement MOD/XM/S3M music playback via SoundManager (adds IBXM as a library we depend on)
+-now keeping SoundManager in the GameConfig object instead of in Main
+-configuring sound manager clips and music from the game config xml file instead of main class
+-moved SoundManager into its own package
 -Add the AND gate explanation to the level that introduces it
 -Make the build process create the builtin-resources list file.
 -Split the ResourceLoader/ResourceManager system, creating a middle level that supports

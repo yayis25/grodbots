@@ -1,5 +1,28 @@
 <?xml version="1.0" encoding="utf-8"?>
 <rocky version="4.0">
+
+  <sound type="CLIP" id="confused_robot" path="ROBO-INF/sounds/confused_robot.wav" />
+  <sound type="CLIP" id="create_prohibited" path="ROBO-INF/sounds/create_prohibited.wav" />
+  <sound type="CLIP" id="create-AND" path="ROBO-INF/sounds/create-AND.wav" />
+  <sound type="CLIP" id="create-OR" path="ROBO-INF/sounds/create-OR.wav" />
+  <sound type="CLIP" id="create-NOT" path="ROBO-INF/sounds/create-NOT.wav" />
+  <sound type="CLIP" id="delete_all" path="ROBO-INF/sounds/delete_all.wav" />
+  <sound type="CLIP" id="delete_gate" path="ROBO-INF/sounds/delete_gate.wav" />
+  <sound type="CLIP" id="delete_prohibited" path="ROBO-INF/sounds/delete_prohibited.wav" />
+  <sound type="CLIP" id="drag-AND" path="ROBO-INF/sounds/drag-AND.wav" />
+  <sound type="CLIP" id="drag-OR" path="ROBO-INF/sounds/drag-OR.wav" />
+  <sound type="CLIP" id="drag-NOT" path="ROBO-INF/sounds/drag-NOT.wav" />
+  <sound type="CLIP" id="enter_gate" path="ROBO-INF/sounds/enter_gate.wav" />
+  <sound type="CLIP" id="leave_gate" path="ROBO-INF/sounds/leave_gate.wav" />
+  <sound type="CLIP" id="pull_wire" path="ROBO-INF/sounds/pull_wire.wav" />
+  <sound type="CLIP" id="relay_clicking" path="ROBO-INF/sounds/relay_clicking.wav" />
+  <sound type="CLIP" id="start_drawing_wire" path="ROBO-INF/sounds/start_drawing_wire.wav" />
+  <sound type="CLIP" id="teleport" path="ROBO-INF/sounds/teleport.wav" />
+  <sound type="CLIP" id="unterminated_wire" path="ROBO-INF/sounds/unterminated_wire.wav" />
+  <sound type="CLIP" id="terminated_wire" path="ROBO-INF/sounds/terminated_wire.wav" />
+  <sound type="CLIP" id="win" path="ROBO-INF/sounds/win.wav" />
+  <sound type="MOD" id="grod_march_01" path="ROBO-INF/music/grod_march_01.xm"/>
+
   <sensor type="Red" />
   <sensor type="Green" />
   <sensor type="Blue" />

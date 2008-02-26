@@ -47,6 +47,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Stack;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -59,6 +60,7 @@ import net.bluecow.robot.GameConfig.SensorConfig;
 import net.bluecow.robot.GameConfig.SquareConfig;
 import net.bluecow.robot.gate.Gate;
 import net.bluecow.robot.resource.ResourceLoader;
+import net.bluecow.robot.sound.SoundManagerEntry;
 import net.bluecow.robot.sprite.Sprite;
 import net.bluecow.robot.sprite.SpriteLoadException;
 import net.bluecow.robot.sprite.SpriteManager;
@@ -71,7 +73,13 @@ import org.xml.sax.helpers.DefaultHandler;
 /**
  * The LevelStore is responsible for loading in level descriptions and
  * saving out level descriptions.
- *
+ * <p>
+ * History of changes to the file format:
+ * <dl>
+ * <dd>4.1 <dt>Added the sound section to the beginning. Prior to this,
+ *             sound names were hardcoded into the Main class of the game.
+ * </dl>
+ * 
  * @author fuerth
  * @version $Id$
  */
@@ -104,13 +112,19 @@ public class LevelStore {
      * @param encoding The character encoding to output in the XML header. Should
      * match the character encoding of the given writer.  It is important
      * to get this right, because XML parsers tend to blindly trust whatever the
-     * XML delcaration says.
+     * XML declaration says.
      * @throws IOException
      */
     public static void save(Writer out, GameConfig gc, String encoding) throws IOException {
         out.write("<?xml version=\"1.0\" encoding=\""+encoding+"\"?>\n");
-        out.write("<rocky version=\"4.0\">");
+        out.write("<rocky version=\"4.1\">\n");
 
+        for (SoundManagerEntry sme : gc.getSoundManager().getClips()) {
+            out.write("  <sound id=\""+sme.getId()+"\" " +
+                            "type=\""+sme.getType()+"\" " +
+                            "path=\""+sme.getPath()+"\" />\n");
+        }
+        
         out.write("\n");
 
         for (SensorConfig sensor : gc.getSensorTypes()) {
@@ -348,6 +362,13 @@ public class LevelStore {
          */
         private StringBuffer charData;
         
+        /**
+         * The current netsing context for where we are in the document. At every
+         * start tag, the qName of the tag is pushed onto this stack; at every end
+         * tag, the top item is popped off the stack.
+         */
+        private Stack<String> nestingContext = new Stack<String>();
+        
         public LevelSaxHandler(ResourceLoader resourceLoader) {
             this.config = new GameConfig(resourceLoader);
             this.warnings = new ArrayList<FileFormatException>();
@@ -372,6 +393,8 @@ public class LevelStore {
             
             // FIXME: need a way to get the text of a particular line from the input stream
             final String line = "(Original line from file is not available)";
+            
+            nestingContext.push(qName);
             
             charData = new StringBuffer();
 
@@ -398,6 +421,34 @@ public class LevelStore {
                         }
                     }
                     
+                } else if (qName.equals("sound")) {
+                    // sound manager entry
+                    
+                    String id = null;
+                    SoundManagerEntry.EntryType type = null;
+                    String path = null;
+                    
+                    for (int i = 0; i < attributes.getLength(); i++) {
+                        String aname = attributes.getQName(i);
+                        String aval = attributes.getValue(i);
+                        
+                        if (aname.equals("id")) {
+                            id = aval;
+                        } else if (aname.equals("type")) {
+                            type = SoundManagerEntry.EntryType.valueOf(aval);
+                        } else if (aname.equals("path")) {
+                            path = aval;
+                        } else {
+                            handleUnknownAttribute(qName, line, aname, aval);
+                        }
+                    }
+                    
+                    checkMandatory(qName, "id", id);
+                    checkMandatory(qName, "type", type);
+                    checkMandatory(qName, "path", path);
+                    
+                    config.getSoundManager().addEntry(id, type, path);
+
                 } else if (qName.equals("sensor")) {
                     // sensor types (square attributes)
                     
@@ -757,6 +808,10 @@ public class LevelStore {
 
             final String line = "Original line not available";
             
+            // note: don't return from inside this try block! The nesting context gets
+            //       updated after it.  Throwing an exception is fine, since it will
+            //       abort the parsing operation.
+            
             try {
                 if (qName.equals("square")) {
                     try {
@@ -829,6 +884,8 @@ public class LevelStore {
             } catch (FileFormatException ex) {
                 throw new SAXException(ex);
             }
+            
+            nestingContext.pop();
         }
         
         private void setupLabel(Labelable obj, Attributes attributes) throws FileFormatException {

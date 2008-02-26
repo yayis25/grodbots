@@ -34,9 +34,11 @@
  *
  * This code belongs to Jonathan Fuerth.
  */
-package net.bluecow.robot;
+package net.bluecow.robot.sound;
 
 import java.io.IOException;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -48,6 +50,7 @@ import javax.sound.sampled.LineUnavailableException;
 import javax.sound.sampled.UnsupportedAudioFileException;
 
 import net.bluecow.robot.resource.ResourceLoader;
+import net.bluecow.robot.sound.SoundManagerEntry.EntryType;
 
 /**
  * The SoundManager handles loading, playing, looping, and stopping
@@ -68,9 +71,10 @@ public class SoundManager {
     private static boolean debugOn = false;
     
     /**
-     * Maps names (which are supplied by the client code) to audio clips.
+     * Maps a clip name (which is supplied by the client code) to all of the
+     * information about the corresponding audio clip.
      */
-    Map<String, Clip> clips = new HashMap<String, Clip>();
+    private Map<String, SoundManagerEntry> clips = new HashMap<String, SoundManagerEntry>();
     
     private ResourceLoader resourceLoader;
     
@@ -79,25 +83,39 @@ public class SoundManager {
     }
     
     /**
-     * Adds a clip to the library, so that you can later use it with
+     * Adds a entry to the library, so that you can later use it with
      * {@link #play(String)}, {@link #loop(String)}, and {@link #stop(String)}.
      * 
-     * @param name The name of the clip you want to add
-     * @param data The URL where the clip can be loaded from.  WAV and AIFF
-     * formats work; others require additional JavaSound service providers.
+     * @param name
+     *            The name of the clip you want to add
+     * @param data
+     *            The resource path of the clip data. For simple sound files,
+     *            WAV and AIFF file formats work; others may work if additional
+     *            JavaSound service providers are installed. The SoundManager
+     *            also recognizes XM, S3M, and MOD files, and can play those using a
+     *            custom playback class.
      * 
-     * @throws RuntimeException if the sound clip cannot be loaded for any reason.
+     * @throws RuntimeException
+     *             if the sound clip cannot be loaded for any reason.
      */
-    public void addClip(String name, String path) {
+    public void addEntry(String name, EntryType type, String path) {
         try {
-            Line.Info linfo = new Line.Info(Clip.class);
-            Line line;
-            line = AudioSystem.getLine(linfo);
-            Clip clip = (Clip) line;
-            //clip.addLineListener(this);
-            AudioInputStream ais = AudioSystem.getAudioInputStream(resourceLoader.getResourceAsStream(path));
-            clip.open(ais);
-            clips.put(name, clip);
+            if (type == EntryType.CLIP) {
+                Line.Info linfo = new Line.Info(Clip.class);
+                Line line;
+                line = AudioSystem.getLine(linfo);
+                Clip clip = (Clip) line;
+                //clip.addLineListener(this);
+                AudioInputStream ais = AudioSystem.getAudioInputStream(resourceLoader.getResourceAsStream(path));
+                clip.open(ais);
+                clips.put(name, new ClipEntry(name, path, clip));
+            } else if (type == EntryType.MOD) {
+                clips.put(name, new ModMusic(resourceLoader, name, path));
+            } else {
+                throw new IllegalArgumentException(
+                        "Error loading entry \"" + name + "\" from path \"" + path + "\": " +
+                        "SoundManager doesn't support entry type " + type);
+            }
         } catch (LineUnavailableException e) {
             e.printStackTrace();
             throw new RuntimeException("Couldn't load clip: "+e.getMessage());
@@ -110,27 +128,28 @@ public class SoundManager {
         }
     }
     
+    // TODO: close method!
+    
     /**
-     * Plays a clip, or if it is already playing, restarts it from the beginning.
+     * Plays a sound once through, from beginning to end. If this sound is
+     * already playing, it will be restarted from the beginning. (XXX: for some
+     * sound effects, it would be better if playback could be layered so many
+     * instances of a sound could be played on top of each other. One idea for
+     * this: indicate "maximum polyphony" for each sound as it's loaded, then
+     * have a SoundManagerEntry wrapper class SoundManagerPolyphonicEntry. The
+     * polyphonic entry could contain a number of entries and use them in a
+     * round-robin manner so the playback won't be cut off unless the maximum
+     * polyphony is exceeded)
      */
     public void play(String name) {
-        Clip c = clips.get(name);
-        if (c == null) {
-            System.out.println("Can't play clip '"+name+"' because it doesn't exist");
-            return;
-        }
-        if (debugOn) {
-            System.out.println("Playing clip "+name);
-        }
-        c.setFramePosition(0);
-        c.start();
+        playEntry(name, false);
     }
 
     /**
      * Stops a clip.  If the clip was not playing, calling this method has no effect.
      */
     public void stop(String name) {
-        Clip c = clips.get(name);
+        SoundManagerEntry c = clips.get(name);
         if (c == null) {
             System.out.println("Can't stop clip '"+name+"' because it doesn't exist");
             return;
@@ -138,7 +157,7 @@ public class SoundManager {
         if (debugOn) {
             System.out.println("Stopping clip "+name);
         }
-        c.stop();
+        c.stopPlaying(null);
     }
 
     /**
@@ -146,16 +165,31 @@ public class SoundManager {
      * until you stop it with {@link #stop(String)}.
      */
     public void loop(String name) {
-        Clip c = clips.get(name);
+        playEntry(name, true);
+    }
+
+    private void playEntry(String name, boolean loop) {
+        SoundManagerEntry c = clips.get(name);
         if (c == null) {
-            System.out.println("Can't loop clip '"+name+"' because it doesn't exist");
+            System.out.println("Can't play clip '"+name+"' because it doesn't exist");
             return;
         }
         if (debugOn) {
-            System.out.println("Looping clip "+name);
+            System.out.println("Starting clip "+name+" (loop="+loop+")");
         }
-        c.setFramePosition(0);
-        c.loop(Clip.LOOP_CONTINUOUSLY);
+        try {
+            c.startPlaying(loop);
+        } catch (LineUnavailableException ex) {
+            System.err.println("Playback of clip " + name + " failed due to unavailable line");
+            ex.printStackTrace();
+        }
+    }
+
+    /**
+     * Returns a list of all the clips in this sound manager.
+     */
+    public Collection<SoundManagerEntry> getClips() {
+        return Collections.unmodifiableCollection(clips.values());
     }
 
 }

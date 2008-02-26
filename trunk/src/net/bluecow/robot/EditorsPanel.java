@@ -64,6 +64,7 @@ import javax.swing.Timer;
 
 import net.bluecow.robot.event.CircuitEvent;
 import net.bluecow.robot.event.CircuitListener;
+import net.bluecow.robot.sound.SoundManager;
 
 /**
  * The EditorsPanel is a custom component that displays thumbnail previews of
