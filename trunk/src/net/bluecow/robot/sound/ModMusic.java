@@ -42,6 +42,8 @@ import ibxm.ScreamTracker3;
 
 import java.io.DataInputStream;
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 
 import javax.sound.sampled.AudioFormat;
 import javax.sound.sampled.AudioSystem;
@@ -90,6 +92,73 @@ public class ModMusic extends AbstractSoundManagerEntry {
     }
     
     /**
+     * The SongPosition class represents a specific playback position in a mod.
+     * It specifies a specific pattern within the sequence of patterns in the mod,
+     * and a line number within that pattern.
+     */
+    private static class SongPosition {
+        
+        /**
+         * The position within the mod's sequence. The first sequence index is
+         * 0.
+         */
+        private final int sequenceIndex;
+
+        /**
+         * The offset (number of lines from the top) within the pattern
+         * specified by {@link #sequenceIndex}.
+         */
+        private final int offset;
+
+        /**
+         * The amount of time, in milliseconds, to continue playing from the given
+         * position.
+         */
+        private final long duration;
+        
+        /**
+         * Creates a new SongPosition object with the given settings. Once
+         * created, the settings for this instance cannot be changed.
+         * 
+         * @param sequenceIndex
+         *            The position within the mod's sequence. The first sequence
+         *            index is 0.
+         * @param offset
+         *            The offset (number of lines from the top) within the
+         *            pattern specified by sequenceIndex.
+         */
+        public SongPosition(int sequenceIndex, int offset, long duration) {
+            this.sequenceIndex = sequenceIndex;
+            this.offset = offset;
+            this.duration = duration;
+        }
+
+        /**
+         * The offset (number of lines from the top) within the pattern
+         * specified by {@link #getSequenceIndex()}.
+         */
+        public int getOffset() {
+            return offset;
+        }
+
+        /**
+         * The position within the mod's sequence. The first sequence index is
+         * 0.
+         */
+        public int getSequenceIndex() {
+            return sequenceIndex;
+        }
+        
+        /**
+         * The amount of time, in milliseconds, to continue playing after
+         * jumping to the specified pattern and offset.
+         */
+        public long getDuration() {
+            return duration;
+        }
+    }
+    
+    /**
      * The module loaded in the constructor. This is the music module that
      * will be played by this ModMusic instance.
      */
@@ -107,10 +176,10 @@ public class ModMusic extends AbstractSoundManagerEntry {
     private final int song_duration;
 
     /**
-     * The pattern to play when requested to play the "winning" end to the song.
+     * Maps ending names to the corresponding pattern number within the MOD.
      */
-    private int winTunePattern = 2;
-
+    private final Map<String, SongPosition> endings = new HashMap<String, SongPosition>();
+    
     private int framesPlayed;
 
     private int remainingFrames;
@@ -163,6 +232,8 @@ public class ModMusic extends AbstractSoundManagerEntry {
 
         playerThread = new PlayerThread();
         playerThread.start();
+        
+        endings.put("win", new SongPosition(0, 4, 5000)); // XXX: temporary for testing
     }
     
     private class PlayerThread extends Thread {
@@ -184,6 +255,15 @@ public class ModMusic extends AbstractSoundManagerEntry {
          */
         private boolean terminated = false;
 
+        /**
+         * The point in time (according to {@link System#currentTimeMillis()}) to
+         * stop playback, if playback is in progress. Once playback has stopped
+         * due to this point in time having passed, this value will be reset to
+         * Long.MAX_VALUE, which will prevent immediate retriggering (unless the
+         * date is past August 17, 292278994).
+         */
+        private long stopTime = Long.MAX_VALUE;
+        
         @Override
         public void run() {
             while (!terminated) {
@@ -193,6 +273,7 @@ public class ModMusic extends AbstractSoundManagerEntry {
                     ibxm.set_sequence_index(0, 0);
                     while (remainingFrames > 0) {
                         synchronized (this) {
+                            checkStopTime();
                             if (!playing) break;
                         }
                         playNextFrames(output_line);
@@ -203,6 +284,7 @@ public class ModMusic extends AbstractSoundManagerEntry {
                 
                 for (;;) {
                     synchronized (this) {
+                        checkStopTime();
                         if (playing || terminated) break;
                         // if not playing and not terminated, sleep again!
                     }
@@ -238,6 +320,22 @@ public class ModMusic extends AbstractSoundManagerEntry {
             terminated = true;
             interrupt();
         }
+        
+        /**
+         * Compares {@link #stopTime} to the current system time, and calls
+         * {@link #stopPlaying()} if the current time is at or after stopTime.
+         * In that case, stopTime is also reset to Long.MAX_VALUE.
+         */
+        private void checkStopTime() {
+            if (System.currentTimeMillis() >= stopTime) {
+                stopTime = Long.MAX_VALUE;
+                stopPlaying();
+            }
+        }
+        
+        public synchronized void setStopTime(long time) {
+            stopTime = time;
+        }
     }
     
     public void startPlaying(boolean loop) throws LineUnavailableException {
@@ -271,8 +369,16 @@ public class ModMusic extends AbstractSoundManagerEntry {
 
     public void stopPlaying(String ending) {
         debugf("Stopping with ending %s", ending);
-        // TODO implement endings
-        playerThread.stopPlaying();
+        SongPosition songPosition = endings.get(ending);
+        if (ending != null && songPosition != null) {
+            debugf("Resetting playback position: seq=%d offset=%d duration=%d",
+                    songPosition.getSequenceIndex(), songPosition.getOffset(), songPosition.getDuration());
+            ibxm.set_sequence_index(songPosition.getSequenceIndex(), songPosition.getOffset());
+            output_line.flush();
+            playerThread.setStopTime(System.currentTimeMillis() + songPosition.getDuration());
+        } else {
+            playerThread.stopPlaying();
+        }
     }
     
     public boolean isLooping() {

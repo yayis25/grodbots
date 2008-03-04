@@ -77,16 +77,18 @@ public class GameStateHandler implements ActionListener {
      */
     private static class GameLoopResetter implements PropertyChangeListener {
 
-        private GameLoop gl;
-        private GameStateHandler stateHandler;
-        private Collection<CircuitEditor> editors;
-        private GameState nextState;
+        private final GameLoop gl;
+        private final GameStateHandler stateHandler;
+        private final Collection<CircuitEditor> editors;
+        private final GameState nextState;
+        private final SoundManager sm;
 
-        public GameLoopResetter(GameLoop gl, GameStateHandler stateHandler, Collection<CircuitEditor> editors, GameState nextState) {
+        public GameLoopResetter(GameLoop gl, GameStateHandler stateHandler, Collection<CircuitEditor> editors, GameState nextState, SoundManager sm) {
             this.gl = gl;
             this.stateHandler = stateHandler;
             this.editors = editors;
             this.nextState = nextState;
+            this.sm = sm;
             if (gl.isRunning()) {
                 gl.addPropertyChangeListener(this);
                 gl.setStopRequested(true);
@@ -108,6 +110,7 @@ public class GameStateHandler implements ActionListener {
             for (CircuitEditor ce : editors) {
                 ce.getCircuit().setLocked(false);
             }
+            sm.stopAll();
             stateHandler.setState(nextState);
         }
     }
@@ -251,7 +254,7 @@ public class GameStateHandler implements ActionListener {
         System.out.printf("Switch state %s -> %s\n", state, newState);
         if (newState == GameState.RESET) {
             state = newState;
-            new GameLoopResetter(loop, this, robots.values(), GameState.NOT_STARTED);
+            new GameLoopResetter(loop, this, robots.values(), GameState.NOT_STARTED, sm);
             // the rest of the work is deferred until the loop is really stopped
         } else if (newState == GameState.PAUSED) {
             state = newState;
@@ -263,6 +266,7 @@ public class GameStateHandler implements ActionListener {
             playfield.setLabellingOn(false);
         } else if (newState == GameState.NOT_STARTED) {
             state = newState;
+            sm.stop("grod_march_01");
             lockEditors(false);
             startButton.setIcon(startIcon);
             stepButton.setIcon(stepIcon);
@@ -270,10 +274,12 @@ public class GameStateHandler implements ActionListener {
             playfield.setLabellingOn(true);
         } else if (newState == GameState.RUNNING) {
             if (state == GameState.WON) {
+                sm.stop("grod_march_01");
                 state = GameState.RESET;
-                new GameLoopResetter(loop, this, robots.values(), GameState.RUNNING);
+                new GameLoopResetter(loop, this, robots.values(), GameState.RUNNING, sm);
             } else {
                 state = newState;
+                sm.play("grod_march_01");
                 lockEditors(true);
                 loop.setStopRequested(false);
                 new Thread(loop).start();
@@ -285,11 +291,18 @@ public class GameStateHandler implements ActionListener {
         } else if (newState == GameState.STEP) {
             if (state == GameState.WON) {
                 state = GameState.RESET;
-                new GameLoopResetter(loop, this, robots.values(), GameState.STEP);
+                new GameLoopResetter(loop, this, robots.values(), GameState.STEP, sm);
             } else if (state == GameState.RUNNING) {
                 state = newState;
                 lockEditors(true);
                 loop.setStopRequested(true);
+                setState(GameState.PAUSED);
+            } else if (state == GameState.NOT_STARTED) {
+                state = newState;
+                sm.play("grod_march_01");
+                lockEditors(true);
+                loop.setStopRequested(false);
+                loop.singleStep();
                 setState(GameState.PAUSED);
             } else {
                 state = newState;
@@ -302,7 +315,8 @@ public class GameStateHandler implements ActionListener {
             state = newState;
             lockEditors(true);
             playfield.setWinMessage("You Win!");
-            sm.play("win");
+//            sm.play("win");
+            sm.stop("grod_march_01", "win");
             startButton.setIcon(restartIcon);
             stepButton.setIcon(restepIcon);
             resetButton.setIcon(resetIcon);
