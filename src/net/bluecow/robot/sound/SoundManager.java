@@ -78,6 +78,13 @@ public class SoundManager {
     
     private ResourceLoader resourceLoader;
     
+    /**
+     * Tracks whether this sound manager has been closed yet.  The best
+     * way to check this variable at the beginning of a method is by
+     * calling {@link #checkClosed()}.
+     */
+    private boolean closed = false;
+    
     public SoundManager(ResourceLoader resourceLoader) {
         this.resourceLoader = resourceLoader;
     }
@@ -128,7 +135,24 @@ public class SoundManager {
         }
     }
     
-    // TODO: close method!
+    /**
+     * Closes all entries in this sound manager. Once the sound manager
+     * has been closed, it can no longer be used.
+     */
+    public void close() {
+        checkClosed();
+        for (SoundManagerEntry sme : getClips()) {
+            sme.close();
+        }
+    }
+    
+    /**
+     * Throws an {@link IllegalStateException} if this sound manager has been
+     * closed; does nothing if this sound manager is still open.
+     */
+    private void checkClosed() {
+        if (closed) throw new IllegalStateException("This sound manager has been closed.");
+    }
     
     /**
      * Plays a sound once through, from beginning to end. If this sound is
@@ -142,13 +166,18 @@ public class SoundManager {
      * polyphony is exceeded)
      */
     public void play(String name) {
+        checkClosed();
         playEntry(name, false);
     }
 
     /**
-     * Stops a clip.  If the clip was not playing, calling this method has no effect.
+     * Jumps playback of the named entry to its named special ending tune.  For example,
+     * sound manager entries that are background music might have a special "win" ending
+     * that ends the song on a happy note. If the named entry is not currently playing,
+     * calling this method has no effect.
      */
-    public void stop(String name) {
+    public void stop(String name, String ending) {
+        checkClosed();
         SoundManagerEntry c = clips.get(name);
         if (c == null) {
             System.out.println("Can't stop clip '"+name+"' because it doesn't exist");
@@ -157,7 +186,24 @@ public class SoundManager {
         if (debugOn) {
             System.out.println("Stopping clip "+name);
         }
-        c.stopPlaying(null);
+        c.stopPlaying(ending);
+    }
+    
+    /**
+     * Stops playback of the named entry immediately (no special ending tune).
+     * If the entry is not currently playing, calling this method has no effect.
+     */
+    public void stop(String name) {
+        stop(name, null);
+    }
+    
+    /**
+     * Stops playback of all entries managed by this sound manager.
+     */
+    public void stopAll() {
+        for (SoundManagerEntry sme : getClips()) {
+            sme.stopPlaying(null);
+        }
     }
 
     /**
@@ -165,6 +211,7 @@ public class SoundManager {
      * until you stop it with {@link #stop(String)}.
      */
     public void loop(String name) {
+        checkClosed();
         playEntry(name, true);
     }
 

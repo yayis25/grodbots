@@ -47,7 +47,7 @@ public class ClipEntry extends AbstractSoundManagerEntry {
     }
 
     public void close() {
-        // no op
+        clip.close();
     }
 
     public void startPlaying(boolean loop) throws LineUnavailableException {
