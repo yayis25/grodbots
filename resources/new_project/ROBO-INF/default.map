@@ -21,8 +21,16 @@
   <sound type="CLIP" id="unterminated_wire" path="ROBO-INF/sounds/unterminated_wire.wav" />
   <sound type="CLIP" id="terminated_wire" path="ROBO-INF/sounds/terminated_wire.wav" />
   <sound type="CLIP" id="win" path="ROBO-INF/sounds/win.wav" />
-  <sound type="MOD" id="grod_march_01" path="ROBO-INF/music/grod_march_01.xm"/>
-
+  <sound type="MOD" id="grod_march_01" path="ROBO-INF/music/grod_march_01.xm">
+    <ending name="win" sequence-index="0" offset="4" duration="5000" />
+  </sound>
+  <sound type="MOD" id="grod_dance_01" path="ROBO-INF/music/grod_dance_01.xm">
+    <ending name="win" sequence-index="0" offset="18" duration="5000" />
+  </sound>
+  <sound type="MOD" id="grod_song_01" path="ROBO-INF/music/grod_song_01.xm">
+    <ending name="win" sequence-index="0" offset="4" duration="5000" />
+  </sound>
+  
   <sensor type="Red" />
   <sensor type="Green" />
   <sensor type="Blue" />

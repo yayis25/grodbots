@@ -42,6 +42,8 @@ import ibxm.ScreamTracker3;
 
 import java.io.DataInputStream;
 import java.io.IOException;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -96,7 +98,12 @@ public class ModMusic extends AbstractSoundManagerEntry {
      * It specifies a specific pattern within the sequence of patterns in the mod,
      * and a line number within that pattern.
      */
-    private static class SongPosition {
+    public static class SongPosition {
+        
+        /**
+         * The name given to this SongPosition.
+         */
+        private final String name;
         
         /**
          * The position within the mod's sequence. The first sequence index is
@@ -127,12 +134,20 @@ public class ModMusic extends AbstractSoundManagerEntry {
          *            The offset (number of lines from the top) within the
          *            pattern specified by sequenceIndex.
          */
-        public SongPosition(int sequenceIndex, int offset, long duration) {
+        public SongPosition(String name, int sequenceIndex, int offset, long duration) {
+            this.name = name;
             this.sequenceIndex = sequenceIndex;
             this.offset = offset;
             this.duration = duration;
         }
 
+        /**
+         * The name given to this SongPosition.
+         */
+        public String getName() {
+            return name;
+        }
+        
         /**
          * The offset (number of lines from the top) within the pattern
          * specified by {@link #getSequenceIndex()}.
@@ -232,8 +247,6 @@ public class ModMusic extends AbstractSoundManagerEntry {
 
         playerThread = new PlayerThread();
         playerThread.start();
-        
-        endings.put("win", new SongPosition(0, 4, 5000)); // XXX: temporary for testing
     }
     
     private class PlayerThread extends Thread {
@@ -367,6 +380,34 @@ public class ModMusic extends AbstractSoundManagerEntry {
         debug("Played frame " + framesPlayed + "/" + song_duration);
     }
 
+    /**
+     * Stops playback either immediately, or after jumping to a pre-configured
+     * position in the mod and continuing playback for a pre-configured number
+     * of milliseconds.
+     * <p>
+     * <b>Hints on using the endings system with mods:</b> Ideally, you could
+     * set aside a whole pattern for each special ending to your mod (for
+     * example, one for winning, one for dying, one for finding a special exit,
+     * and so on). However, the mod playback library used by ModMusic only
+     * allows jumping to a certain index in the playback sequence. This makes
+     * any patterns in your mod that are not in the playback sequence
+     * inaccessible. The recommended workaround for this problem is to set aside
+     * sequence index 0 for all of your endings. On the first row in that
+     * pattern, use effect <code>B01</code> to cause an immediate jump to
+     * sequence index 1. This leaves the rest of the pattern for various
+     * endings. Between each ending tune, use effect <code>F00</code>
+     * (speed/tempo 0) to ensure playback halts before reaching the next ending
+     * tune. Then simply use sequenceIndex 0 for all endings, and various
+     * offsets and durations as appropriate. Since each ending is guarded by a
+     * <code>F00</code>, you can afford to overestimate by a few seconds on
+     * your durations.
+     * 
+     * @param ending
+     *            The ending to play. Endings are configured using the
+     *            {@link #addEnding(String, int, int, long)} method, which is
+     *            normally done when first setting up all the
+     *            SoundManagerEntries.
+     */
     public void stopPlaying(String ending) {
         debugf("Stopping with ending %s", ending);
         SongPosition songPosition = endings.get(ending);
@@ -422,9 +463,43 @@ public class ModMusic extends AbstractSoundManagerEntry {
 
     public void close() {
         output_line.close();
+        playerThread.terminate();
     }
     
     public EntryType getType() {
         return EntryType.MOD;
+    }
+
+    /**
+     * Creates a new SongPosition with the given parameters, and adds it to this
+     * ModMusic's set of available endings. See {@link #stopPlaying(String)} for
+     * details and hints on how to set up a mod to take advantage of this
+     * system.
+     * 
+     * @param name
+     *            The name this ending will be known by. If this ModMusic
+     *            already has an ending of that name, the new one will replace
+     *            it.
+     * @param sequenceIndex
+     *            The place in the playback sequence this ending jumps to. The
+     *            first pattern in the playback sequence is numbered 0.
+     * @param offset
+     *            The number of lines into the pattern specified by
+     *            sequenceIndex to jump to.
+     * @param duration
+     *            The number of milliseconds playback should continue after
+     *            {@link #stopPlaying(String)} has been called for this ending.
+     * @return The new SongPosition object created as a result of this call.
+     */
+    public SongPosition addEnding(String name, int sequenceIndex, int offset, long duration) {
+        return endings.put(name, new SongPosition(name, sequenceIndex, offset, duration));
+    }
+    
+    /**
+     * Returns a read-only view of the current endings configured for this
+     * ModMusic instance.
+     */
+    public Collection<SongPosition> getEndings() {
+        return Collections.unmodifiableCollection(endings.values());
     }
 }

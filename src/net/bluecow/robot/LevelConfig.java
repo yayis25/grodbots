@@ -46,6 +46,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
+import net.bluecow.robot.sound.SoundManager;
 import net.bluecow.robot.sprite.Sprite;
 import bsh.EvalError;
 import bsh.Interpreter;
@@ -353,6 +354,15 @@ public class LevelConfig {
     private List<String> descriptionPages;
     
     /**
+     * The sound manager ID of the music for this level. Null means to use the
+     * game default if there is one. This is the music that will play while the
+     * robot is in motion.
+     * 
+     * @see SoundManager
+     */
+    private String marchMusicId;
+    
+    /**
      * Normal constructor.  Creates a LevelConfig with default settings.
      */
     public LevelConfig() {
@@ -407,6 +417,28 @@ public class LevelConfig {
      */
     public List<String> getDescriptionPages() {
         return descriptionPages;
+    }
+
+    /**
+     * Returns the sound manager ID of the music to use for this level. Null means
+     * no specific music has been chosen, and the gamewide default (if there is one)
+     * should be used.
+     */
+    public String getMarchMusicId() {
+        return marchMusicId;
+    }
+
+    /**
+     * Sets the name of the music to use for this level. Null means
+     * to use the gamewide default (if there is one).
+     * 
+     * @param musicId The id for the sound manager entry to loop
+     * while the robot is in motion.
+     */
+    public void setMarchMusicId(String musicId) {
+        String oldValue = this.marchMusicId;
+        this.marchMusicId = musicId;
+        pcs.firePropertyChange("marchMusicId", oldValue, musicId);
     }
 
     /**

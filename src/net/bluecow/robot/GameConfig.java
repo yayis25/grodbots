@@ -404,4 +404,13 @@ public class GameConfig {
     public SoundManager getSoundManager() {
         return sm;
     }
+
+    /**
+     * Releases all resources held by this game config which need to be closed
+     * explicitly. This may include files, network connections, and audio channels
+     * among other things.
+     */
+    public void close() {
+        sm.close();
+    }
 }
