@@ -125,6 +125,7 @@ import net.bluecow.robot.LevelConfig.Switch;
 import net.bluecow.robot.editor.resource.ResourcesComboBoxModel;
 import net.bluecow.robot.gate.Gate;
 import net.bluecow.robot.sound.SoundManager;
+import net.bluecow.robot.sound.SoundManagerEntry;
 import net.bluecow.robot.sprite.Sprite;
 import net.bluecow.robot.sprite.SpriteFileFilter;
 import net.bluecow.robot.sprite.SpriteLoadException;
@@ -321,7 +322,7 @@ public class EditorMain {
                 final JFrame playtestFrame = new JFrame("Playtest");
                 final Playfield playfield = new Playfield(project.getGameConfig(), level);
                 final List<Window> windowsToDispose = new ArrayList<Window>();
-                final SoundManager soundManager = new SoundManager(project.getResourceManager());
+                final SoundManager soundManager = project.getGameConfig().getSoundManager();
 
                 // This makes the reset feature of GameStateHandler work properly.
                 level.snapshotState();
@@ -1540,7 +1541,7 @@ public class EditorMain {
      * project, shuts down this editor with respect to the current project.
      * When it returns true, this method will have released any and all system
      * resources associated with the current editor instance, including the
-     * Window object.  This method does not terminate the JVM.
+     * Window object and the GameConfig.  This method does not terminate the JVM.
      * <p>
      * See also {@link #confirmExit()}.
      * 
@@ -1637,8 +1638,7 @@ public class EditorMain {
     }
     
     /**
-     * Creates a panel for editing non-nested level properties (this
-     * is only name and description at the moment).
+     * Creates a panel for editing non-nested level properties.
      * 
      * @param level The level to create a property editor for.  Must not
      * be <tt>null</tt>.
@@ -1661,6 +1661,29 @@ public class EditorMain {
         levelNameField.getDocument().addDocumentListener(updateListener);
         descriptionArea.getDocument().addDocumentListener(updateListener);
 
+        final JComboBox marchMusicBox = new JComboBox(
+                new SoundManagerEntryComboBoxModel(getProject().getGameConfig().getSoundManager()));
+        String initialMusicId = level.getMarchMusicId();
+        SoundManagerEntry initialMusic;
+        if (initialMusicId == null) {
+            initialMusic = null;
+        } else {
+            initialMusic = getProject().getGameConfig().getSoundManager().getEntry(initialMusicId);
+        }
+        marchMusicBox.setSelectedItem(initialMusic);
+        marchMusicBox.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                SoundManagerEntry newMusic = (SoundManagerEntry) marchMusicBox.getSelectedItem();
+                String newMusicId;
+                if (newMusic == null) {
+                    newMusicId = null;
+                } else {
+                    newMusicId = newMusic.getId();
+                }
+                level.setMarchMusicId(newMusicId);
+            }
+        });
+        
         final JSpinner widthSpinner = new JSpinner(new SpinnerNumberModel(level.getWidth(), 1, 100, 1));
         final JSpinner heightSpinner = new JSpinner(new SpinnerNumberModel(level.getHeight(), 1, 100, 1));
         final ChangeListener spinnerListener = new ChangeListener() {
@@ -1707,6 +1730,17 @@ public class EditorMain {
         gbc.weighty = 0.0;
         gbc.weightx = 0.5;
         p.add(heightSpinner, gbc);
+
+        gbc.weighty = 0.0;
+        gbc.weightx = 0.0;
+        gbc.gridwidth = 1;
+        gbc.fill = GridBagConstraints.NONE;
+        gbc.anchor = GridBagConstraints.LINE_END;
+        p.add(new JLabel("Marching Music:"), gbc);
+
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.gridwidth = GridBagConstraints.REMAINDER;
+        p.add(marchMusicBox, gbc);
 
         gbc.weighty = 0.5;
         gbc.weightx = 0.0;

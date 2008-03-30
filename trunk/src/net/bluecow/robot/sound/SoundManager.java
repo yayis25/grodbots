@@ -37,9 +37,11 @@
 package net.bluecow.robot.sound;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import javax.sound.sampled.AudioInputStream;
@@ -74,9 +76,12 @@ public class SoundManager {
      * Maps a clip name (which is supplied by the client code) to all of the
      * information about the corresponding audio clip.
      */
-    private Map<String, SoundManagerEntry> clips = new HashMap<String, SoundManagerEntry>();
+    private final Map<String, SoundManagerEntry> clips = new HashMap<String, SoundManagerEntry>();
     
-    private ResourceLoader resourceLoader;
+    /**
+     * The resource loader this sound manager loads its entries from.
+     */
+    private final ResourceLoader resourceLoader;
     
     /**
      * Tracks whether this sound manager has been closed yet.  The best
@@ -84,6 +89,13 @@ public class SoundManager {
      * calling {@link #checkClosed()}.
      */
     private boolean closed = false;
+    
+    /**
+     * List of all listeners currently interested in knowing when entries are
+     * added to or removed from the sound manager.
+     */
+    private final List<SoundManagerEntryEventListener> entryEventListeners =
+        new ArrayList<SoundManagerEntryEventListener>();
     
     public SoundManager(ResourceLoader resourceLoader) {
         this.resourceLoader = resourceLoader;
@@ -105,8 +117,9 @@ public class SoundManager {
      * @throws RuntimeException
      *             if the sound clip cannot be loaded for any reason.
      */
-    public void addEntry(String name, EntryType type, String path) {
+    public SoundManagerEntry addEntry(String name, EntryType type, String path) {
         try {
+            SoundManagerEntry retval;
             if (type == EntryType.CLIP) {
                 Line.Info linfo = new Line.Info(Clip.class);
                 Line line;
@@ -115,26 +128,46 @@ public class SoundManager {
                 //clip.addLineListener(this);
                 AudioInputStream ais = AudioSystem.getAudioInputStream(resourceLoader.getResourceAsStream(path));
                 clip.open(ais);
-                clips.put(name, new ClipEntry(name, path, clip));
+                retval = new ClipEntry(name, path, clip);
             } else if (type == EntryType.MOD) {
-                clips.put(name, new ModMusic(resourceLoader, name, path));
+                retval = new ModMusic(resourceLoader, name, path);
             } else {
                 throw new IllegalArgumentException(
                         "Error loading entry \"" + name + "\" from path \"" + path + "\": " +
                         "SoundManager doesn't support entry type " + type);
             }
+            clips.put(name, retval);
+            fireEntryAdded(retval);
+            return retval;
         } catch (LineUnavailableException e) {
-            e.printStackTrace();
-            throw new RuntimeException("Couldn't load clip: "+e.getMessage());
+            throw new RuntimeException("Couldn't load sound: "+e.getMessage(), e);
         } catch (UnsupportedAudioFileException e) {
-            e.printStackTrace();
-            throw new RuntimeException("Couldn't load clip: "+e.getMessage());
+            throw new RuntimeException("Couldn't load sound: "+e.getMessage(), e);
         } catch (IOException e) {
-            e.printStackTrace();
-            throw new RuntimeException("Couldn't load clip: "+e.getMessage());
+            throw new RuntimeException("Couldn't load sound: "+e.getMessage(), e);
         }
     }
     
+    /**
+     * Removes the entry identified by the given entryId from this sound
+     * manager. Once the entry has been removed, the {@link #play(String)},
+     * {@link #loop(String)}, {@link #stop(String)}, and similar entry-related
+     * methods will no longer work for this entry. When the entry has been
+     * removed, it will be closed.
+     * 
+     * @param entryId
+     *            The ID of the entry to remove.
+     * @return The entry that was removed, or null if there was no entry with
+     *         the given ID.
+     */
+    public SoundManagerEntry removeEntry(String entryId) {
+        SoundManagerEntry removed = clips.remove(entryId);
+        if (removed != null) {
+            fireEntryRemoved(removed);
+            removed.close();
+        }
+        return removed;
+    }
     /**
      * Closes all entries in this sound manager. Once the sound manager
      * has been closed, it can no longer be used.
@@ -233,10 +266,50 @@ public class SoundManager {
     }
 
     /**
-     * Returns a list of all the clips in this sound manager.
+     * Returns an unmodifiable collection of all the clips in this sound manager.
      */
     public Collection<SoundManagerEntry> getClips() {
         return Collections.unmodifiableCollection(clips.values());
     }
+    
+    /**
+     * Returns the entry with the given ID, if there is one. Otherwise, returns
+     * null.
+     * <p>
+     * Note: If you are interested in playing or looping music or sound effects,
+     * it is easier to use the {@link #play(String)} and {@link #stop(String)}
+     * methods of this SoundManager than it is to get the entries and play them.
+     * The SoundManager fails gracefully when certain sounds are missing; your
+     * code will get repetitive if you do this check everywhere.
+     * 
+     * @param id
+     *            The ID of the entry to retrieve
+     * @return The entry referenced by the given ID, or null if there is no such
+     *         entry.
+     */
+    public SoundManagerEntry getEntry(String id) {
+        return clips.get(id);
+    }
 
+    public void addSoundManagerEntryListener(SoundManagerEntryEventListener l) {
+        entryEventListeners.add(l);
+    }
+
+    public void removeSoundManagerEntryEventListener(SoundManagerEntryEventListener l) {
+        entryEventListeners.remove(l);
+    }
+    
+    private void fireEntryAdded(SoundManagerEntry entry) {
+        SoundManagerEntryEvent e = new SoundManagerEntryEvent(this, entry);
+        for (int i = entryEventListeners.size() - 1; i >= 0; i--) {
+            entryEventListeners.get(i).soundManagerEntryAdded(e);
+        }
+    }
+
+    private void fireEntryRemoved(SoundManagerEntry entry) {
+        SoundManagerEntryEvent e = new SoundManagerEntryEvent(this, entry);
+        for (int i = entryEventListeners.size() - 1; i >= 0; i--) {
+            entryEventListeners.get(i).soundManagerEntryRemoved(e);
+        }
+    }
 }

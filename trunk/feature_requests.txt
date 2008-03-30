@@ -1,9 +1,12 @@
 Game Features:
+-ensure clips are closed when not playing back (javasound only supports 32 open simultaneously)
+-think about making music and switch clicking mutually exclusive
+-think about playing music the whole time (during circuit design and marching time)
+-ensure IBXM playback halts after each ending (F00 isn't working)
 -ensure the game can still exit cleanly now that IBXM is on the scene (it seems to do
  something to JavaSound that prevents the VM from halting when the main thread terminates)
--make a close() method for SoundManager that closes all its clips.
  This may solve the halting problem. (No, not THAT halting problem...)
--add sound management to the level editor
+-add sound manager entry management to the level editor
 -automatic updates
 -create a set of tutorial levels for learning the game
 -Make real game UI:
@@ -62,6 +65,12 @@ Sounds:
 -little ditties for the beginning of each level (maybe this would be better suited to the MIDI sequencer api)
 
 Completed:
+-implement per-level background music in level config and xml file load/save
+-add per-level background music picking to the level editor
+-cut down the default_levels project to just the map file
+-ED: let preview mode use the game's sound manager
+-destroy the sound manager before loading a new game (editor and runtime)
+-make a close() method for SoundManager that closes all its clips.
 -unified the handling of clips and music in the SoundManager
  (renamed BackgroundMusic to something better, have a Clip-based
  implementation, and using it instead of Clip in the sound manager)

@@ -117,10 +117,25 @@ public class GameStateHandler implements ActionListener {
 
     private GameState state = GameState.NOT_STARTED;
 
+    /**
+     * The game loop this state handler is responsible for.
+     */
     private final GameLoop loop;
+    
+    /**
+     * The configuration for the level in play. Taken from the game loop
+     * when this handler is constructed.
+     */
+    private final LevelConfig level;
 
+    /**
+     * The playfield for the current level and game loop.
+     */
     private final Playfield playfield;
     
+    /**
+     * The sound manager for this game.
+     */
     private final SoundManager sm;
     
     private final Map<Robot,CircuitEditor> robots;
@@ -185,6 +200,7 @@ public class GameStateHandler implements ActionListener {
     public GameStateHandler(GameLoop gameLoop, SoundManager sm, ResourceLoader resourceLoader,
                             Map<Robot,CircuitEditor> robots) throws IOException {
         this.loop = gameLoop;
+        this.level = loop.getLevelConfig();
         this.playfield = loop.getPlayfield();
         this.sm = sm;
         this.robots = robots;
@@ -266,7 +282,7 @@ public class GameStateHandler implements ActionListener {
             playfield.setLabellingOn(false);
         } else if (newState == GameState.NOT_STARTED) {
             state = newState;
-            sm.stop("grod_march_01");
+            sm.stop(level.getMarchMusicId());
             lockEditors(false);
             startButton.setIcon(startIcon);
             stepButton.setIcon(stepIcon);
@@ -274,12 +290,12 @@ public class GameStateHandler implements ActionListener {
             playfield.setLabellingOn(true);
         } else if (newState == GameState.RUNNING) {
             if (state == GameState.WON) {
-                sm.stop("grod_march_01");
+                sm.stop(level.getMarchMusicId());
                 state = GameState.RESET;
                 new GameLoopResetter(loop, this, robots.values(), GameState.RUNNING, sm);
             } else {
                 state = newState;
-                sm.play("grod_march_01");
+                sm.play(level.getMarchMusicId());
                 lockEditors(true);
                 loop.setStopRequested(false);
                 new Thread(loop).start();
@@ -299,7 +315,7 @@ public class GameStateHandler implements ActionListener {
                 setState(GameState.PAUSED);
             } else if (state == GameState.NOT_STARTED) {
                 state = newState;
-                sm.play("grod_march_01");
+                sm.play(level.getMarchMusicId());
                 lockEditors(true);
                 loop.setStopRequested(false);
                 loop.singleStep();
@@ -316,7 +332,7 @@ public class GameStateHandler implements ActionListener {
             lockEditors(true);
             playfield.setWinMessage("You Win!");
 //            sm.play("win");
-            sm.stop("grod_march_01", "win");
+            sm.stop(level.getMarchMusicId(), "win");
             startButton.setIcon(restartIcon);
             stepButton.setIcon(restepIcon);
             resetButton.setIcon(resetIcon);

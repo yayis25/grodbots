@@ -1,28 +1,35 @@
 <?xml version="1.0" encoding="utf-8"?>
-<rocky version="4.0">
+<rocky version="4.1">
+  <sound id="enter_gate" type="CLIP" path="ROBO-INF/sounds/enter_gate.wav" />
+  <sound id="drag-NOT" type="CLIP" path="ROBO-INF/sounds/drag-NOT.wav" />
+  <sound id="unterminated_wire" type="CLIP" path="ROBO-INF/sounds/unterminated_wire.wav" />
+  <sound id="teleport" type="CLIP" path="ROBO-INF/sounds/teleport.wav" />
+  <sound id="drag-AND" type="CLIP" path="ROBO-INF/sounds/drag-AND.wav" />
+  <sound id="grod_song_01" type="MOD" path="ROBO-INF/music/grod_song_01.xm">
+    <ending name="win" sequence-index="0" offset="4" duration="5000" />
+  </sound>
+  <sound id="relay_clicking" type="CLIP" path="ROBO-INF/sounds/relay_clicking.wav" />
+  <sound id="create-NOT" type="CLIP" path="ROBO-INF/sounds/create-NOT.wav" />
+  <sound id="delete_gate" type="CLIP" path="ROBO-INF/sounds/delete_gate.wav" />
+  <sound id="grod_march_01" type="MOD" path="ROBO-INF/music/grod_march_01.xm">
+    <ending name="win" sequence-index="0" offset="4" duration="5000" />
+  </sound>
+  <sound id="start_drawing_wire" type="CLIP" path="ROBO-INF/sounds/start_drawing_wire.wav" />
+  <sound id="grod_dance_01" type="MOD" path="ROBO-INF/music/grod_dance_01.xm">
+    <ending name="win" sequence-index="0" offset="18" duration="5000" />
+  </sound>
+  <sound id="delete_prohibited" type="CLIP" path="ROBO-INF/sounds/delete_prohibited.wav" />
+  <sound id="leave_gate" type="CLIP" path="ROBO-INF/sounds/leave_gate.wav" />
+  <sound id="create_prohibited" type="CLIP" path="ROBO-INF/sounds/create_prohibited.wav" />
+  <sound id="delete_all" type="CLIP" path="ROBO-INF/sounds/delete_all.wav" />
+  <sound id="terminated_wire" type="CLIP" path="ROBO-INF/sounds/terminated_wire.wav" />
+  <sound id="drag-OR" type="CLIP" path="ROBO-INF/sounds/drag-OR.wav" />
+  <sound id="create-OR" type="CLIP" path="ROBO-INF/sounds/create-OR.wav" />
+  <sound id="confused_robot" type="CLIP" path="ROBO-INF/sounds/confused_robot.wav" />
+  <sound id="pull_wire" type="CLIP" path="ROBO-INF/sounds/pull_wire.wav" />
+  <sound id="create-AND" type="CLIP" path="ROBO-INF/sounds/create-AND.wav" />
+  <sound id="win" type="CLIP" path="ROBO-INF/sounds/win.wav" />
 
-  <sound type="CLIP" id="confused_robot" path="ROBO-INF/sounds/confused_robot.wav" />
-  <sound type="CLIP" id="create_prohibited" path="ROBO-INF/sounds/create_prohibited.wav" />
-  <sound type="CLIP" id="create-AND" path="ROBO-INF/sounds/create-AND.wav" />
-  <sound type="CLIP" id="create-OR" path="ROBO-INF/sounds/create-OR.wav" />
-  <sound type="CLIP" id="create-NOT" path="ROBO-INF/sounds/create-NOT.wav" />
-  <sound type="CLIP" id="delete_all" path="ROBO-INF/sounds/delete_all.wav" />
-  <sound type="CLIP" id="delete_gate" path="ROBO-INF/sounds/delete_gate.wav" />
-  <sound type="CLIP" id="delete_prohibited" path="ROBO-INF/sounds/delete_prohibited.wav" />
-  <sound type="CLIP" id="drag-AND" path="ROBO-INF/sounds/drag-AND.wav" />
-  <sound type="CLIP" id="drag-OR" path="ROBO-INF/sounds/drag-OR.wav" />
-  <sound type="CLIP" id="drag-NOT" path="ROBO-INF/sounds/drag-NOT.wav" />
-  <sound type="CLIP" id="enter_gate" path="ROBO-INF/sounds/enter_gate.wav" />
-  <sound type="CLIP" id="leave_gate" path="ROBO-INF/sounds/leave_gate.wav" />
-  <sound type="CLIP" id="pull_wire" path="ROBO-INF/sounds/pull_wire.wav" />
-  <sound type="CLIP" id="relay_clicking" path="ROBO-INF/sounds/relay_clicking.wav" />
-  <sound type="CLIP" id="start_drawing_wire" path="ROBO-INF/sounds/start_drawing_wire.wav" />
-  <sound type="CLIP" id="teleport" path="ROBO-INF/sounds/teleport.wav" />
-  <sound type="CLIP" id="unterminated_wire" path="ROBO-INF/sounds/unterminated_wire.wav" />
-  <sound type="CLIP" id="terminated_wire" path="ROBO-INF/sounds/terminated_wire.wav" />
-  <sound type="CLIP" id="win" path="ROBO-INF/sounds/win.wav" />
-  <sound type="MOD" id="grod_march_01" path="ROBO-INF/music/grod_march_01.xm"/>
-  
   <sensor type="Red" />
   <sensor type="Green" />
   <sensor type="Blue" />
@@ -36,23 +43,23 @@
   <square type="BLACK" mapchar=" " graphic="ROBO-INF/images/blacktile_glint.rsf">
   </square>
   <square type="MAGENTA" mapchar="M" graphic="ROBO-INF/images/magentatile.png">
-    <activate-sensor type="Red" />
     <activate-sensor type="Blue" />
+    <activate-sensor type="Red" />
   </square>
   <square type="RED" mapchar="R" graphic="ROBO-INF/images/redtile.png">
     <activate-sensor type="Red" />
   </square>
   <square type="WHITE" mapchar="W" graphic="ROBO-INF/images/whitetile.png">
-    <activate-sensor type="Red" />
     <activate-sensor type="Blue" />
-    <activate-sensor type="Green" />
-  </square>
-  <square type="YELLOW" mapchar="Y" graphic="ROBO-INF/images/yellowtile.png">
     <activate-sensor type="Red" />
     <activate-sensor type="Green" />
   </square>
   <square type="CYAN" mapchar="C" graphic="ROBO-INF/images/cyantile.png">
     <activate-sensor type="Blue" />
+    <activate-sensor type="Green" />
+  </square>
+  <square type="YELLOW" mapchar="Y" graphic="ROBO-INF/images/yellowtile.png">
+    <activate-sensor type="Red" />
     <activate-sensor type="Green" />
   </square>
   <square type="BLUE" mapchar="B" graphic="ROBO-INF/images/bluetile.png">
@@ -95,12 +102,13 @@ You can connect inputs to outputs by dragging your mouse from one to the other. 
 <p>
 Once you have made your connection, press the Start button again.  If you made a mistake and want to try again, just press Reset.
   ]]></description>
+  <march-music ref="grod_song_01" />
     <grod id="grod" step-size="0.1" start-x="3.5" start-y="4.5" initial-heading="90.0" evals-per-step="1" label="Grod" label-direction="s" label-enabled="true">
       <graphic href="ROBO-INF/images/grod/grod.rsf" scale="0.4"/>
-      <gate-allowance type="NOR" value="0" />
-      <gate-allowance type="NAND" value="0" />
       <gate-allowance type="NOT" value="0" />
       <gate-allowance type="AND" value="0" />
+      <gate-allowance type="NAND" value="0" />
+      <gate-allowance type="NOR" value="0" />
       <gate-allowance type="OR" value="0" />
     </grod>
 
@@ -125,12 +133,13 @@ XXXXXXXXXXXXXXX
   <description><![CDATA[
 Ok, this one isn't much harder.  See if you can figure out the trick!
   ]]></description>
+  <march-music ref="grod_song_01" />
     <grod id="Grod" step-size="0.1" start-x="3.5" start-y="8.5" initial-heading="45.0" evals-per-step="1" label="Grod" label-direction="n" label-enabled="true">
       <graphic href="ROBO-INF/images/grod/grod.rsf" scale="0.4"/>
-      <gate-allowance type="NOR" value="0" />
-      <gate-allowance type="NAND" value="0" />
       <gate-allowance type="NOT" value="0" />
       <gate-allowance type="AND" value="0" />
+      <gate-allowance type="NAND" value="0" />
+      <gate-allowance type="NOR" value="0" />
       <gate-allowance type="OR" value="0" />
     </grod>
 
@@ -156,12 +165,13 @@ XXXXXXXXXXXXXXX
 Grod has to wake up and make a decision now.  No more mindless
 wandering in the same direction all the time!
   ]]></description>
+  <march-music ref="grod_song_01" />
     <grod id="Grod" step-size="0.1" start-x="3.5" start-y="8.5" initial-heading="0.0" evals-per-step="1" label="Grod" label-direction="e" label-enabled="true">
       <graphic href="ROBO-INF/images/grod/grod.rsf" scale="0.4"/>
-      <gate-allowance type="NOR" value="0" />
-      <gate-allowance type="NAND" value="0" />
       <gate-allowance type="NOT" value="0" />
       <gate-allowance type="AND" value="0" />
+      <gate-allowance type="NAND" value="0" />
+      <gate-allowance type="NOR" value="0" />
       <gate-allowance type="OR" value="0" />
     </grod>
 
@@ -188,12 +198,13 @@ Three colours, three directions.
 <p>
 Can you handle it?
   ]]></description>
+  <march-music ref="grod_song_01" />
     <grod id="Grod" step-size="0.1" start-x="3.5" start-y="8.5" initial-heading="0.0" evals-per-step="1" label="Grod" label-direction="e" label-enabled="true">
       <graphic href="ROBO-INF/images/grod/grod.rsf" scale="0.4"/>
-      <gate-allowance type="NOR" value="0" />
-      <gate-allowance type="NAND" value="0" />
       <gate-allowance type="NOT" value="0" />
       <gate-allowance type="AND" value="0" />
+      <gate-allowance type="NAND" value="0" />
+      <gate-allowance type="NOR" value="0" />
       <gate-allowance type="OR" value="0" />
     </grod>
 
@@ -227,13 +238,18 @@ This is an OR gate:<br>
  &nbsp;&nbsp;
  <img src="resource:///ROBO-INF/doc/or-both-active.png">
 </center>
+<pb>
+In this level, you will find that you want to combine two outputs into one input.  You can't just connect two outputs to the same input.  Try it now and see what happens.
+<p>
+You will need to use an OR gate to get Grod to the cake.  Drag one out of the tool box and put it to use!
   ]]></description>
+  <march-music ref="grod_song_01" />
     <grod id="Grod" step-size="0.1" start-x="4.5" start-y="4.5" initial-heading="90.0" evals-per-step="1" label="Grod" label-direction="w" label-enabled="true">
       <graphic href="ROBO-INF/images/grod/grod.rsf" scale="0.4"/>
-      <gate-allowance type="NOR" value="0" />
-      <gate-allowance type="NAND" value="0" />
       <gate-allowance type="NOT" value="0" />
       <gate-allowance type="AND" value="0" />
+      <gate-allowance type="NAND" value="0" />
+      <gate-allowance type="NOR" value="0" />
       <gate-allowance type="OR" value="1" />
     </grod>
 
@@ -258,12 +274,13 @@ XXXXXXXXXXXXXXX
   <description><![CDATA[
 Can you do the 3-way OR?
   ]]></description>
+  <march-music ref="grod_song_01" />
     <grod id="Grod" step-size="0.1" start-x="4.5" start-y="4.5" initial-heading="90.0" evals-per-step="1" label="Grod" label-direction="w" label-enabled="true">
       <graphic href="ROBO-INF/images/grod/grod.rsf" scale="0.4"/>
-      <gate-allowance type="NOR" value="0" />
-      <gate-allowance type="NAND" value="0" />
       <gate-allowance type="NOT" value="0" />
       <gate-allowance type="AND" value="0" />
+      <gate-allowance type="NAND" value="0" />
+      <gate-allowance type="NOR" value="0" />
       <gate-allowance type="OR" value="2" />
     </grod>
 
@@ -298,13 +315,24 @@ When its input is active, its output is inactive (<b>not</b> active). When its i
 </center>
 <pb>
 Now what will you do?
+<p>
+Give it a try.  If you're really stuck, there is a hint on the next page.
+<pb>
+Need a hint?
+<p>
+Think about what happens when you don't connect one of Grod's inputs.  If you don't connect Grod's UP input, does he move up?
+<p>
+Try again.  The final hint is on the next page.
+<pb>
+Here's your last hint: When an input is not connected, it behaves just as if it's connected to an inactive output.  <b>Not</b> inactive is... active!
   ]]></description>
+  <march-music ref="grod_song_01" />
     <grod id="Grod" step-size="0.1" start-x="4.5" start-y="4.5" initial-heading="90.0" evals-per-step="1" label="Grod" label-direction="w" label-enabled="true">
       <graphic href="ROBO-INF/images/grod/grod.rsf" scale="0.4"/>
-      <gate-allowance type="NOR" value="0" />
-      <gate-allowance type="NAND" value="0" />
       <gate-allowance type="NOT" value="1" />
       <gate-allowance type="AND" value="0" />
+      <gate-allowance type="NAND" value="0" />
+      <gate-allowance type="NOR" value="0" />
       <gate-allowance type="OR" value="0" />
     </grod>
 
@@ -331,12 +359,13 @@ When you blend light together, you get different results than when you mix paint
 <p><p>
 Can you figure out how it works?
   ]]></description>
+  <march-music ref="grod_song_01" />
     <grod id="Grod" step-size="0.1" start-x="2.5" start-y="7.5" initial-heading="90.0" evals-per-step="1" label="Grod" label-direction="e" label-enabled="true">
       <graphic href="ROBO-INF/images/grod/grod.rsf" scale="0.4"/>
-      <gate-allowance type="NOR" value="0" />
-      <gate-allowance type="NAND" value="0" />
       <gate-allowance type="NOT" value="0" />
       <gate-allowance type="AND" value="0" />
+      <gate-allowance type="NAND" value="0" />
+      <gate-allowance type="NOR" value="0" />
       <gate-allowance type="OR" value="0" />
     </grod>
 
@@ -359,33 +388,34 @@ XXXXXXXXXXXXXXX
   </level>
   <level name="White means dance!" size-x="15" size-y="10">
   <description><![CDATA[
-Grod can go a bit haywire when you give him conflicting instructions, but he sorts it out eventually.
+Hit the dancefloor!
 <p>
-This is a placeholder. Need to get actual level from Dallas.
+(Grod can go a bit haywire when you give him conflicting instructions, but he sorts it out eventually.)
   ]]></description>
-    <grod id="Grod" step-size="0.1" start-x="4.5" start-y="4.5" initial-heading="0.0" evals-per-step="1" label="Grod" label-direction="sw" label-enabled="true">
+  <march-music ref="grod_dance_01" />
+    <grod id="Grod" step-size="0.1" start-x="1.5" start-y="5.5" initial-heading="90.0" evals-per-step="1" label="Grod" label-direction="se" label-enabled="true">
       <graphic href="ROBO-INF/images/grod/grod.rsf" scale="0.4"/>
-      <gate-allowance type="NOR" value="0" />
-      <gate-allowance type="NAND" value="0" />
-      <gate-allowance type="NOT" value="0" />
+      <gate-allowance type="NOT" value="1" />
       <gate-allowance type="AND" value="0" />
-      <gate-allowance type="OR" value="0" />
+      <gate-allowance type="NAND" value="0" />
+      <gate-allowance type="NOR" value="0" />
+      <gate-allowance type="OR" value="2" />
     </grod>
 
-    <switch id="Cake" loc-x="10" loc-y="4" on-enter="robot.setGoalReached(true); level.score += 200;" enabled="true" label="Cake" label-direction="se" label-enabled="true">
+    <switch id="Cake" loc-x="11" loc-y="3" on-enter="robot.setGoalReached(true); level.score += 200;" enabled="true" label="Cake" label-direction="ne" label-enabled="true">
       <graphic href="ROBO-INF/images/cake.png" scale="1.0"/>
     </switch>
 
     <map>
 XXXXXXXXXXXXXXX
-XMMMMMMMMMMMMMX
-XMMMMMMMMMMMMMX
-XMMMMMMMMMMMMMX
-XMMMMMMMMMMMMMX
-XMMMMMMMMMMMMMX
-XMMMMMMMMMMMMMX
-XMMMMMMMMMMMMMX
-XMMMMMMMMMMMMMX
+X             X
+X             X
+XXRRBXXYMXX   X
+XXGXBXYYMMXXXGX
+XRGXRRYXXMWWWGX
+X             X
+X             X
+X             X
 XXXXXXXXXXXXXXX
     </map>
   </level>
@@ -403,12 +433,13 @@ This is an AND gate:<br>
  <img src="resource:///ROBO-INF/doc/and-both-active.png">
 </center>
   ]]></description>
+  <march-music ref="grod_song_01" />
     <grod id="Grod" step-size="0.1" start-x="2.5" start-y="7.5" initial-heading="0.0" evals-per-step="1" label="Grod" label-direction="e" label-enabled="true">
       <graphic href="ROBO-INF/images/grod/grod.rsf" scale="0.4"/>
-      <gate-allowance type="NOR" value="0" />
-      <gate-allowance type="NAND" value="0" />
       <gate-allowance type="NOT" value="0" />
       <gate-allowance type="AND" value="1" />
+      <gate-allowance type="NAND" value="0" />
+      <gate-allowance type="NOR" value="0" />
       <gate-allowance type="OR" value="0" />
     </grod>
 
@@ -435,12 +466,13 @@ Looks familiar?
 <p>
 This one's trickier.
   ]]></description>
+  <march-music ref="grod_song_01" />
     <grod id="Grod" step-size="0.1" start-x="2.5" start-y="7.5" initial-heading="0.0" evals-per-step="1" label="Grod" label-direction="e" label-enabled="true">
       <graphic href="ROBO-INF/images/grod/grod.rsf" scale="0.4"/>
-      <gate-allowance type="NOR" value="0" />
-      <gate-allowance type="NAND" value="0" />
       <gate-allowance type="NOT" value="1" />
       <gate-allowance type="AND" value="0" />
+      <gate-allowance type="NAND" value="0" />
+      <gate-allowance type="NOR" value="0" />
       <gate-allowance type="OR" value="1" />
     </grod>
 
@@ -465,12 +497,13 @@ XXXXXXXXXXXXXXX
   <description><![CDATA[
 Is there more than one way to do it?
   ]]></description>
+  <march-music ref="grod_song_01" />
     <grod id="Grod" step-size="0.1" start-x="6.519999980926514" start-y="5.480000019073486" initial-heading="270.0" evals-per-step="1" label="Grod" label-direction="w" label-enabled="true">
       <graphic href="ROBO-INF/images/grod/grod.rsf" scale="0.4"/>
-      <gate-allowance type="NOR" value="0" />
-      <gate-allowance type="NAND" value="0" />
       <gate-allowance type="NOT" value="1" />
       <gate-allowance type="AND" value="4" />
+      <gate-allowance type="NAND" value="0" />
+      <gate-allowance type="NOR" value="0" />
       <gate-allowance type="OR" value="1" />
     </grod>
 
@@ -495,12 +528,13 @@ XXXXXXXXXXXXXXX
   <description><![CDATA[
 There is a very useful construction that you can make with a single OR gate.  You will need to figure it out if you want to get past this level.
   ]]></description>
+  <march-music ref="grod_song_01" />
     <grod id="Grod" step-size="0.1" start-x="2.5" start-y="7.5" initial-heading="90.0" evals-per-step="1" label="Grod" label-direction="e" label-enabled="true">
       <graphic href="ROBO-INF/images/grod/grod.rsf" scale="0.4"/>
-      <gate-allowance type="NOR" value="0" />
-      <gate-allowance type="NAND" value="0" />
       <gate-allowance type="NOT" value="0" />
       <gate-allowance type="AND" value="0" />
+      <gate-allowance type="NAND" value="0" />
+      <gate-allowance type="NOR" value="0" />
       <gate-allowance type="OR" value="1" />
     </grod>
 
@@ -525,12 +559,13 @@ XXXXXXXXXXXXXXX
   <description><![CDATA[
 The name says it all.
   ]]></description>
+  <march-music ref="grod_song_01" />
     <grod id="Grod" step-size="0.1" start-x="2.5" start-y="7.5" initial-heading="90.0" evals-per-step="1" label="Grod" label-direction="e" label-enabled="true">
       <graphic href="ROBO-INF/images/grod/grod.rsf" scale="0.4"/>
-      <gate-allowance type="NOR" value="0" />
-      <gate-allowance type="NAND" value="0" />
       <gate-allowance type="NOT" value="0" />
       <gate-allowance type="AND" value="0" />
+      <gate-allowance type="NAND" value="0" />
+      <gate-allowance type="NOR" value="0" />
       <gate-allowance type="OR" value="2" />
     </grod>
 
@@ -555,12 +590,13 @@ XXXXXXXXXXXXXXX
   <description><![CDATA[
 The name still says it all.
   ]]></description>
+  <march-music ref="grod_song_01" />
     <grod id="Grod" step-size="0.1" start-x="2.5" start-y="7.5" initial-heading="90.0" evals-per-step="1" label="Grod" label-direction="e" label-enabled="true">
       <graphic href="ROBO-INF/images/grod/grod.rsf" scale="0.4"/>
-      <gate-allowance type="NOR" value="0" />
-      <gate-allowance type="NAND" value="0" />
       <gate-allowance type="NOT" value="1" />
       <gate-allowance type="AND" value="0" />
+      <gate-allowance type="NAND" value="0" />
+      <gate-allowance type="NOR" value="0" />
       <gate-allowance type="OR" value="1" />
     </grod>
 
@@ -585,12 +621,13 @@ XXXXXXXXXXXXXXX
   <description><![CDATA[
 U-Turn permitted on green.
   ]]></description>
+  <march-music ref="grod_song_01" />
     <grod id="Grod" step-size="0.1" start-x="6.519999980926514" start-y="5.519999980926514" initial-heading="0.0" evals-per-step="1" label="Grod" label-direction="w" label-enabled="true">
       <graphic href="ROBO-INF/images/grod/grod.rsf" scale="0.4"/>
-      <gate-allowance type="NOR" value="0" />
-      <gate-allowance type="NAND" value="0" />
       <gate-allowance type="NOT" value="1" />
       <gate-allowance type="AND" value="0" />
+      <gate-allowance type="NAND" value="0" />
+      <gate-allowance type="NOR" value="0" />
       <gate-allowance type="OR" value="2" />
     </grod>
 
@@ -617,12 +654,13 @@ Wow, that's a lot of gates!
 <p>
 To make the gates smaller in the circuit editor, just press the - (minus) key on your keyboard. If you want to make them bigger again, press + (plus).
   ]]></description>
+  <march-music ref="grod_song_01" />
     <grod id="Grod" step-size="0.1" start-x="1.559999942779541" start-y="8.520000457763672" initial-heading="90.0" evals-per-step="1" label="Grod" label-direction="e" label-enabled="true">
       <graphic href="ROBO-INF/images/grod/grod.rsf" scale="0.4"/>
-      <gate-allowance type="NOR" value="0" />
-      <gate-allowance type="NAND" value="0" />
       <gate-allowance type="NOT" value="2" />
       <gate-allowance type="AND" value="9" />
+      <gate-allowance type="NAND" value="0" />
+      <gate-allowance type="NOR" value="0" />
       <gate-allowance type="OR" value="4" />
     </grod>
 
@@ -647,12 +685,13 @@ XXXXXXXXXXXXXXX
   <description><![CDATA[
 Suddenly feeling blue again?
   ]]></description>
+  <march-music ref="grod_song_01" />
     <grod id="Grod" step-size="0.1" start-x="1.5" start-y="8.5" initial-heading="90.0" evals-per-step="1" label="Grod" label-direction="ne" label-enabled="true">
       <graphic href="ROBO-INF/images/grod/grod.rsf" scale="0.4"/>
-      <gate-allowance type="NOR" value="0" />
-      <gate-allowance type="NAND" value="0" />
       <gate-allowance type="NOT" value="2" />
       <gate-allowance type="AND" value="1" />
+      <gate-allowance type="NAND" value="0" />
+      <gate-allowance type="NOR" value="0" />
       <gate-allowance type="OR" value="1" />
     </grod>
 
@@ -677,12 +716,13 @@ XXXXXXXXXXXXXXX
   <description><![CDATA[
 Grod thinks he's a venus fly trap.
   ]]></description>
+  <march-music ref="grod_song_01" />
     <grod id="Grod" step-size="0.1" start-x="1.5" start-y="8.5" initial-heading="90.0" evals-per-step="1" label="Grod" label-direction="e" label-enabled="true">
       <graphic href="ROBO-INF/images/grod/grod.rsf" scale="0.4"/>
-      <gate-allowance type="NOR" value="0" />
-      <gate-allowance type="NAND" value="0" />
       <gate-allowance type="NOT" value="2" />
       <gate-allowance type="AND" value="3" />
+      <gate-allowance type="NAND" value="0" />
+      <gate-allowance type="NOR" value="0" />
       <gate-allowance type="OR" value="3" />
     </grod>
 
@@ -707,12 +747,13 @@ XXXXXXXXXXXXXXX
   <description><![CDATA[
 Now for the biggest challenge.
   ]]></description>
+  <march-music ref="grod_song_01" />
     <grod id="Grod" step-size="0.1" start-x="1.5" start-y="8.5" initial-heading="0.0" evals-per-step="1" label="Grod" label-direction="n" label-enabled="true">
       <graphic href="ROBO-INF/images/grod/grod.rsf" scale="0.4"/>
-      <gate-allowance type="NOR" value="0" />
-      <gate-allowance type="NAND" value="0" />
       <gate-allowance type="NOT" value="3" />
       <gate-allowance type="AND" value="2" />
+      <gate-allowance type="NAND" value="0" />
+      <gate-allowance type="NOR" value="0" />
       <gate-allowance type="OR" value="3" />
     </grod>
 

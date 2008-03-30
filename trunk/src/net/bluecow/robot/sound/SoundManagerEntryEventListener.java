@@ -1,5 +1,5 @@
 /*
- * Created on Feb 25, 2008
+ * Created on Mar 20, 2008
  *
  * Copyright (c) 2008, Jonathan Fuerth
  * 
@@ -34,44 +34,28 @@
 
 package net.bluecow.robot.sound;
 
+/**
+ * The interface by which objects interested in sound manager entry additions
+ * and removals can be notified.
+ * 
+ * @see SoundManager
+ */
+public interface SoundManagerEntryEventListener {
 
-public abstract class AbstractSoundManagerEntry implements SoundManagerEntry {
+    /**
+     * Receives notification that an entry was just added to a sound manager.
+     * 
+     * @param e The details of the addition (specifies which sound manager
+     * and which entry of that sound manager)
+     */
+    void soundManagerEntryAdded(SoundManagerEntryEvent e);
     
     /**
-     * This clip's name.
+     * Receives notification that an entry was just removed from a sound manager.
+     * 
+     * @param e The details of the removal (specifies which sound manager
+     * and which entry of that sound manager)
      */
-    private String id;
+    void soundManagerEntryRemoved(SoundManagerEntryEvent e);
     
-    /**
-     * The resource this clip can be loaded from (using the sound manager's current
-     * resource loader).
-     */
-    private String path;
-    
-    /**
-     * Creates a new SoundManagerClip with the given property values.
-     */
-    public AbstractSoundManagerEntry(String id, String path) {
-        if (id == null) {
-            throw new NullPointerException("Null clip id is not allowed");
-        }
-        if (path == null) {
-            throw new NullPointerException("Null path is not allowed");
-        }
-        this.id = id;
-        this.path = path;
-    }
-
-    public String getId() {
-        return id;
-    }
-
-    public String getPath() {
-        return path;
-    }
-    
-    @Override
-    public String toString() {
-        return getId() + " - " + getPath();
-    }
 }

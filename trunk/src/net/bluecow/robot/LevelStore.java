@@ -60,6 +60,7 @@ import net.bluecow.robot.GameConfig.SensorConfig;
 import net.bluecow.robot.GameConfig.SquareConfig;
 import net.bluecow.robot.gate.Gate;
 import net.bluecow.robot.resource.ResourceLoader;
+import net.bluecow.robot.sound.ModMusic;
 import net.bluecow.robot.sound.SoundManagerEntry;
 import net.bluecow.robot.sprite.Sprite;
 import net.bluecow.robot.sprite.SpriteLoadException;
@@ -120,9 +121,28 @@ public class LevelStore {
         out.write("<rocky version=\"4.1\">\n");
 
         for (SoundManagerEntry sme : gc.getSoundManager().getClips()) {
+            boolean hasEndings = false;
             out.write("  <sound id=\""+sme.getId()+"\" " +
                             "type=\""+sme.getType()+"\" " +
-                            "path=\""+sme.getPath()+"\" />\n");
+                            "path=\""+sme.getPath()+"\"");
+            if (sme instanceof ModMusic) {
+                ModMusic mm = (ModMusic) sme;
+                for (ModMusic.SongPosition sp : mm.getEndings()) {
+                    if (!hasEndings) {
+                        out.write(">\n");
+                        hasEndings = true;
+                    }
+                    out.write("    <ending name=\""+sp.getName()+"\" " +
+                                        "sequence-index=\""+sp.getSequenceIndex()+"\" " +
+                                        "offset=\""+sp.getOffset()+"\" " +
+                                        "duration=\""+sp.getDuration()+"\" />\n");
+                }
+            }
+            if (hasEndings) {
+                out.write("  </sound>\n");
+            } else {
+                out.write(" />\n");
+            }
         }
         
         out.write("\n");
@@ -167,6 +187,10 @@ public class LevelStore {
                 out.write("  <description><![CDATA[\n");
                 out.write(level.getDescription());
                 out.write("\n  ]]></description>\n");
+            }
+
+            if (level.getMarchMusicId() != null && level.getMarchMusicId().trim().length() > 0) {
+                out.write("  <march-music ref=\"" + level.getMarchMusicId() + "\" />\n");
             }
             
             for (Robot r : level.getRobots()) {
@@ -308,16 +332,23 @@ public class LevelStore {
         private List<FileFormatException> warnings;
         
         /**
+         * The current SoundManager entry that is being configured. If this
+         * handler is not currently in the midst of a &lt;sound&gt; element,
+         * this value will be null.
+         */
+        private SoundManagerEntry soundManagerEntry;
+        
+        /**
          * Caches flags of square types while processing a &lt;square&gt; element.
          * Should be null at all other times.
          */
-        List<String> squareAttributes;
+        private List<String> squareAttributes;
 
         /**
          * Caches sensor types for square types while processing a &lt;square&gt; element.
          * Should be null at all other times.
          */
-        List<String> squareSensors;
+        private List<String> squareSensors;
 
         /**
          * The type of the current square we're configuring.
@@ -447,8 +478,72 @@ public class LevelStore {
                     checkMandatory(qName, "type", type);
                     checkMandatory(qName, "path", path);
                     
-                    config.getSoundManager().addEntry(id, type, path);
+                    soundManagerEntry = config.getSoundManager().addEntry(id, type, path);
 
+                } else if (qName.equals("ending")) {
+                    // alternate ending for a sound manager entry
+                    
+                    if (soundManagerEntry == null) {
+                        throw new FileFormatException(
+                                "Found an <ending> element that is not nested inside a <sound> element",
+                                loc.getLineNumber(), line, loc.getColumnNumber());
+                    }
+                    if ( ! (soundManagerEntry instanceof ModMusic) ) {
+                        throw new FileFormatException(
+                                "<ending> elements are only supported for sounds of type MOD",
+                                loc.getLineNumber(), line, loc.getColumnNumber());
+                    }
+
+                    String name = null;
+                    Integer sequenceIndex = null;
+                    Integer offset = null;
+                    Long duration = null;
+                    
+                    for (int i = 0; i < attributes.getLength(); i++) {
+                        String aname = attributes.getQName(i);
+                        String aval = attributes.getValue(i);
+                        
+                        if (aname.equals("name")) {
+                            name = aval;
+                        } else if (aname.equals("sequence-index")) {
+                            try {
+                                sequenceIndex = Integer.parseInt(aval);
+                            } catch (NumberFormatException ex) {
+                                throw new FileFormatException(
+                                        "Couldn't parse sequence-index '"+aval+"' of an ending for sound" +
+                                        " '"+soundManagerEntry.getId()+"'",
+                                        loc.getLineNumber(), line, loc.getColumnNumber());
+                            }
+                        } else if (aname.equals("offset")) {
+                            try {
+                                offset = Integer.parseInt(aval);
+                            } catch (NumberFormatException ex) {
+                                throw new FileFormatException(
+                                        "Couldn't parse offset '"+aval+"' of an ending for sound" +
+                                        " '"+soundManagerEntry.getId()+"'",
+                                        loc.getLineNumber(), line, loc.getColumnNumber());
+                            }
+                        } else if (aname.equals("duration")) {
+                            try {
+                                duration = Long.parseLong(aval);
+                            } catch (NumberFormatException ex) {
+                                throw new FileFormatException(
+                                        "Couldn't parse duration '"+aval+"' of an ending for sound" +
+                                        " '"+soundManagerEntry.getId()+"'",
+                                        loc.getLineNumber(), line, loc.getColumnNumber());
+                            }
+                        } else {
+                            handleUnknownAttribute(qName, line, aname, aval);
+                        }
+                    }
+
+                    checkMandatory("ending", "name", name);
+                    checkMandatory("ending", "sequence-index", sequenceIndex);
+                    checkMandatory("ending", "offset", offset);
+                    checkMandatory("ending", "duration", duration);
+                    
+                    ((ModMusic) soundManagerEntry).addEnding(name, sequenceIndex, offset, duration);
+                    
                 } else if (qName.equals("sensor")) {
                     // sensor types (square attributes)
                     
@@ -625,6 +720,30 @@ public class LevelStore {
                         throw new FileFormatException("Encountered description element while not inside level element", loc.getLineNumber(), line, loc.getColumnNumber());
                     }
                     // description text is cdata inside this element
+
+                } else if (qName.equals("march-music")) { // XXX: check we're directly inside level element
+                    
+                    if (level == null) {
+                        throw new FileFormatException("Encountered march-music element while not inside level element", loc.getLineNumber(), line, loc.getColumnNumber());
+                    }
+                    
+                    String musicId = null;
+                    
+                    for (int i = 0; i < attributes.getLength(); i++) {
+                        String aname = attributes.getQName(i);
+                        String aval = attributes.getValue(i);
+                        
+                        if (aname.equals("ref")) {
+                            musicId = aval;
+                        } else {
+                            handleUnknownAttribute(qName, line, aname, aval);
+                        }
+                    }
+                    
+                    // The entire march-music element may be omitted, but if it is present, ref is mandatory 
+                    checkMandatory("march-music", "ref", musicId);
+
+                    level.setMarchMusicId(musicId);
                     
                 } else if (qName.equals("grod")) { // XXX: ensure this is inside a level element
                     

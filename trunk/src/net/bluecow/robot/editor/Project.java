@@ -322,14 +322,15 @@ public class Project {
     }
     
     /**
-     * Notifies this project that it is no longer in use.  Causes a
-     * <tt>projectClosing</tt> event.  It is essential that this method
-     * is called for every project instance, because the event it fires
-     * can lead to temp file cleanup and other important housekeeping
-     * tasks.
+     * Notifies this project that it is no longer in use. Causes a
+     * <tt>projectClosing</tt> event. It is essential that this method is
+     * called for every project instance, because the event it fires can lead to
+     * temp file cleanup, closing the project's GameConfig, and other important
+     * housekeeping tasks.
      */
     public void close() {
         fireProjectClosing();
+        gameConfig.close();
     }
 
     /**

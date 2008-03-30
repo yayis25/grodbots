@@ -1,5 +1,5 @@
 /*
- * Created on Feb 25, 2008
+ * Created on Mar 21, 2008
  *
  * Copyright (c) 2008, Jonathan Fuerth
  * 
@@ -24,7 +24,7 @@
  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
  * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
  * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+ * SPECIAL, EXEMPLARY, OR CONS  EQUENTIAL DAMAGES (INCLUDING, BUT NOT
  * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
  * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
@@ -34,44 +34,44 @@
 
 package net.bluecow.robot.sound;
 
+/**
+ * Event class that represents additions to or removals from a SoundManager.
+ * 
+ * @see SoundManagerEntryEventListener
+ */
+public class SoundManagerEntryEvent {
 
-public abstract class AbstractSoundManagerEntry implements SoundManagerEntry {
+    /**
+     * The sound manager the entry was added to or removed from.
+     */
+    private final SoundManager source;
+
+    /**
+     * The sound manager entry that was added or removed.
+     */
+    private final SoundManagerEntry entry;
     
     /**
-     * This clip's name.
+     * Creates a new event about entry being either added to or removed
+     * from the given sound manager.
      */
-    private String id;
-    
-    /**
-     * The resource this clip can be loaded from (using the sound manager's current
-     * resource loader).
-     */
-    private String path;
-    
-    /**
-     * Creates a new SoundManagerClip with the given property values.
-     */
-    public AbstractSoundManagerEntry(String id, String path) {
-        if (id == null) {
-            throw new NullPointerException("Null clip id is not allowed");
-        }
-        if (path == null) {
-            throw new NullPointerException("Null path is not allowed");
-        }
-        this.id = id;
-        this.path = path;
+    public SoundManagerEntryEvent(final SoundManager source, final SoundManagerEntry entry) {
+        this.source = source;
+        this.entry = entry;
     }
 
-    public String getId() {
-        return id;
+    /**
+     * Returns the sound manager entry that was added or removed.
+     */
+    public SoundManagerEntry getEntry() {
+        return entry;
     }
 
-    public String getPath() {
-        return path;
+    /**
+     * Returns the sound manager the entry was added to or removed from.
+     */
+    public SoundManager getSource() {
+        return source;
     }
     
-    @Override
-    public String toString() {
-        return getId() + " - " + getPath();
-    }
 }

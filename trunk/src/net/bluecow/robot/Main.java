@@ -185,7 +185,8 @@ public class Main {
 
     /**
      * Reads in a new game config, replacing the currently-loaded one with the
-     * one in the given ResourceLoader.
+     * one in the given ResourceLoader.  The currently-loaded game config (if
+     * there is one) will be closed before the new one is loaded.
      * 
      * @param resourceLoader
      *            The resource loader to load the level and its associated
@@ -203,6 +204,9 @@ public class Main {
             new PrefixResourceLoader(new SystemResourceLoader(), "builtin/");
         ResourceLoader loader =
             new CompoundResourceLoader(resourceLoader, builtinResourceLoader);
+        if (config != null) {
+            config.close();
+        }
         config = LevelStore.loadLevels(loader);
         ResourceUtils.initResourceURLHandler(loader);
     }

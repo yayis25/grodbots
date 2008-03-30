@@ -340,6 +340,9 @@ public class GameLoop implements Runnable {
         }
     }
 
+    public LevelConfig getLevelConfig() {
+        return level;
+    }
     
     // PROPERTY CHANGE STUFF (for notifying of game wins)
     private PropertyChangeSupport pcs = new PropertyChangeSupport(this);
