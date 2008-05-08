@@ -54,6 +54,18 @@ import java.util.TreeSet;
 public class PreListedResourceLoader implements ListableResourceLoader {
 
     /**
+     * Controls the debugging features of this class.
+     */
+    private static final boolean debugOn = false;
+    
+    /**
+     * Prints the given message to System.out if debugOn is true.
+     */
+    private static void debug(String msg) {
+        if (debugOn) System.out.println(msg);
+    }
+
+    /**
      * The resource loader that all of the actual resource loading
      * work is delegated to.
      */
@@ -134,19 +146,19 @@ public class PreListedResourceLoader implements ListableResourceLoader {
 
     public List<String> list(String path, ResourceNameFilter filter) throws IOException {
         path = cleanPath(path);
-        System.out.println("Listing path \""+path+"\"");
+        debug("Listing path \""+path+"\"");
         List<String> listing = new ArrayList<String>();
         SortedSet<String> dirContents = contents.tailSet(path);
         for (String p : dirContents) {
-            System.out.println("  Considering \""+p+"\"");
+            debug("  Considering \""+p+"\"");
             if (!p.startsWith(path)) break;
-            System.out.println("  It starts with path");
+            debug("  It starts with path");
             int nextSlash = p.indexOf('/', path.length() + 1);
             if (nextSlash >= 0 && nextSlash != p.length() - 1) continue;
             if (p.equals(path)) continue;
-            System.out.println("  It's not in a subdirectory");
+            debug("  It's not in a subdirectory");
             if (filter == null || filter.accepts(p)) {
-                System.out.println("  It passes the filter. Adding to list.");
+                debug("  It passes the filter. Adding to list.");
                 listing.add(p);
             }
         }
@@ -170,7 +182,11 @@ public class PreListedResourceLoader implements ListableResourceLoader {
     public boolean resourceExists(String path) {
         path = cleanPath(path);
         boolean exists = contents.contains(path);
-        System.out.println("Resource \""+path+"\" exists? " + exists);
+        debug("Resource \""+path+"\" exists? " + exists);
+        if (!exists) {
+            // try again with trailing slash (in case it's a directory)
+            exists = contents.contains(path + "/");
+        }
         return exists;
     }
 

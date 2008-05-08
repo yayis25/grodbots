@@ -37,15 +37,11 @@
 package net.bluecow.robot.resource;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.Enumeration;
 import java.util.List;
 import java.util.jar.JarEntry;
@@ -57,7 +53,7 @@ public class JarResourceManager extends AbstractResourceManager {
     /**
      * Controls the debugging features of this class.
      */
-    private static final boolean debugOn = true;
+    private static final boolean debugOn = false;
     
     /**
      * Prints the given message to System.out if debugOn is true.
@@ -80,6 +76,12 @@ public class JarResourceManager extends AbstractResourceManager {
      * unpacked so we can manipulate them.
      */
     private File dir;
+    
+    /**
+     * Once the JAR file has been unpacked, this DirectoryResourceManager does all the
+     * heavy lifting for us.
+     */
+    private final DirectoryResourceManager delegate;
 
     /**
      * Creates a new ResourceManager whose contents are populated initially from
@@ -92,6 +94,7 @@ public class JarResourceManager extends AbstractResourceManager {
     public JarResourceManager(File jar) throws IOException {
         dir = createTempDir();
         unjar(jar, dir);
+        delegate = new DirectoryResourceManager(dir);
     }
 
     /**
@@ -131,91 +134,50 @@ public class JarResourceManager extends AbstractResourceManager {
             }
         }
         jin.close();
+        
+        delegate = new DirectoryResourceManager(dir);
     }
     
     
-    // ------------------ Interface Methods ----------------------
-    
-    public List<String> listAll(ResourceNameFilter filter) throws IOException {
-        checkClosed();
-        return ResourceUtils.recursiveListResources(dir, filter);
-    }
-
-    public List<String> list(String path, ResourceNameFilter filter) throws IOException {
-        File resourceDir = new File(dir, path);
-        debug("Listing children of " + resourceDir.getAbsolutePath());
-        if (resourceDir.isFile()) {
-            debug("It's not a directory");
-            return Collections.emptyList();
-        }
-        
-        if (!path.endsWith("/")) {
-            path += "/";
-        }
-        
-        // ensure the root directory does not have a leading slash
-        if (path.equals("/")) {
-            path = "";
-        }
-        
-        File[] children = resourceDir.listFiles();
-        if (children == null) {
-            throw new IOException("No such resource directory: \""+path+"\"");
-        }
-        Arrays.sort(children);
-
-        List<String> retval = new ArrayList<String>();
-        for (File f : children) {
-            String resourcePath = path + f.getName();
-            if (f.isDirectory() && (!resourcePath.endsWith("/"))) {
-                resourcePath += "/";
-            }
-            
-            if (filter == null || filter.accepts(resourcePath)) {
-                retval.add(resourcePath);
-            }
-        }
-        
-        debug("Children are: " + retval);
-        
-        return retval;
-    }
-    
-    public OutputStream openForWrite(String path, boolean create) throws IOException {
-        checkClosed();
-        File resourceFile = new File(dir, path);
-        if (!create && !resourceFile.exists()) {
-            throw new FileNotFoundException(
-                    "Resource \""+path+"\" cannot be written because it" +
-                    " does not exist, and I was instructed not to create it.");
-        }
-        return new FileOutputStream(resourceFile);
-    }
-
-    public void remove(String path) throws IOException {
-        checkClosed();
-        File f = new File(dir, path);
-        if (!f.delete()) {
-            boolean exists = f.exists();
-            boolean canWrite = f.canWrite();
-            boolean isDir = f.isDirectory();
-            throw new IOException("Couldn't delete resource \""+path+"\" " +
-                    "(exists="+exists+", canWrite="+canWrite+", isDir="+isDir+")");
-        }
-    }
-
-    public InputStream getResourceAsStream(String path) throws IOException {
-        checkClosed();
-        return new FileInputStream(new File(dir, path));
-    }
+    // ------------------ Interface Methods (delegated to DirectoryResourceManager) ---------------------
     
     public void close() throws IOException {
+        delegate.close();
         super.close();
         recursiveRmdir(dir);
     }
     
-    // ------------------ Helper Methods ----------------------
+    public void createDirectory(String targetDir, String newDirName) throws IOException {
+        delegate.createDirectory(targetDir, newDirName);
+    }
+
+    public InputStream getResourceAsStream(String resourceName) throws IOException {
+        return delegate.getResourceAsStream(resourceName);
+    }
+
+    public List<String> list(String path, ResourceNameFilter filter) throws IOException {
+        return delegate.list(path, filter);
+    }
+
+    public List<String> listAll(ResourceNameFilter filter) throws IOException {
+        return delegate.listAll(filter);
+    }
+
+    public OutputStream openForWrite(String path, boolean create) throws IOException {
+        return delegate.openForWrite(path, create);
+    }
+
+    public void remove(String path) throws IOException {
+        delegate.remove(path);
+    }
+
+    public boolean resourceExists(String path) {
+        return delegate.resourceExists(path);
+    }    
     
+
+    // ------------------ Helper Methods ----------------------
+
     /**
      * Deletes the given directory and all of its contents, including
      * any nested directories.
@@ -298,30 +260,4 @@ public class JarResourceManager extends AbstractResourceManager {
         return dir;
     }
 
-    /* docs come from interface */
-    public void createDirectory(String targetDir, String newDirName) throws IOException {
-        if (!targetDir.endsWith("/")) {
-            throw new IOException(
-                    "Target directory name \""+targetDir+"\" must end with the / character.");
-        }
-        if (newDirName.contains("/")) {
-            throw new IOException(
-                    "New resource directory name \""+newDirName+"\" not valid: it contains the / character.");
-        }
-        File parent = new File(dir, targetDir);
-        if (!parent.exists()) {
-            throw new IOException("Target resource directory \"" + targetDir + "\" does not exist.");
-        }
-        File newDir = new File(parent, newDirName);
-        String newDirPath = targetDir + newDirName;
-        if (!newDir.mkdir()) {
-            throw new IOException("Could not create resource directory \"" + newDirPath + "\".");
-        }
-        fireResourceAdded(targetDir, newDirName + "/");
-    }
-
-    public boolean resourceExists(String path) {
-        File f = new File(dir, path);
-        return f.exists();
-    }
 }

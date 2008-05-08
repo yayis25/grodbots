@@ -107,7 +107,7 @@ public class CompoundResourceManager extends AbstractResourceManager {
     /**
      * Controls the debugging features of this class.
      */
-    private static final boolean debugOn = true;
+    private static final boolean debugOn = false;
     
     /**
      * Prints the given message to System.out if debugOn is true.
@@ -197,7 +197,16 @@ public class CompoundResourceManager extends AbstractResourceManager {
     }
 
     public OutputStream openForWrite(String path, boolean create) throws IOException {
-        String parentDir = path.substring(0, path.lastIndexOf('/'));
+        int lastSlash = path.lastIndexOf('/');
+        String parentDir;
+        if (lastSlash == -1) {
+            // creating a file in the root
+            parentDir = "";
+        } else {
+            // include trailing slash
+            parentDir = path.substring(0, lastSlash + 1);
+        }
+        
         if (!primary.resourceExists(parentDir)) {
             if (!secondary.resourceExists(parentDir)) {
                 throw new IOException("Cannot write to \""+path+"\": Parent path does not exist");

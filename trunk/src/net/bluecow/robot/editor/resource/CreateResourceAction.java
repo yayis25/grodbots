@@ -51,8 +51,18 @@ import javax.swing.JFileChooser;
 import net.bluecow.robot.RobotUtils;
 import net.bluecow.robot.resource.ResourceManager;
 
+/**
+ * A GUI action for creating a new resource. When invoked, prompts the user for
+ * a file, then reads the contents of that file into the resource maanger.
+ */
 public class CreateResourceAction extends ResourceEditorAction {
 
+    /**
+     * Creates a new action for adding resources to the given resource manager.
+     * 
+     * @param resourceManager The resource manager to add new entries to.
+     * @param owningComponent The Swing component that owns any dialogs that pop up.
+     */
     public CreateResourceAction(ResourceManager resourceManager, JComponent owningComponent) {
         super("Create Resource...", resourceManager, owningComponent);
     }
@@ -93,9 +103,13 @@ public class CreateResourceAction extends ResourceEditorAction {
         } catch (IOException ex) {
             RobotUtils.showException("Couldn't create resource", ex);
         } finally {
-            try { in.close(); } catch (IOException ex) { ex.printStackTrace(); }
-            try { out.flush(); } catch (IOException ex) { ex.printStackTrace(); }
-            try { out.close(); } catch (IOException ex) { ex.printStackTrace(); }
+            if (in != null) {
+                try { in.close(); } catch (IOException ex) { ex.printStackTrace(); }
+            }
+            if (out != null) {
+                try { out.flush(); } catch (IOException ex) { ex.printStackTrace(); }
+                try { out.close(); } catch (IOException ex) { ex.printStackTrace(); }
+            }
         }
     }
 

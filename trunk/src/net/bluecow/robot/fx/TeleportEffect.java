@@ -46,6 +46,18 @@ import net.bluecow.robot.sprite.Sprite;
 
 public class TeleportEffect extends AbstractEffect {
 
+    /**
+     * Controls the debugging features of this class.
+     */
+    private static final boolean debugOn = false;
+    
+    /**
+     * Prints the given message to System.out if debugOn is true.
+     */
+    private static void debug(String msg) {
+        if (debugOn) System.out.println(msg);
+    }
+
     private int frame = 0;
     private int nframes = 10;
     
@@ -99,7 +111,7 @@ public class TeleportEffect extends AbstractEffect {
 
     @Override
     public void paint(Graphics2D g2, int x, int y) {
-        System.out.println("Painting teleport. frame="+frame);
+        debug("Painting teleport. frame="+frame);
         
         int halfway = nframes / 2;
         
@@ -124,7 +136,7 @@ public class TeleportEffect extends AbstractEffect {
         transform.translate(roboSprite.getWidth()/2.0, roboSprite.getHeight()/2.0);
         final double xscale = effectSeverity * 2.0;
         final double yscale = 1.0 / (effectSeverity + 1.0);
-        System.out.println("Severity="+effectSeverity+"; Scaling "+xscale+","+yscale);
+        debug("Severity="+effectSeverity+"; Scaling "+xscale+","+yscale);
         transform.scale(xscale, yscale);
         transform.translate(-roboSprite.getWidth()/2.0, -roboSprite.getHeight()/2.0);
         roboSprite.setTransform(transform);

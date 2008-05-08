@@ -39,6 +39,18 @@ import javax.sound.sampled.LineUnavailableException;
 
 public class ClipEntry extends AbstractSoundManagerEntry {
 
+    /**
+     * Controls the debugging features of this class.
+     */
+    private static final boolean debugOn = false;
+    
+    /**
+     * Prints the given message to System.out if debugOn is true.
+     */
+    private static void debug(String msg) {
+        if (debugOn) System.out.println(msg);
+    }
+
     private final Clip clip;
 
     public ClipEntry(String name, String path, Clip clip) {
@@ -61,7 +73,7 @@ public class ClipEntry extends AbstractSoundManagerEntry {
 
     public void stopPlaying(String ending) {
         if (ending != null) {
-            System.out.println(
+            debug(
                     "Warning: clips do not support special endings " +
                     "(ending \""+ending+"\" was requested)");
         }

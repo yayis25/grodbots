@@ -71,7 +71,7 @@ public class ModMusic extends AbstractSoundManagerEntry {
     /**
      * Controls the debugging features of this class.
      */
-    private static final boolean debugOn = true;
+    private static final boolean debugOn = false;
     
     /**
      * The time this class was loaded (for debugging purposes).

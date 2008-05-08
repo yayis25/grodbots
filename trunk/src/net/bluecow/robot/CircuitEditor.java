@@ -510,7 +510,7 @@ public class CircuitEditor extends JPanel {
         public void actionPerformed(ActionEvent e) {
             if (circuit.isLocked()) return;
             if (circuit.getGateAllowances().get(gc.getGateClass()) == 0) {
-                System.out.println("Not adding "+gc.getGateClass()+" because no more are allowed");
+                debug("Not adding "+gc.getGateClass()+" because no more are allowed");
                 playSound("create_prohibited");
                 return;
             }

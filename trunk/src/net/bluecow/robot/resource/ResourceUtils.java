@@ -213,13 +213,14 @@ public class ResourceUtils {
      * 
      * @param resourceManager The resource manager in which to create
      * the given directories
-     * @param path The directory or directories to create
+     * @param path The directory or directories to create. If there is a
+     * trailing slash, it will be ignored.
      * @throws IOException If the resource manager cannot create the specified
      * path as a directory
      */
     public static void mkdirs(ResourceManager resourceManager, String path) throws IOException {
         if (path.endsWith("/")) {
-            throw new IllegalArgumentException("Illegal path \""+path+"\" (must not end with slash)");
+            path = path.substring(0, path.length() - 1);
         }
         if (resourceManager.resourceExists(path)) return;
         String parentPath = path.substring(0, path.lastIndexOf('/'));
