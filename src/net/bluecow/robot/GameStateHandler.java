@@ -70,6 +70,26 @@ import net.bluecow.robot.sound.SoundManager;
 public class GameStateHandler implements ActionListener {
 
     /**
+     * Controls the debugging features of this class.
+     */
+    private static final boolean debugOn = false;
+    
+    /**
+     * Prints the given message to System.out if debugOn is true.
+     */
+    private static void debug(String msg) {
+        if (debugOn) System.out.println(msg);
+    }
+    
+    /**
+     * Prints the given printf-formatted message, followed by a newline,
+     * to the console if debugOn == true.
+     */
+    private static void debugf(String fmt, Object ... args) {
+        if (debugOn) debug(String.format(fmt, args));
+    }
+
+    /**
      * A helper class that assists with resetting the game loop.  The
      * game loop doesn't allow resets while it is running, and this class
      * is designed to make a reset possible whether or not the game loop
@@ -234,7 +254,7 @@ public class GameStateHandler implements ActionListener {
         
         loop.addPropertyChangeListener("goalReached", new PropertyChangeListener() {
             public void propertyChange(java.beans.PropertyChangeEvent evt) {
-                System.out.println("Property change! goalReached "+evt.getOldValue()+" -> "+evt.getNewValue()+" (running="+loop.isRunning()+"; goalReached="+loop.isGoalReached()+")");
+                debug("Property change! goalReached "+evt.getOldValue()+" -> "+evt.getNewValue()+" (running="+loop.isRunning()+"; goalReached="+loop.isGoalReached()+")");
                 SwingUtilities.invokeLater(new Runnable() {
                     public void run() {
                         if (loop.isGoalReached()) {
@@ -267,7 +287,7 @@ public class GameStateHandler implements ActionListener {
     }
 
     public void setState(GameState newState) {
-        System.out.printf("Switch state %s -> %s\n", state, newState);
+        debugf("Switch state %s -> %s\n", state, newState);
         if (newState == GameState.RESET) {
             state = newState;
             new GameLoopResetter(loop, this, robots.values(), GameState.NOT_STARTED, sm);

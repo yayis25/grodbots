@@ -179,8 +179,7 @@ public class Fireworks {
                         }
                         Thread.sleep(50);
                     } catch (InterruptedException e) {
-                        // TODO Auto-generated catch block
-                        System.out.println("Woops, interrupted");
+                        System.out.println("Animation thread was interrupted during sleep");
                     }
                 } while (keepGoing);
                 System.exit(0);

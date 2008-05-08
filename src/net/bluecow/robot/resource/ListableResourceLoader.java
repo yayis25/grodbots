@@ -122,7 +122,10 @@ public interface ListableResourceLoader extends ResourceLoader {
      * Returns true if the given resource path represents an existing resource
      * (either file or directory) in this resource manager.
      * 
-     * @param path The path to check for existence
+     * @param path The path to check for existence. Can be either a file or a
+     * directory. If checking for the existence of a directory, one trailing
+     * slash is optional. If checking for a file, there must not be a trailing
+     * slash.
      * @return True if the path exists in this resource manager; false if it
      * does not.
      */

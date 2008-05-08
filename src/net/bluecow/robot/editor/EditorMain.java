@@ -133,6 +133,18 @@ import net.bluecow.robot.sprite.SpriteManager;
 
 public class EditorMain {
 
+    /**
+     * Controls the debugging features of this class.
+     */
+    private static final boolean debugOn = false;
+    
+    /**
+     * Prints the given message to System.out if debugOn is true.
+     */
+    private static void debug(String msg) {
+        if (debugOn) System.out.println(msg);
+    }
+
     public static final Dimension DEFAULT_LEVEL_SIZE = new Dimension(15,10);
 
     private static final String BSH_ID_REGEX = "[A-Za-z_][A-Za-z0-9_]*";
@@ -159,7 +171,7 @@ public class EditorMain {
         
         public void actionPerformed(ActionEvent e) {
             if (closeProject()) {
-                Project proj = promptUserForProject();
+                Project proj = promptUserForProject((e.getModifiers() & ActionEvent.SHIFT_MASK) != 0);
                 if (proj != null) {
                     new EditorMain(proj);
                 } else {
@@ -182,6 +194,7 @@ public class EditorMain {
                 putValue(MNEMONIC_KEY, KeyEvent.VK_A);
             } else {
                 putValue(MNEMONIC_KEY, KeyEvent.VK_S);
+                putValue(ACCELERATOR_KEY, KeyStroke.getKeyStroke('s', Toolkit.getDefaultToolkit().getMenuShortcutKeyMask()));
             }
             this.saveAs = saveAs;
         }
@@ -531,9 +544,28 @@ public class EditorMain {
         return d;
     }
     
-    public static Project promptUserForProject() {
+    /**
+     * Prompts the user to select an existing project to open. The project can
+     * either be a level pack (single JAR file containing all the project
+     * resources) or a directory (a directory tree with the same layout as the
+     * JAR file would have). For end users, the JAR file is almost always used,
+     * so this method provides a flag to enable/disable directory selection.
+     * This should help to avoid confusion.
+     * 
+     * @param allowDirs
+     *            If true, the file chooser will allow users to select
+     *            directories or files. Otherwise, only file selection will be
+     *            allowed.
+     * @return A new project loaded from the file or directory chosen by the
+     *         user, or null if the user canceled or the file or directory the
+     *         user chose was not a valid project.
+     */
+    public static Project promptUserForProject(boolean allowDirs) {
         JFileChooser fc = new JFileChooser();
-        fc.setDialogTitle("Choose a Robot Project File");
+        fc.setDialogTitle("Choose a Robot Project File" + (allowDirs ? " or Directory" : ""));
+        if (allowDirs) {
+            fc.setFileSelectionMode(JFileChooser.FILES_AND_DIRECTORIES);
+        }
         File recentProject = new File(recentProjects.get("0", System.getProperty("user.home")));
         if (recentProject.isDirectory()) {
             // for project directories, we want to default the dialog to the parent dir
@@ -1631,8 +1663,8 @@ public class EditorMain {
         if (levelEditPanel instanceof JSplitPane) {
             final JSplitPane splitPane = ((JSplitPane) levelEditPanel);
             int newDividerLoc = splitPane.getHeight() - splitPane.getBottomComponent().getPreferredSize().height;
-            System.out.println("split pane height: "+splitPane.getHeight());
-            System.out.println("editor panel pref size: "+splitPane.getBottomComponent().getPreferredSize());
+            debug("split pane height: "+splitPane.getHeight());
+            debug("editor panel pref size: "+splitPane.getBottomComponent().getPreferredSize());
             splitPane.setDividerLocation(newDividerLoc);
         }
     }
@@ -1915,35 +1947,21 @@ public class EditorMain {
         if (recentProjects.get("0", null) == null) return false;
         if (recentProjects.get("autoLoadOk", "false").equals("false")) return false;
         File mostRecentProjectLocation = new File(recentProjects.get("0", null));
-        if (mostRecentProjectLocation.isDirectory()) {
+
+        Project project = null;
+        try {
+            project = Project.load(mostRecentProjectLocation);
+            new EditorMain(project);
+            return true;
+        } catch (Exception ex) {
             System.err.println("autoloadMostRecentProject():");
-            System.err.println("  Most recent project location '"+
-                        mostRecentProjectLocation.getPath()+"' is a directory." +
-                        " This probably means it's an old-style project which needs" +
-                        " to be jarred up.");
-            JOptionPane.showMessageDialog(null,
-                    "Your most recent project location is a directory." +
-                    "\nThere is now no difference between the level pack" +
-                    "\nfile and the project file.  Export a level pack of" +
-                    "\nyour project using an old version of the editor," +
-                    "\nthen load that into this version of the editor and" +
-                    "\nyou'll be good to go!");
-        } else {
-            Project project = null;
-            try {
-                project = Project.load(mostRecentProjectLocation);
-                new EditorMain(project);
-                return true;
-            } catch (Exception ex) {
-                System.err.println("autoloadMostRecentProject():");
-                System.err.println("  Exception while opening most recent project from '"+
-                        mostRecentProjectLocation.getPath()+"'. Giving up.");
-                ex.printStackTrace();
-                
-                // clean up even if creating editor failed
-                if (project != null) {
-                    project.close();
-                }
+            System.err.println("  Exception while opening most recent project from '"+
+                    mostRecentProjectLocation.getPath()+"'. Giving up.");
+            ex.printStackTrace();
+
+            // clean up even if creating editor failed
+            if (project != null) {
+                project.close();
             }
         }
         return false;
@@ -1975,7 +1993,7 @@ public class EditorMain {
                 System.exit(0);
             } else if (choice == 1) {
                 // open existing
-                proj = promptUserForProject();
+                proj = promptUserForProject(false);
             } else if (choice == 2) {
                 // create new
                 JFileChooser fc = new JFileChooser();

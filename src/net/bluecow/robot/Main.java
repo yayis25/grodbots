@@ -248,7 +248,7 @@ public class Main {
             return;
         }
         
-        System.out.println("Starting level "+level.getName());
+        debug("Starting level "+level.getName());
         
         final JMenuBar menuBar = gameUI.getMenuBar();
         if (System.getProperty("net.bluecow.robot.DEBUG") != null) {

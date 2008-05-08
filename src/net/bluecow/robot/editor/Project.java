@@ -55,6 +55,7 @@ import net.bluecow.robot.LevelConfig.Switch;
 import net.bluecow.robot.editor.event.LifecycleEvent;
 import net.bluecow.robot.editor.event.LifecycleListener;
 import net.bluecow.robot.resource.CompoundResourceManager;
+import net.bluecow.robot.resource.DirectoryResourceManager;
 import net.bluecow.robot.resource.JarResourceManager;
 import net.bluecow.robot.resource.ListableResourceLoader;
 import net.bluecow.robot.resource.PreListedResourceLoader;
@@ -113,7 +114,7 @@ public class Project {
     }
 
     /**
-     * The file that this project was most recently loaded from or saved to.
+     * The file or directory that this project was most recently loaded from or saved to.
      */
     private File fileLocation;
     
@@ -182,19 +183,29 @@ public class Project {
     }
     
     /**
-     * Creates a new Project instance by loading it from a JAR file which
-     * contains files laid out in a special way.
+     * Creates a new Project instance by loading it from a directory structure
+     * which contains files laid out in a special way. The directory structure
+     * can be an actual directory with files and subdirectories, or it can be
+     * a JAR file which contains the same structure.
      * <p>
      * Important Note: It is essential that you call {@link #close()} on the
      * returned project instance when you are done with it.. even if the next
      * step will be to terminate the JVM.
      * 
-     * @param jar The JAR file to read the project descirption from.
-     * @return
+     * @param jarOrDir
+     *            The directory or JAR file to read the project description and
+     *            resources from.
+     * @return A new project configured from the given location
      * @throws IOException
      */
-    public static Project load(File jar) throws IOException {
-        ResourceManager projResources = new JarResourceManager(jar);
+    public static Project load(File jarOrDir) throws IOException {
+        
+        ResourceManager projResources;
+        if (jarOrDir.isDirectory()) {
+            projResources = new DirectoryResourceManager(jarOrDir);
+        } else {
+            projResources = new JarResourceManager(jarOrDir);
+        }
         PreListedResourceLoader builtinResources = new PreListedResourceLoader(
                 new PrefixResourceLoader(new SystemResourceLoader(), BUILTIN_RESOURCES_PREFIX),
                 RESOURCE_LIST_PATH);
@@ -204,7 +215,7 @@ public class Project {
         
         Project proj = new Project();
         proj.gameConfig = LevelStore.loadLevels(compoundResources);
-        proj.fileLocation = jar;
+        proj.fileLocation = jarOrDir;
         ResourceUtils.initResourceURLHandler(compoundResources);
         
         proj.addLifecycleListener(new LifecycleListener() {
@@ -255,6 +266,10 @@ public class Project {
      */
     public void saveLevelPack(File location) throws IOException {
         saveMapFile();
+        if (location == null && fileLocation != null && fileLocation.isDirectory()) {
+            debug("Not creating level pack because save location is a directory (the map file has been saved)");
+            return;
+        }
         if (location == null) {
             location = fileLocation;
         }

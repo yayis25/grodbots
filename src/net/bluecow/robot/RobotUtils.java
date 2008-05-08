@@ -59,6 +59,18 @@ import javax.swing.filechooser.FileFilter;
 
 public class RobotUtils {
     
+    /**
+     * Controls the debugging features of this class.
+     */
+    private static final boolean debugOn = false;
+    
+    /**
+     * Prints the given message to System.out if debugOn is true.
+     */
+    private static void debug(String msg) {
+        if (debugOn) System.out.println(msg);
+    }
+
     private static Preferences prefs = Preferences.userNodeForPackage(RobotUtils.class);
 
     private RobotUtils() {
@@ -107,7 +119,7 @@ public class RobotUtils {
             }
         }
         
-        System.out.println("Old recent files list: "+paths);
+        debug("Old recent files list: "+paths);
         
         String recentPath = f.getPath();
         if (paths.contains(recentPath)) {
@@ -117,14 +129,14 @@ public class RobotUtils {
         }
         paths.add(0, recentPath);
         
-        System.out.println("After update: "+paths);
+        debug("After update: "+paths);
         
         prefs.clear();
         
         int i = 0;
         for (String path : paths) {
             String key = String.valueOf(i++);
-            System.out.println("Putting '"+key+"' -> '"+path+"'");
+            debug("Putting '"+key+"' -> '"+path+"'");
             if (path != null) prefs.put(key, path);
         }
     }
@@ -191,7 +203,7 @@ public class RobotUtils {
         Rectangle b = gc.getBounds();
         Insets i = Toolkit.getDefaultToolkit().getScreenInsets(gc);
         
-        System.out.println("gc="+gc+" (bounds="+b+", insets="+i+")");
+        debug("gc="+gc+" (bounds="+b+", insets="+i+")");
         
         final int startx = b.x + i.left;
         final int starty = b.y + i.top;
