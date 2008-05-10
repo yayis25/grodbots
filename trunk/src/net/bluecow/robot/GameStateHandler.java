@@ -299,6 +299,7 @@ public class GameStateHandler implements ActionListener {
             startButton.setIcon(resumeIcon);
             stepButton.setIcon(stepIcon);
             resetButton.setIcon(resetIcon);
+            playfield.setDescriptionOn(false);
             playfield.setLabellingOn(false);
         } else if (newState == GameState.NOT_STARTED) {
             state = newState;
@@ -322,6 +323,7 @@ public class GameStateHandler implements ActionListener {
                 startButton.setIcon(pauseIcon);
                 stepButton.setIcon(stepIcon);
                 resetButton.setIcon(resetIcon);
+                playfield.setDescriptionOn(false);
                 playfield.setLabellingOn(false);
             }
         } else if (newState == GameState.STEP) {
@@ -357,6 +359,7 @@ public class GameStateHandler implements ActionListener {
             stepButton.setIcon(restepIcon);
             resetButton.setIcon(resetIcon);
             nextLevelButton.setEnabled(true);
+            playfield.setDescriptionOn(false);
             playfield.setLabellingOn(false);
         }
     }
