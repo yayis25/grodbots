@@ -44,6 +44,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 import javax.swing.Action;
+import javax.swing.Icon;
 import javax.swing.JButton;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
@@ -51,6 +52,8 @@ import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.JPanel;
+
+import com.sun.org.apache.bcel.internal.generic.ACONST_NULL;
 
 import net.bluecow.robot.sound.SoundManager;
 
@@ -131,6 +134,11 @@ public class GameUI {
     private final LoadLevelsAction loadLevelsAction;
 
     /**
+     * Action for showing the About dialog.
+     */
+    private final Action aboutAction;
+
+    /**
      * The action that quits the game.
      */
     private QuitAction quitAction = new QuitAction();
@@ -172,6 +180,8 @@ public class GameUI {
         }
         final GameLoop gameLoop = new GameLoop(robots.keySet(), level, playfield);
 
+        aboutAction = new AboutAction(panel);
+        
         saveCircuitAction = new SaveCircuitAction(panel, robots.keySet());
         loadCircuitAction = new LoadCircuitAction(panel, robots.keySet());
         loadLevelsAction = new LoadLevelsAction(session);
@@ -251,6 +261,7 @@ public class GameUI {
         JMenuItem item;
         mb.add(menu = new JMenu("File"));
         menu.setMnemonic(KeyEvent.VK_F);
+        menu.add(item = new JMenuItem(aboutAction ));
         menu.add(item = new JMenuItem(loadLevelsAction));
         menu.add(item = new RecentFilesMenu("Open Recent Levels", loadLevelsAction, RobotUtils.getPrefs().node("recentGameFiles")));
         item.setMnemonic(KeyEvent.VK_T);
