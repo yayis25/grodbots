@@ -6,17 +6,17 @@
   <sound id="teleport" type="CLIP" path="ROBO-INF/sounds/teleport.wav" />
   <sound id="drag-AND" type="CLIP" path="ROBO-INF/sounds/drag-AND.wav" />
   <sound id="grod_song_01" type="MOD" path="ROBO-INF/music/grod_song_01.xm">
-    <ending name="win" sequence-index="0" offset="4" duration="5000" />
+    <ending name="win" sequence-index="0" offset="4" duration="2000" />
   </sound>
   <sound id="relay_clicking" type="CLIP" path="ROBO-INF/sounds/relay_clicking.wav" />
   <sound id="create-NOT" type="CLIP" path="ROBO-INF/sounds/create-NOT.wav" />
   <sound id="delete_gate" type="CLIP" path="ROBO-INF/sounds/delete_gate.wav" />
   <sound id="grod_march_01" type="MOD" path="ROBO-INF/music/grod_march_01.xm">
-    <ending name="win" sequence-index="0" offset="4" duration="5000" />
+    <ending name="win" sequence-index="0" offset="4" duration="2000" />
   </sound>
   <sound id="start_drawing_wire" type="CLIP" path="ROBO-INF/sounds/start_drawing_wire.wav" />
   <sound id="grod_dance_01" type="MOD" path="ROBO-INF/music/grod_dance_01.xm">
-    <ending name="win" sequence-index="0" offset="18" duration="5000" />
+    <ending name="win" sequence-index="0" offset="18" duration="2000" />
   </sound>
   <sound id="delete_prohibited" type="CLIP" path="ROBO-INF/sounds/delete_prohibited.wav" />
   <sound id="leave_gate" type="CLIP" path="ROBO-INF/sounds/leave_gate.wav" />
