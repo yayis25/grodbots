@@ -730,9 +730,10 @@ public class CircuitEditor extends JPanel {
             }
 
             public void gatesChangedState(CircuitEvent evt) {
-                if (evt.getGatesAffected().size() > 0) {
-                    playSound("relay_clicking");
-                }
+                // TODO make this an option (either music or this; not both!)
+//                if (evt.getGatesAffected().size() > 0) {
+//                    playSound("relay_clicking");
+//                }
                 repaint();
             }
 
