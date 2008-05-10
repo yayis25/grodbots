@@ -44,7 +44,6 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 import javax.swing.Action;
-import javax.swing.Icon;
 import javax.swing.JButton;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
@@ -52,8 +51,6 @@ import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.JPanel;
-
-import com.sun.org.apache.bcel.internal.generic.ACONST_NULL;
 
 import net.bluecow.robot.sound.SoundManager;
 
