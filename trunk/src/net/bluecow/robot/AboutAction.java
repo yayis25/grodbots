@@ -52,7 +52,7 @@ public class AboutAction extends AbstractAction {
      * end up referencing this variable from outside the AboutDialog, think
      * about moving it somewhere more reasonable.
      */
-    public static final Version VERSION = new Version("1.0beta");
+    public static final Version VERSION = new Version("1.0beta2");
     
     /**
      * The component that will own the popup dialog when it gets displayed.

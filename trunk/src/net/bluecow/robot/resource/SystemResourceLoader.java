@@ -40,13 +40,18 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 
+/**
+ * ResourceLoader implementation that reads resources from the classpath. For
+ * Webstart and applet compatibility, the resource is actually retrieved from
+ * this class's classloader, not the system classloader.
+ */
 public class SystemResourceLoader extends AbstractResourceLoader {
 
     public InputStream getResourceAsStream(String resourceName) throws IOException {
-        InputStream resourceStream = ClassLoader.getSystemResourceAsStream(resourceName);
+        InputStream resourceStream = getClass().getClassLoader().getResourceAsStream(resourceName);
         if (resourceStream == null) {
             throw new FileNotFoundException("Can't locate resource '"+resourceName+
-                    "' on system classpath");
+                    "' on classpath");
         }
         return resourceStream;
     }
