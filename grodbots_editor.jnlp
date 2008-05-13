@@ -1,14 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- JNLP File for WebStart-ing GrodBots game. Copied'n'modified from the SwingSet2 example. -->
+<!-- JNLP File for WebStart-ing GrodBots editor. Copied'n'modified from the SwingSet2 example. -->
 <jnlp
   spec="1.5+"
   codebase="http://www.bluecow.net/grodbots/"
-  href="http://grodbots.googlecode.com/svn/trunk/grodbots.jnlp">
+  href="http://grodbots.googlecode.com/svn/trunk/grodbots_editor.jnlp">
   <information>
     <title>GrodBots</title>
     <vendor>Jonathan Fuerth</vendor>
     <homepage href="http://code.google.com/p/grodbots/"/>
-    <description>Help the robot get to the cake!</description>
+    <description>Build new levels for GrodBots!</description>
     <offline-allowed/>
     <shortcut online="false">
       <desktop/>
@@ -22,5 +22,5 @@
     <j2se version="1.5+"/>
     <jar href="files/grodbots-1.0beta2.jar"/>
   </resources>
-  <application-desc main-class="net.bluecow.robot.Main"/>
+  <application-desc main-class="net.bluecow.robot.editor.EditorMain"/>
 </jnlp>

@@ -65,6 +65,7 @@ Sounds:
 -little ditties for the beginning of each level (maybe this would be better suited to the MIDI sequencer api)
 
 Completed:
+-WebStart support (requested several times on javagaming.org)
 -implement per-level background music in level config and xml file load/save
 -add per-level background music picking to the level editor
 -cut down the default_levels project to just the map file

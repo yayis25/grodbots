@@ -1,2 +1,2 @@
 Main-Class: net.bluecow.robot.editor.EditorMain
-Class-Path: robot.jar
+Class-Path: grodbots-1.0beta2.jar
