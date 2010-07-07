@@ -37,6 +37,7 @@
 package net.bluecow.robot.sprite;
 
 import java.awt.Graphics2D;
+import java.awt.Rectangle;
 import java.awt.geom.AffineTransform;
 import java.util.Map;
 
@@ -89,6 +90,26 @@ public interface Sprite {
      * this sprite.
      */
     int getHeight();
+    
+    /**
+     * Returns the bounding box that defines how this sprite collides with its
+     * surroundings and other sprites. If null, this sprite will not collide
+     * with anything.
+     * <p>
+     * The rectangle's coordinates are relative to the top left corner of the
+     * sprite (the image's (0,0) point).
+     */
+    public Rectangle getCollisionBox();
+    
+    /**
+     * Sets up the optional bounding box that defines how this sprite collides with its
+     * surroundings and other sprites. If not specified, this sprite will not
+     * collide with anything.
+     * <p>
+     * The rectangle's coordinates are relative to the top left corner of the
+     * sprite (the image's (0,0) point).
+     */
+    public void setCollisionBox(Rectangle box);
     
     /**
      * Reports the scaling factor that will be applied to the source image data

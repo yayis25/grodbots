@@ -38,10 +38,12 @@ package net.bluecow.robot.sprite;
 
 import java.awt.Dimension;
 import java.awt.Image;
+import java.awt.Rectangle;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -50,9 +52,11 @@ import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
 
+import net.bluecow.robot.FileFormatException;
 import net.bluecow.robot.resource.ResourceLoader;
 
 import org.xml.sax.Attributes;
+import org.xml.sax.Locator;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
@@ -63,6 +67,12 @@ public class AnimatedSprite extends AbstractSprite {
      * parses it.
      */
     private class RsfSaxHandler extends DefaultHandler {
+        
+        /**
+         * Object from the parser that tracks parse position.
+         */
+        private Locator loc;
+
         @Override
         public void startElement(String uri, String localName,
                 String qName, Attributes attributes) throws SAXException {
@@ -76,8 +86,38 @@ public class AnimatedSprite extends AbstractSprite {
                     size.width = Math.max(size.width, icon.getIconWidth());
                     size.height = Math.max(size.height, icon.getIconHeight());
                     frames.put(attributes.getValue("id"), icon);
+                } else if (qName.equals("collision-box")) {
+                    Integer x = null;
+                    Integer y = null;
+                    Integer width = null;
+                    Integer height = null;
+                    for (int i = 0; i < attributes.getLength(); i++) {
+                        String aname = attributes.getQName(i);
+                        String aval = attributes.getValue(i);
+                        
+                        if (aname.equals("x")) {
+                            x = Integer.parseInt(aval);
+                        } else if (aname.equals("y")) {
+                            y = Integer.parseInt(aval);
+                        } else if (aname.equals("width")) {
+                            width = Integer.parseInt(aval);
+                        } else if (aname.equals("height")) {
+                            height = Integer.parseInt(aval);
+                        }                        
+                    }
+                    
+                    checkMandatory(qName, "x", x);
+                    checkMandatory(qName, "y", y);
+                    checkMandatory(qName, "width", width);
+                    checkMandatory(qName, "height", height);
+                    
+                    Rectangle collisionBox = new Rectangle(x, y, width, height);
+                    setCollisionBox(collisionBox);
+                    
                 } else if (qName.equals("sequence")) {
-                    // nothing to do, really
+                    // the ID might be null, which is fine.
+                    curSeqName = attributes.getValue("id");
+                    sequences.put(curSeqName, new ArrayList<ImageIcon>());
                 } else if (qName.equals("step")) {
                     int count = 1;
                     String countStr = attributes.getValue("count");
@@ -85,13 +125,36 @@ public class AnimatedSprite extends AbstractSprite {
                         count = Integer.parseInt(countStr);
                     }
                     for (int i = 0; i < count; i++) {
-                        sequence.add(frames.get(attributes.getValue("frame")));
+                        sequences.get(curSeqName).add(frames.get(attributes.getValue("frame")));
                     }
                 } else {
                     throw new SAXException("Unknown element \""+qName+"\" in RSF file");
                 }
             } catch (IOException ex) {
                 throw new SAXException(ex);
+            }
+        }
+        
+        @Override
+        public void setDocumentLocator(Locator locator) {
+            this.loc = locator;
+        }
+        
+        /**
+         * Helper routine that throws a FileFormatException when a mandatory attribute
+         * is null.
+         * 
+         * @param elemName The qName of the element that the mandatory attribute should
+         * be found in.
+         * @param attName The name of the mandatory attribute
+         * @param attVal The value of the mandatory attribute
+         * @throws FileFormatException if attVal is null.  The message will say the name of
+         * the element and the attribute, and say it should have been there.
+         */
+        private void checkMandatory(String elemName, String attName, Object attVal) throws FileFormatException {
+            if (attVal == null) {
+                throw new FileFormatException("Missing mandatory attribute \""+attName+"\" of element <"+elemName+">",
+                        loc.getLineNumber(), "(original line from file not available)", loc.getColumnNumber());
             }
         }
     }
@@ -107,7 +170,21 @@ public class AnimatedSprite extends AbstractSprite {
     private String basePath;
     
     private Dimension size = new Dimension(0,0);
-    private List<ImageIcon> sequence = new ArrayList<ImageIcon>();
+    
+    /**
+     * All sequences that were defined in the RSF file.
+     */
+    private Map<String, List<ImageIcon>> sequences = new LinkedHashMap<String, List<ImageIcon>>();
+    
+    /**
+     * The name of the current sequence being played back. The default sequence after
+     * parsing the RSF file is the last one that was defined in that file.
+     */
+    private String curSeqName = null;
+    
+    /**
+     * The current frame number within the current sequence.
+     */
     private int curSeqNum = 0;
     
     /**
@@ -146,12 +223,12 @@ public class AnimatedSprite extends AbstractSprite {
     @Override
     public void nextFrame() {
         curSeqNum++;
-        if (curSeqNum >= sequence.size()) curSeqNum = 0;
+        if (curSeqNum >= sequences.get(curSeqName).size()) curSeqNum = 0;
     }
 
     @Override
     public Image getImage() {
-        return sequence.get(curSeqNum).getImage();
+        return sequences.get(curSeqName).get(curSeqNum).getImage();
     }
     
     public int getWidth() {
@@ -160,5 +237,48 @@ public class AnimatedSprite extends AbstractSprite {
 
     public int getHeight() {
         return (int) (size.height * getScale());
+    }
+    
+    /**
+     * Switches the animation progression to the given sequence, and if the
+     * given sequence is not the current sequence, resets the frame position to
+     * the first frame of the new sequence. In other words, this method has
+     * no effect if the given sequence is already the current sequence.
+     * 
+     * @param seqName
+     *            The sequence to switch to. If this sequence is not defined for
+     *            this sprite, the animation state will not be changed.
+     */
+    public void setCurrentSequence(String seqName) {
+        if (seqName == curSeqName || (seqName != null && seqName.equals(curSeqName))) {
+            return;
+        }
+        if (sequences.containsKey(seqName)) {
+            this.curSeqName = seqName;
+            curSeqNum = 0;
+        } else {
+            System.out.println(
+                    "Warning: this animated sprite has no sequence called " +
+                    seqName + ". Staying with sequence " + curSeqName + ".");
+        }
+    }
+    
+    public String getCurrentSequence() {
+        return curSeqName;
+    }
+    
+    /**
+     * Enhances the basic clone functionality to make sure the new copy's animation sequences
+     * are truly independant of the ones in this object.
+     */
+    @Override
+    public Sprite clone() {
+        AnimatedSprite copy = (AnimatedSprite) super.clone();
+        
+        for (Map.Entry<String, List<ImageIcon>> entry : copy.sequences.entrySet()) {
+            entry.setValue(new ArrayList<ImageIcon>(entry.getValue()));
+        }
+        
+        return copy;
     }
 }

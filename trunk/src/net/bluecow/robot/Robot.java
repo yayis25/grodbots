@@ -582,6 +582,13 @@ public class Robot implements Labelable {
         return theta;
     }
 
+    /**
+     * Returns true if this robot is moving (has changed position in the past frame).
+     */
+    public boolean isMoving() {
+        return movingDirection != 0;
+    }
+
     public LevelConfig getLevel() {
         return level;
     }

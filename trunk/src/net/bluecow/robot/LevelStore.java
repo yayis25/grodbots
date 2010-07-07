@@ -37,6 +37,7 @@
 package net.bluecow.robot;
 
 import java.awt.Point;
+import java.awt.Rectangle;
 import java.awt.geom.Point2D;
 import java.io.BufferedInputStream;
 import java.io.File;

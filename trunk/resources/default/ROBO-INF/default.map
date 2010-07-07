@@ -40,7 +40,7 @@
   <gate type="NAND" mnemonic="A" class="net.bluecow.robot.gate.NandGate" />
   <gate type="OR" mnemonic="o" class="net.bluecow.robot.gate.OrGate" />
 
-  <square type="BLACK" mapchar=" " graphic="ROBO-INF/images/blacktile_glint.rsf">
+  <square type="BLACK" mapchar=" " graphic="ROBO-INF/images/blacktile.png">
   </square>
   <square type="MAGENTA" mapchar="M" graphic="ROBO-INF/images/magentatile.png">
     <activate-sensor type="Red" />
