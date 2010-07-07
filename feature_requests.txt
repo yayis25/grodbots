@@ -1,8 +1,12 @@
 Game Features:
+-a way of saving progress (prefs or passwords)
+-define a bounding box around (actually, just inside) the robot sprite, and do wall collisions based on that
+-make editor aware of collision box
+-make robot copy aware of collision box
+-make levelstore save collision box
 -ensure clips are closed when not playing back (javasound only supports 32 open simultaneously)
 -think about making music and switch clicking mutually exclusive
 -think about playing music the whole time (during circuit design and marching time)
--ensure IBXM playback halts after each ending (F00 isn't working)
 -ensure the game can still exit cleanly now that IBXM is on the scene (it seems to do
  something to JavaSound that prevents the VM from halting when the main thread terminates)
  This may solve the halting problem. (No, not THAT halting problem...)
@@ -65,6 +69,10 @@ Sounds:
 -little ditties for the beginning of each level (maybe this would be better suited to the MIDI sequencer api)
 
 Completed:
+-fix font size problem in page number after level has been completed
+-get rid of the animated gleam/glint on the black tiles
+-multiple animation phases for sprites, so Grod can idle without marching
+-ensure IBXM playback halts after each ending (F00 isn't working)
 -WebStart support (requested several times on javagaming.org)
 -implement per-level background music in level config and xml file load/save
 -add per-level background music picking to the level editor

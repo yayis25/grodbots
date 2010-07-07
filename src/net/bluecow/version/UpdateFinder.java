@@ -68,7 +68,7 @@ public class UpdateFinder {
     /**
      * Controls whether or not the debugging features of this class are enabled.
      */
-    private static final boolean debugOn = true;
+    private static final boolean debugOn = false;
     
     /**
      * Prints the given printf-formatted message, followed by a newline,

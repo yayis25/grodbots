@@ -36,6 +36,7 @@ import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Composite;
 import java.awt.Dimension;
+import java.awt.Font;
 import java.awt.FontMetrics;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
@@ -67,6 +68,7 @@ import javax.swing.event.AncestorListener;
 import net.bluecow.robot.GameConfig.SquareConfig;
 import net.bluecow.robot.LevelConfig.Switch;
 import net.bluecow.robot.fx.Effect;
+import net.bluecow.robot.sprite.AnimatedSprite;
 import net.bluecow.robot.sprite.Sprite;
 import net.bluecow.robot.sprite.SpriteLoadException;
 import net.bluecow.robot.sprite.SpriteManager;
@@ -450,11 +452,13 @@ public class Playfield extends JPanel {
         }
         
         if (winMessage != null) {
-            g2.setFont(g2.getFont().deriveFont(50f));
+            Font oldFont = g2.getFont();
+            g2.setFont(oldFont.deriveFont(50f));
             g2.setColor(Color.BLACK);
             g2.drawString(winMessage, 20, getHeight()/2);
             g2.setColor(Color.RED);
             g2.drawString(winMessage, 15, getHeight()/2-5);
+            g2.setFont(oldFont);
         }
         
         final List<String> pages = level.getDescriptionPages();
@@ -505,6 +509,7 @@ public class Playfield extends JPanel {
                 }
 
                 g2.setColor(Color.WHITE);
+                
                 g2.drawString("Page "+ (getDescriptionPageNumber() + 1) +
                         "/" + level.getDescriptionPages().size(),
                         prevDescriptionPageRegion.x,
@@ -531,8 +536,13 @@ public class Playfield extends JPanel {
     
     /**
      * Tells all the sprites and effects to get ready for the next frame.
+     * 
+     * @param inPlay Whether or not this next frame happened while the
+     * game was in play. If so, the robot sprites will look like they took
+     * a step. Progression of other sprite animations will continue regardless
+     * of this parameter.
      */
-    private void nextFrame() {
+    private void nextFrame(boolean inPlay) {
         for (SquareConfig sc : game.getSquareTypes()) {
             sc.getSprite().nextFrame();
         }
@@ -542,7 +552,23 @@ public class Playfield extends JPanel {
         }
 
         for (RoboStuff rs : robots) {
-            rs.getRobot().getSprite().nextFrame();
+            // XXX I don't like this for two reasons:
+            // 1. The robot should probably be doing this itself
+            // 2. I don't think there should be an instanceof check here
+            Robot robot = rs.getRobot();
+            Sprite sprite = robot.getSprite();
+            if (robot.isMoving()) {
+                if (sprite instanceof AnimatedSprite) {
+                    ((AnimatedSprite) sprite).setCurrentSequence("march");
+                }
+                if (inPlay) {
+                    sprite.nextFrame();
+                }
+            } else {
+                if (sprite instanceof AnimatedSprite) {
+                    ((AnimatedSprite) sprite).setCurrentSequence("idle");
+                }
+            }
         }
 
         for (Iterator<Effect> effectsIt = effects.iterator(); effectsIt.hasNext(); ) {
@@ -720,8 +746,9 @@ public class Playfield extends JPanel {
     
     public void setFrameCount(Integer c) {
         debug("===="+System.identityHashCode(this)+" SetFrameCount Next Frame");
+        boolean inPlay = (frameCount != c);
         frameCount = c;
-        nextFrame();
+        nextFrame(inPlay);
     }
     
     /**
@@ -773,7 +800,7 @@ public class Playfield extends JPanel {
         public synchronized void actionPerformed(ActionEvent e) {
             if (enabled) {
                 debug("===="+System.identityHashCode(Playfield.this)+" Async Next Frame");
-                nextFrame();
+                nextFrame(false);
                 repaint();
             }
         }

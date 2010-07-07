@@ -107,6 +107,20 @@ public abstract class AbstractEffect implements Effect {
     public void setTransform(AffineTransform transform) {
         this.transform = transform;
     }
+    
+    /**
+     * Returns null; Effect doesn't currently implement collisions.
+     */
+    public Rectangle getCollisionBox() {
+        return null;
+    }
+
+    /**
+     * No-op. Effect doesn't currently implement collisions.
+     */
+    public void setCollisionBox(Rectangle box) {
+        // no op
+    }
 
     public abstract void nextFrame();
     

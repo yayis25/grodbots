@@ -36,8 +36,10 @@
  */
 package net.bluecow.robot.sprite;
 
+import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.Image;
+import java.awt.Rectangle;
 import java.awt.geom.AffineTransform;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -45,6 +47,19 @@ import java.util.Map;
 import net.bluecow.robot.resource.ResourceLoader;
 
 public abstract class AbstractSprite implements Sprite {
+    
+    /**
+     * Controls debugging features of this class, including whether or not
+     * it prints debug information to the console.
+     */
+    private static final boolean debugOn = false;
+    
+    /**
+     * Prints the given string plus a newline to stdout, if debugOn==true. 
+     */
+    private static void debug(String msg) {
+        if (debugOn) System.out.println(msg);
+    }
     
     /**
      * The resource loader that this sprite's resources came from.
@@ -66,6 +81,16 @@ public abstract class AbstractSprite implements Sprite {
      * Defaults to the identity transform.
      */
     private AffineTransform transform = new AffineTransform();
+    
+    /**
+     * Optional bounding box that defines how this sprite collides with its
+     * surroundings and other sprites. If not specified, this sprite will not
+     * collide with anything.
+     * <p>
+     * The rectangle's coordinates are relative to the top left corner of the
+     * sprite (the image's (0,0) point).
+     */
+    private Rectangle collisionBox;
     
     protected AbstractSprite(ResourceLoader resourceLoader, Map<String, String> attributes) {
         this.resourceLoader = resourceLoader;
@@ -117,6 +142,13 @@ public abstract class AbstractSprite implements Sprite {
             AffineTransform drawingTransform = AffineTransform.getScaleInstance(scale, scale);
             drawingTransform.concatenate(transform);
             g2.drawImage(getImage(), drawingTransform, null);
+            if (debugOn && getCollisionBox() != null) {
+                Color backupColor = g2.getColor();
+                g2.setColor(Color.RED);
+                Rectangle cb = getCollisionBox();
+                g2.drawRect(cb.x, cb.y, cb.width, cb.height);
+                g2.setColor(backupColor);
+            }
         } finally {
             g2.setTransform(backupXform);
         }
@@ -128,6 +160,15 @@ public abstract class AbstractSprite implements Sprite {
      * the AbstractSprite's generic implementation of paint().
      */
     public abstract Image getImage();
+    
+    
+    public Rectangle getCollisionBox() {
+        return collisionBox;
+    }
+    
+    public void setCollisionBox(Rectangle box) {
+        this.collisionBox = box;
+    }
     
     public double getScale() {
         final String stringScale = getAttributes().get("scale");
